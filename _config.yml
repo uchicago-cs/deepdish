@@ -5,7 +5,7 @@ url:          https://amitgroup.github.io/deepdish
 author:
   name:       ''
   email:      ''
-markdown:     rdiscount
+markdown:     kramdown
 permalink:    pretty
 highlighter:  pygments
 paginate:     5
