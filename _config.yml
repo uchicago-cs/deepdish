@@ -2,10 +2,12 @@ title:        deepdish
 tagline:      'Deep learning at the University of Chicago'
 description:  'Deep learning blog and reference implementations.'
 url:          https://amitgroup.github.io/deepdish
+baseurl:      /deepdish
 author:
   name:       ''
   email:      ''
 markdown:     kramdown
+#permalink:    /deepdish/:categories/:year/:month/:day/:title/
 permalink:    pretty
 highlighter:  pygments
-paginate:     5
+paginate:     2
