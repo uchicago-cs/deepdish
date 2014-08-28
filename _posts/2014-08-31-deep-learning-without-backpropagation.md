@@ -12,3 +12,8 @@ Some things to consider:
 * what are examples of networks that don't use back-propagation
 * what are the best results that such networks are able to achieve
 * how does removing back-propagation increase simplicity
+* greedy training is often used as pre-training (however this reached its popularity peak a few years ago and most competition winners today do not use unsupervised pre-training [1])
+* how good can greedy training be? Its inherent limitations are not entirely clear, which is why it's interesting to explore, considering its benefits
+* find papers that compare for instance a Deep Belief Network's performance with and without fine-tuning.
+
+[1] Schmidhuber, J., Deep Learning in Neural Networks: An Overview
