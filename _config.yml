@@ -7,7 +7,6 @@ author:
   name:       ''
   email:      ''
 markdown:     kramdown
-#permalink:    /deepdish/:categories/:year/:month/:day/:title/
 permalink:    pretty
 highlighter:  pygments
-paginate:     2
+paginate:     5
