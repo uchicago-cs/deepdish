@@ -1,8 +1,8 @@
 title:        deepdish
 tagline:      'Deep learning at the University of Chicago'
 description:  'Deep learning blog and reference implementations.'
-url:          https://amitgroup.github.io/deepdish
-baseurl:      /deepdish
+url:          http://deepdish.io/
+baseurl:      ''
 author:
   name:       ''
   email:      ''
