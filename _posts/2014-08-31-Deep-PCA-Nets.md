@@ -22,6 +22,15 @@ The authors extensively test the technique on a variety of datasets and a strong
 
 The authors achieve state-of-the-art results on several of the [MNIST Variations](http://www.iro.umontreal.ca/~lisa/twiki/bin/view.cgi/Public/MnistVariations) tasks. The method compares favorably to hand-designed features, wavelet-derived featues, and deep-network learned features.
 
+## The algorithm
+
+The main algorithm is cascading a filterbank convolution
+ followed by 
+a binary hashing step, followed by a histogramming step.  In order
+to use the algorithm we just need to estimate the filterbank
+using PCA, and everything else is fixed. \\( sin(x^2) \\) 
+$$ a^2 + b^2 = c^2 $$
+
 
 
  Extended Yale B, [AR] http://www2.ece.ohio-state.edu/~aleix/ARdatabase.html, FERET
