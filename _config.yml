@@ -6,7 +6,9 @@ baseurl:      /deepdish
 author:
   name:       ''
   email:      ''
-markdown:     kramdown
+markdown:     redcarpet
+redcarpet:
+ extensions: ["tables"]
 permalink:    pretty
 highlighter:  pygments
 paginate:     5
