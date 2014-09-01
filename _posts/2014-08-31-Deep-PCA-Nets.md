@@ -99,7 +99,7 @@ on the estimated feature vector for each image.
 ## My Implementation
 
 I was intrigued by the simplicity of the network and the strong
-results so I attempted to implement the network
+results so I implemented the network myself
 
   Each
 filter is then convolved with zero-padded images so that the 
