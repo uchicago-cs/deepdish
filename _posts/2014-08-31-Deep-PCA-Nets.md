@@ -48,16 +48,16 @@ the input images.  The input images are zero-padded for the
 convolution so that the output has the same dimension as the 
 image itself.  So, using the eight columns of \\( W \\)
 we take each input image \\( \mathcal{I}\\) and convert it
-into eight output images \\( \mathcal{I}_l \\)  where \\( 1\leq l\leq 8 \\). 
+into eight output images \\( \mathcal{I} _ l \\)  where \\( 1\leq l\leq 8 \\). 
 
 #### Second Layer
 
 The second layer is constructed by iterating the algorithm from
 the first layer over each of the eight output images.  For each
-output image \\( \mathcal{I}_l \\) we take the dense set
+output image \\( \mathcal{I} _ l \\) we take the dense set
 of flattened patch vectors, remove the DC-component, and then
 estimate a PCA filterbank (again with eight filters).  Each filter
-\\( w_{l,k} \\) from the filterbank is convolved with \\( \mathcal{I}_l \\) to produce a new image \\( \mathcal{I}_{l,k} \\).  Repeating
+\\( w _ {l,k} \\) from the filterbank is convolved with \\( \mathcal{I} _ l \\) to produce a new image \\( \mathcal{I} _ {l,k} \\).  Repeating
 this process for each filter in the filterbanks produces 64
 images.
 
@@ -66,14 +66,14 @@ images.
 The 64 images have the same size as the original image thus we 
 may view the filter outputs as producing a three-dimensional
 array \\( \mathcal{J}\in\mathbb{R}^{H\times W\times 64} \\)
-where $H\times W$ are the dimensions of the input image. Each
-of the 64 images is produced from a layer one filter \\( l_1 \\)
-and a layer two filter \\( l_2 \\) so we denote the associated
-image as \\( \mathcal{J}_{l_1,l_2} \\).  Each
+where \\( H\times W \\) are the dimensions of the input image. Each
+of the 64 images is produced from a layer one filter \\( l _ 1 \\)
+and a layer two filter \\( l _ 2 \\) so we denote the associated
+image as \\( \mathcal{J} _ {l _ 1,l _ 2} \\).  Each
 pixel \\( (x,y) \\) from the image has an associated
 8-dimensional feature vector \\( \mathcal{J}(x,y)\in\mathbb{R}^{64} \\).  These feature vectors are converted into integers by using a
-Heavyside step function \\( H \\) sum:
-$$ \mathcal{K}_{l_1}(x,y)=\sum_{z=1}^{8} 2^{z-1}\cdot H(\mathcal{J}_{l_1,z}(x,y,z)).   $$
+[Heaviside step function](http://en.wikipedia.org/wiki/Heaviside_step_function) \\( H \\) sum:
+$$ \mathcal{K} _ {l _ 1}(x,y)=\sum _ {z=1}^{8} 2^{z-1}\cdot H(\mathcal{J} _ {l _ 1,z}(x,y,z)).   $$
 
 We note that we produce a hashed image such as \\( \mathcal{K}_l \\)
 for each filter \\( l \\) in the layer one filterbank so this means
@@ -93,8 +93,18 @@ vector.
 
 ### Classification
 
-In the paper they estimate a multiclass-linear SVM to operate
-on the estimated feature vector for each image.
+In the paper they estimate a multiclass linear SVM to operate
+on the estimated feature vector for each image.  The same
+setup was used for all input data.
+
+## Author's Implementation
+
+Code for the paper is [here](http://mx.nthu.edu.tw/~tsunghan/download/PCANet_demo.zip)
+and it has implementations for cifar10 and MNIST basic (a subset of MNIST).  With a little extra
+work one can also make it suitable for testing on the whole MNIST data set.
+
+I tested this implementation on the MNIST dataset and received the following results:
+
 
 ## My Implementation
 
