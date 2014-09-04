@@ -10,3 +10,16 @@ markdown:     kramdown
 permalink:    pretty
 highlighter:  pygments
 paginate:     5
+authors:
+  gustav:
+    name: Gustav Larsson
+    display_name: Gustav
+    email: gustav@deepdish.io
+    github: gustavla
+  mark:
+    name: Mark Stoehr
+    display_name: Mark
+    email: mark@deepdish.io
+    github: markstoehr
+
+  
