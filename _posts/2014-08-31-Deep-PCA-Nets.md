@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Deep PCA Nets
+author: mark
 ---
 
 Tsung-Han Chan and colleagues recently uploaded to [ArXiv](http://arxiv.org) an [interesting paper](http://arxiv.org/abs/1404.3606) proposing a simple but effective baseline for deep learning.  They propose a novel two-layer architecture where
