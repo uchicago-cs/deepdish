@@ -3,11 +3,11 @@ layout: post
 title: Deep PCA Nets
 ---
 
-Tsung-Han Chan and colleagues recently uploaded to [ArXiv](arxiv.org) an [interesting paper](http://arxiv.org/abs/1404.3606) proposing a simple but effective baseline for deep learning.  They propose a novel two-layer architecture where
+Tsung-Han Chan and colleagues recently uploaded to [ArXiv](http://arxiv.org) an [interesting paper](http://arxiv.org/abs/1404.3606) proposing a simple but effective baseline for deep learning.  They propose a novel two-layer architecture where
 each layer convolves the image with a filterbank, followed by binary hasing, and finally block histogramming for indexing and pooling.  The filters in the filterbank are learned using simple algorithms such as random projections (RandNet),
 [principal component analysis](http://en.wikipedia.org/wiki/Principal_component_analysis) (PCANet), and linear discriminant analysis (LDANet).  They report results competitive with those obtained
 by other deep learning methods
-and [scattering networks](www.di.ens.fr/data/scattering) (introduced by Stéphane Mallat) on a variety of task: face recognition, face verification, hand-written digits recognition, texture discrimination, and object recognition:
+and [scattering networks](http://www.di.ens.fr/data/scattering) (introduced by Stéphane Mallat) on a variety of task: face recognition, face verification, hand-written digits recognition, texture discrimination, and object recognition:
 
 |Dataset   | Task  | Accuracy  |
 |---|---|---|
@@ -81,7 +81,7 @@ pixel \\( (x,y) \\) from the image has an associated
 [Heaviside step function](http://en.wikipedia.org/wiki/Heaviside_step_function) \\( H \\) sum:
 $$ \mathcal{K} _ {l _ 1}(x,y)=\sum _ {z=1}^{8} 2^{z-1}\cdot H(\mathcal{J} _ {l _ 1,z}(x,y,z)).   $$
 
-We note that we produce a hashed image such as \\( \mathcal{K}_l \\)
+We note that we produce a hashed image such as \\( \mathcal{K} _ l \\)
 for each filter \\( l \\) in the layer one filterbank so this means
 that we have eight images after the hashing operation and the images
 are all integers.
