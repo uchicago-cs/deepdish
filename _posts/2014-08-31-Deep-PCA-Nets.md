@@ -22,7 +22,7 @@ and [scattering networks](http://www.di.ens.fr/data/scattering) (introduced by S
 
 The authors achieve state-of-the-art results on several of the [MNIST Variations](http://www.iro.umontreal.ca/~lisa/twiki/bin/view.cgi/Public/MnistVariations) tasks. The method compares favorably to hand-designed features, wavelet-derived featues, and deep-network learned features.
 
-## The algorithm
+## PCA-Net Algorithm
 
 The main algorithm is cascades two filterbank convolutions
 with an intermediate mean normalization step,
