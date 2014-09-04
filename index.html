@@ -19,7 +19,8 @@ layout: default
       {% if author %}
       <span class="post-date">
         <!-- Personal Info. -->
-	<a href="{{ author.email }}" target="_blank">{{ author.name }}</a>
+	{{ author.name }}
+	<!-- <a href="{{ author.email }}" target="_blank">{{ author.name }}</a> -->
       </span>
       {% endif %}
 
