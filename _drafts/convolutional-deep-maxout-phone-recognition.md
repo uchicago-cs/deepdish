@@ -16,7 +16,7 @@ of his ideas.  This post is primarily concerned with explaining what is written 
 These networks operate on log mel filterbank features--a filtered [spectrogram](http://en.wikipedia.org/wiki/Spectrogram) transformed to match a [mel scale](http://en.wikipedia.org/wiki/Mel_scale).  These filterbank features are a time-frequency representation 
 which may serve as a visual representation of speech utterances, e.g.:
 
-[Picture of spectrogram and filterbank features from Kaldi](/path/to/images "Spectrogram and Filterbank Features")
+![Picture of spectrogram and filterbank features from Kaldi](/path/to/images "Spectrogram and Filterbank Features")
 
 These filterbank features are then processed by a special formulation of a [convolutional neural network](http://en.wikipedia.org/wiki/Convolutional_neural_network) (CNN)
  combined with down-sampling and max-pooling. These steps produce local time-frequency translation invariance and allow the network
