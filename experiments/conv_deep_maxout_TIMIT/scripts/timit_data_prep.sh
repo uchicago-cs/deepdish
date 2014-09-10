@@ -24,6 +24,9 @@ else
    exit 1;
 fi
 
+# construct Training, Development, and Testing sets
+
+
 
 for DIR in  TEST TRAIN ; do
     dir=`echo $DIR | tr '[:upper:]' '[:lower:]'`
@@ -71,16 +74,19 @@ for DIR in  TEST TRAIN ; do
     fi
 
     # create MLF
-    $HTKTools/HLEd -S data/$dir.phn -i data/${dir}Mono.mlf /dev/null
+    $HTKTools/HLEd -G TIMIT -S data/$dir.phn -i data/${dir}Mono.mlf /dev/null
     rm -f data/$dir.wav
 
 done
 
-# filter the main test set to get the core test set
-FILTER='^data/timit/test/dr./[mf](DAB0|WBT0|ELC0|TAS1|WEW0|PAS0|JMP0|LNT0|PKT0|LLL0|TLS0|JLM0|BPM0|KLT0|NLP0|CMJ0|JDH0|MGD0|GRT0|NJM0|DHC0|JLN0|PAM0|MLD0)/s[ix]'
-egrep -i $FILTER data/test.scp > data/coreTest.scp
-egrep -i $FILTER data/test.phn > data/coreTest.phn
-$HTKTools/HLEd -S data/coreTest.phn -i data/coreTestMono.mlf /dev/null
+# filter the main test set to get the core test set and the development set (the latter being use to test for convergence)
+for dset in dev coreTest ; do
+    FILTER=`(echo -n '^data/timit/test/dr./(' && cat conf/$dset.spkrs && echo -n ')/s[ix]' )| tr '\n' '|'`
+    egrep -i $FILTER data/test.scp > data/$dset.scp
+    egrep -i $FILTER data/test.phn > data/$dset.phn
+    $HTKTools/HLEd -G TIMIT -S data/$dset.phn -i data/${dset}Mono.mlf /dev/null
+done
+
 
 mkdir -p exp
 # create list of monophones
