@@ -39,7 +39,7 @@ patches from all of the images and vectorize them so that each patch
 is a flat 49-entry vector: $$  \mathbf{v}\in\mathbb{R}^{7\times 7} \to \operatorname{vec}\mathbf{v}\in\mathbb{R}^{49}   $$
 where \\( \mathbf{v} \\) is an image patch in the picture, e.g.:
 
-<center><img src="images/mnist5_patch.png" alt="Image Patch Picture"></center>
+![Image Patch Picture]({{ site.baseurl }}/public/images/PCANet_mnist5_patch.png)
 
 For each patch vector we take the mean
 of the entries (the DC-component) and then subtract that mean
@@ -126,10 +126,10 @@ reported in the author's paper.  It is possible that the author ran a more optim
 that was not indicated in the posted codes.  
 
 The filters learned in the first layer were:
-![first layer PCA filters](images/PCANet_V1.png "Layer 1 PCA filters")
+![first layer PCA filters]({{ site.baseurl }}/public/images/PCANet_V1.png "Layer 1 PCA filters")
 
 The filters learned in the second layer were:
-![second layer PCA filters](images/PCANet_V2.png "Layer 2 PCA filters")
+![second layer PCA filters]({{ site.baseurl }}/public/images/PCANet_V2.png "Layer 2 PCA filters")
 
 We can see that the different image filters are somewhat similar to edge filters and that the seventh
 and eighth filters (in the lower-right hand corner) have less clear structure than the others. Often,

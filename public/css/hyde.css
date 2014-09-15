@@ -181,6 +181,11 @@ img {
   border-radius: 5px;
 }
 
+div.post img {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 
 /*
  * Custom type
