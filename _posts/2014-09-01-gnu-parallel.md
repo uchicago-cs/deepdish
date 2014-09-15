@@ -1,5 +1,6 @@
 ---
 layout: post
+author: gustav
 title: GNU Parallel
 ---
 
@@ -8,7 +9,10 @@ tutorial](http://caffe.berkeleyvision.org/gathered/examples/imagenet.html) for
 [Caffe](http://caffe.berkeleyvision.org/) (a deep learning framework), in which
 they need to resize a large number of images. It struck me that they might not
 be aware of [GNU Parallel](http://www.gnu.org/software/parallel/), since it
-is a great tool for this task.
+is a great tool for this task. I recommend it to any data scientist out there
+since it is so simple to use and like many other GNU tools, with good chance
+already installed on your computer (if not, `apt-get install moreutils` on
+Debian).
 
 In the writeup, it says that the author used his own MapReduce framework to do
 it, but it can also be done sequentially as:
