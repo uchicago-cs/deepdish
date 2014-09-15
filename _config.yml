@@ -6,7 +6,7 @@ baseurl:      ''
 author:
   name:       ''
   email:      ''
-markdown:     kramdown
+markdown:     redcarpet
 permalink:    pretty
 highlighter:  pygments
 paginate:     5
