@@ -339,6 +339,10 @@ a:focus {
   color: #9a9a9a;
 }
 
+.list-post-date {
+  color: #9a9a9a;
+}
+
 /* Related posts */
 .related {
   padding-top: 20px;

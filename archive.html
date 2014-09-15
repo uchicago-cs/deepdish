@@ -1,0 +1,21 @@
+---
+layout: default
+---
+
+<div class="page">
+  <h1>Archive</h1>
+  <p>List of all blog posts:</p>
+  <div>
+      <ul>
+      {% for post in site.posts %}
+        <li>
+          <a href="{{ site.baseurl }}{{ post.url }}">
+            {{ post.title }}
+          </a> 
+          <span class="list-post-date">{{ post.date | date_to_string }}</span>
+        </li>
+      {% endfor %}
+      </ul>
+  </div>
+</div>
+
