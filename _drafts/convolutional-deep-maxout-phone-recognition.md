@@ -16,8 +16,9 @@ of his ideas.  This post is primarily concerned with explaining what is written 
 These networks operate on log mel filterbank features--a filtered [spectrogram](http://en.wikipedia.org/wiki/Spectrogram) transformed to match a [mel scale](http://en.wikipedia.org/wiki/Mel_scale).  These filterbank features are a time-frequency representation 
 which may serve as a visual representation of speech utterances, e.g.:
 
-![Picture of spectrogram and filterbank features from Kaldi](/path/to/images "Spectrogram and Filterbank Features")
+<center><img src="images/greasy.png" alt="Greasy Filterbank"></center>
 
+which is a representation of someone saying "greasy".
 These filterbank features are then processed by a special formulation of a [convolutional neural network](http://en.wikipedia.org/wiki/Convolutional_neural_network) (CNN)
  combined with down-sampling and max-pooling. These steps produce local time-frequency translation invariance and allow the network
 to use many fewer parameters.  	 These convolutions are performed using a [maxout network](arxiv.org/pdf/1302.4389) which takes
@@ -38,7 +39,24 @@ a [pressure wave](http://en.wikipedia.org/wiki/Sound) produced by a vocal appara
 encode these using features amenable to a deep network.  Usually, the sound is saved onto a computer hard-drive as a
 digitized waveform using a [Pulse-code modulation stream](http://en.wikipedia.org/wiki/Pulse-code_modulation#Modulation) (PCM)--this is the basis for [WAV](http://en.wikipedia.org/wiki/WAV) files (other formats such as [MP3](http://en.wikipedia.org/wiki/MP3) and [Ogg](http://en.wikipedia.org/wiki/Ogg) generally use lossy compression).  The PCM format captures the [amplitude](http://en.wikipedia.org/wiki/Amplitude)
  of the 
-speech signal at regular intervals of time: e.g. in TIMIT there are 16 amplitude samples per millisecond.
+speech signal at regular intervals of time: e.g. in TIMIT there are 16 amplitude samples per millisecond so 25 milliseconds of
+speech looks like:
+
+<center><img src="images/greasy_wave.png" alt="Greasy Waveform" width="512"></center>
+
+
+whose waveform structure is inferred from the list of amplitude
+samples and sampling frequency.  Note that 
+only the relative scale of the amplitude is important and the absolute
+scale is determined entirely for efficiency in the audio coding.  We take the [Fourier transform](http://en.wikipedia.org/wiki/Fourier_transform) of the waveform, 
+take the squared modulus, and
+use a filterbank to convert the waveform to a [Mel scale](http://en.wikipedia.org/wiki/Mel_scale):
+
+<center><img src="images/greasy_fbank.png" alt="Greasy Filterbank" width="512"></center>
+
+The plot above corresponds to the ninth column, which we call the *frame*, of the visual representation of "greasy" shown in the first image:
+
+<center><img src="images/greasy_fbank_column.png" alt="Greasy Filterbank"></center>
 
 ## Time-Frequency Convolutional Neural Networks 
 
