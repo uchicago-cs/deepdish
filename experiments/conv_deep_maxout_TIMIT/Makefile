@@ -1,5 +1,6 @@
 TIMIT=/home/mark/Data/timit
 MFCCCONFIG=conf/htk_mfcc.config
+FBANKCONFIG=conf/htk_fbank.config
 HTK=/home/mark/Software/htk
 HTKSamples=$(HTK)/samples
 CANTAB=HTKtimit.sh
@@ -18,8 +19,9 @@ bestnumtrimix:
 work/triphoneLabels:
 	bash -ex generate_training_alignments.sh $(HTK)
 
-work/train.fbank: bestnumtrimix
-	bash -ex fbank_features.sh $(TIMIT) $(HTK)
+
+work/timit_CDlabel_fbank_train.hdf5:
+	bash -ex make_timit_hdf5.sh $(HTK)/HTKTools $(TIMIT) $(FBANKCONFIG)
 
 vis_greasy:
 	bash extract_greasy_pictures.sh $(TIMIT)/.. $(HTK)/HTKTools
