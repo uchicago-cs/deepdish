@@ -10,20 +10,26 @@ NPASSPERMIX=4            # number of fwd/bwd passes per mixture incr
 
 all: dataprep trainmonophone triphonetrees traintriphone
 
+.PHONY: traintriphone
 traintriphone: exp/triphones
 	bash scripts/timit_train_triphone.sh $(HTK)/HTKTools $(NMIXTRI) $(MINTESTTRI) $(NPASSPERMIX)
 
+.PHONY: triphonetrees
 triphonetrees: exp
 	bash scripts/triphone_trees.sh $(HTK)/HTKTools $(HTKSamples) $(NPASSPERMIX)
 
+.PHONY: trainmonophone
 trainmonophone: data
-	echo $(HTKSamples); echo $(HTK);
-	bash scripts/timit_train_monophone.sh $(HTK)/HTKTools $(HTKSamples) $(NMIXMONO) $(MINTESTMONO) $(NPASSPERMIX)
+	bash scripts/timit_train_monophone.sh $(HTK)/HTKTools
 
+.PHONY: dataprep
 dataprep:
 	bash scripts/timit_data_prep.sh $(TIMIT) $(HTK)/HTKTools
 
 
+vis_greasy: data
+	bash scripts/extract_greasy_pictures.sh $(TIMIT) $(HTK)/HTKTools
 
+.PHONY: clean
 clean:
-	rm -rf data exp
+	rm -rf data exp vis_greasy
