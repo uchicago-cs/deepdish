@@ -3,10 +3,6 @@
 #
 
 HTKTools=$1
-HTKSamples=$2
-NMIXMONO=$3
-MINTESTMONO=$4
-NPASSPERMIX=$5
 
 # template for a prototype model should be in 
 # conf/simp.pcf
@@ -66,8 +62,37 @@ for phn in `cat exp/monophones` ; do
 done
 
 # combine together to estimate as a single model
-# do splitting and re-estimation until likelihood no longer improves
+mkdir -p exp/hmm3
 
+# new HMM macro is exp/hmm3/newMacros
+$HTKTools/HERest -d exp/hmm2 -M exp/hmm3 -I data/trainMono.mlf -S data/train.scp exp/monophones
 
+for i in `seq 1 1 12` ; do
+    $HTKTools/HERest -H exp/hmm3/newMacros  -M exp/hmm3 \
+	-I data/trainMono.mlf -S data/train.scp -T 1 \
+	exp/monophones
+done
 
-mkdir -p exp/hmm1
+# create a grammar
+(echo -n '$phone = ' && cat exp/monophones && echo -n ' ;' )| sed ':a;N;$!ba;s/\n/ | /g' | sed 's:|  ;:;:' > exp/gram
+echo '' >> exp/gram
+echo '( <$phone> )' >> exp/gram
+
+$HTKTools/HParse  exp/gram monophonewrdnet
+mv monophonewrdnet exp/
+
+paste exp/monophones exp/monophones > exp/dict
+
+$HTKTools/HVite -H exp/hmm3/newMacros -S data/dev.scp \
+    -i exp/hmm3/recout.mlf -w exp/monophonewrdnet \
+    -p -6.0 -s 5.0 exp/dict exp/monophones
+
+accuracy=`$HTKTools/HResults -I data/devMono.mlf exp/monophones exp/hmm3/recout.mlf | grep '^WORD:' | awk '{ print $3 }' | sed 's:Acc=::'`
+
+echo $accuracy > exp/hmm3/dev_accuracy
+
+$HTKTools/HVite -H exp/hmm3/newMacros -S data/train.scp \
+    -i exp/hmm3/train_recout.mlf -w exp/monophonewrdnet \
+    -p -6.0 -s 5.0 exp/dict exp/monophones
+
+$HTKTools/HResults -I data/trainMono.mlf exp/monophones exp/hmm3/train_recout.mlf | grep '^WORD:' | awk '{ print $3 }' | sed 's:Acc=::' > exp/hmm3/train_accuracy
