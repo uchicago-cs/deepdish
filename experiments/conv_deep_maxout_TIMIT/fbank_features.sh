@@ -31,7 +31,7 @@ for DIR in train test ; do
 
 
   paste $DIR.wav $DIR.fbank | sed "s:^:$TIMIT/:" > $DIR.convert
-  HCopy -C config -S $DIR.convert
+  HCopy -C fbankconfig -S $DIR.convert
   rm -f $DIR.convert
 
 done
