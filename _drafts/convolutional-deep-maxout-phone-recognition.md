@@ -60,9 +60,7 @@ The plot above corresponds to the ninth column, which we call the *frame*, of th
 
 ## Time-Frequency Convolutional Neural Networks 
 
-
-
-
 The axes of the image correspond (approximately) to group operations: time translation and frequency transposition (or scaling) hence
 we may meaningfully apply [convolutional filters](http://en.wikipedia.org/wiki/Convolution#Convolutions_on_groups) and hence
-convolutional neural nets (CNNs)
+convolutional neural nets (CNNs) are a good choice for the
+bottom layer of the neural network.
