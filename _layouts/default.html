@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+
+  {% include head.html %}
+
+  <body>
+
+    <header class="masthead">
+      <div class="masthead-inner">
+          <h1><a href="{{ site.baseurl }}/">{{ site.title }}</a></h2>
+        <p class="lead">{{ site.description }}</p>
+
+        <div class="colophon">
+          <ul class="colophon-links">
+            <li>
+              <a href="https://github.com/uchicago-cs/deepdish">GitHub project</a>
+            </li>
+            {% comment %}<li>Currently v{{ site.version }}</li>{% endcomment %}
+          </ul>
+          <p>&copy; 2014. {{ site.author.name }} All rights reserved.</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="content container">
+      {{ content }}
+    </div>
+
+  </body>
+</html>
