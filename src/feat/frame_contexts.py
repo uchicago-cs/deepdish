@@ -29,8 +29,8 @@ def utterance_to_contexts(utt_frames,n_context_frames):
 
     feature_window = np.zeros((n_context_frames,n_frame_features),dtype=utt_frames.dtype)
 
+
     for frame_id, frame in enumerate(utt_frames):
-        feature_window[:] = 0.
         # print "n_frames={0}, frame_id+context_radius+1={1}".format(n_frames,frame_id+context_radius+1)
         # print "n_context_frames + n_frames - frame_id + context_radius+1={0}".format(n_frames -frame_id+context_radius+1)
         # print frame_id, "template indices:", max(0,
@@ -39,17 +39,29 @@ def utterance_to_contexts(utt_frames,n_context_frames):
         #                                                                          (frame_id + context_radius+1)), "utt indices:", max(0,frame_id- context_radius), min(n_frames,
         #                    frame_id + context_radius+1)
         # print ""
-        feature_window[max(0,
+        if frame_id == 0:
+            feature_window[:] = 0.
+            feature_window[max(0,
                            context_radius-frame_id):
                        min(n_context_frames, 
                            n_context_frames + n_frames - 
                            (frame_id + context_radius+1))
-        ] = utt_frames[max(0,frame_id- context_radius):
-                       min(n_frames,
-                           frame_id + context_radius+1)]
+                       ] = utt_frames[max(0,frame_id- context_radius):
+                                      min(n_frames,
+                                          frame_id + context_radius+1)]
+        else: 
+            feature_window[:-1] = feature_window[1:]
+            if frame_id + context_radius + 1 > n_frames:
+                feature_window[-1] = 0.
+            else:
+                feature_window[-1] = utt_frames[frame_id + context_radius]
+
+            
         X[frame_id] = feature_window.ravel()
         
     return X
+
+
         
 
 def fbank_frame_select_idx(data_dset,labels_dset,utt_start_end_inds,n_context_frames,use_frames):
