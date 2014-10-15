@@ -45,6 +45,7 @@ for utt_id, (utt_start_ind,utt_end_ind) in enumerate(F['utt_start_end_inds']):
         shuffled_id = out_indices[datum_id]
         out_data[shuffled_id] = x
         out_labels[shuffled_id] = use_labels[x_id]
+        datum_id += 1
         
 
 F.close()
