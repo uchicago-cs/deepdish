@@ -17,7 +17,23 @@ could be used to improve large scale image classification at Google.
 2. The smaller network can be trained with fewer examples and possibly without seeing all of the classes
 3. Smaller specialized networks that classify among a small set of classes can improve the performance of large general networks that can classify between many classes
 
-These three things come from using a technique similar to one discussed in [this paper](http://www.cs.cornell.edu/~caruana/compression.kdd06.pdf)
+These three things come from using a technique similar to one discussed in [this paper](http://www.cs.cornell.edu/~caruana/compression.kdd06.pdf) that appeared in 2006.  
+The technique is based on a temperature-type trick to use for training.  A deep neural network generally maps an input vector \\( \mathbf{x}\in\mathbb{R}^D_{in} \\) to an output feature vector 
+    \\( \mathbf{h}\in\mathbb{R}^{D_{out}} \\) and a logistic regression is estimated to map the output
+features \\( \mathbf{h} \\) to the classes \\( 1,\ldots, C \\).  The logistic regressor estimates a matrix of coefficients \\( (\boldsymbol{\beta}_1,\ldots,\boldsymbol{\beta}_C) \in \mathbb{R}^{D\times C} \\) so that
+given an output vector \\( \mathbf{h} \\) we may compute a vector of \\( C \\) scores \\(\mathbf{z}\in\mathbb{R}^C \\):
+$$ \mathbf{z}=\mathbf{h}^{\top}(\boldsymbol{\beta}_1,\ldots,\boldsymbol{\beta}_C) $$
+We may use this vector of scores \\( \mathbf{z} \\) to estimate a class posterior given the output features $\mathbf{h}$ namely we set
+$$ \hat{\mathbb{P}}(c\mid \mathbf{h}) = \frac{e^{\boldsymbol{\beta}^\top_c \mathbf{h}}}{\sum_{c'=1}^C e^{\boldsymbol{\beta}^\top_c \mathbf{h}} } $$
+where \\( \hat{\mathbb{P}}(c\mid \mathbf{h}) \\) denotes the estimate of the posterior probability that our data point belongs to class
+\\( c \\).  
+
+The goal of the learning algorithm is to estimate each of the parameter vectors \\( \boldsymbol{\beta}_c \)) for all of the classes.
+Usually, the parameters learned to minimize the log loss:
+$$ \sum_{n=1}^NL(\mathbf{h}_n,y_n;\boldsymbol{\beta}) = -\sum_{n=1}^N\sum_{c=1}^C 1\{y_n=c\}\log\frac{e^{\boldsymbol{\beta}^\top_c \mathbf{h}}}{\sum_{c'=1}^C e^{\boldsymbol{\beta}^\top_c \mathbf{h}} } $$
+which is the log-likelihood of the data under the logistic regression model.  \\( \boldsymbol{\beta} \\) is usually estimated with iterative algorithms
+since there is no closed-form solution.
+
 
 The first point suggests some efficiency gains.  The classifiers used for speech recognition and computer vision
 at Google need to be efficient.
