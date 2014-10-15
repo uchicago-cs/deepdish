@@ -34,6 +34,24 @@ $$ \sum_{n=1}^NL(\mathbf{h}_n,y_n;\boldsymbol{\beta}) = -\sum_{n=1}^N\sum_{c=1}^
 which is the log-likelihood of the data under the logistic regression model.  \\( \boldsymbol{\beta} \\) is usually estimated with iterative algorithms
 since there is no closed-form solution.
 
+The loss function may be viewed as a cross-entropy between 
+an empirical conditional distribution \\( y\mid x \\) and
+a predicted conditional distribution given by the logistic model.
+This cross-entropy view motivates the dark knowledge training
+paradigm.  Instead of training the cross entropy against the data
+one could train it against a prediction by another model.  In particular,
+for each data point \\( \mathbf{x}_n \\) another neural network
+may make a prediction
+$$\mathbf{y} = (y_{n,1},y_{n,2},\ldots,y_{n,C})^\top $$
+such that $$\sum_{c=1}^C y_{n,c} = 1$$ and \\( y_{n,c} > 0 \\)
+for every class \\( c \\): i.e. the network outputs a distribution
+over labels.  The idea is to train the smaller network using
+this output distribution rather than the true labels.
+The loss function then becomes
+$$ \sum_{n=1}^NL(\mathbf{h}_n,y_n;\boldsymbol{\beta}) = -\sum_{n=1}^N\sum_{c=1}^C y_{n,c}\log\frac{e^{\boldsymbol{\beta}^\top_c \mathbf{h}}}{\sum_{c'=1}^C e^{\boldsymbol{\beta}^\top_c \mathbf{h}} }
+$$
+and solving for \\( \boldsymbol{\beta} \\) may be performed in the usual manner.
+
 
 The first point suggests some efficiency gains.  The classifiers used for speech recognition and computer vision
 at Google need to be efficient.
