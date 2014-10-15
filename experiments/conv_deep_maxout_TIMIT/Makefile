@@ -26,6 +26,9 @@ work/timit_CDlabel_fbank_train.hdf5:
 vis_greasy:
 	bash extract_greasy_pictures.sh $(TIMIT)/.. $(HTK)/HTKTools
 
+work/timit_CDlabel_fbank_window_train.hdf5:
+	bash construct_input_windowed_dsets.sh
+
 
 .PHONY: clean
 clean:
