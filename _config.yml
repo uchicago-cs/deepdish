@@ -23,5 +23,8 @@ authors:
     display_name: Mark
     email: mark@deepdish.io
     github: markstoehr
-
-  
+  markgustav:
+    name: Mark Stoehr, Gustav Larsson
+    display_name: Mark and Gustav
+    email: deepdish@deepdish.io
+    github: uchicago-cs
