@@ -4,7 +4,7 @@ author: markgustav
 title: Hinton's Dark Knowledge
 ---
 
-On Thursday, October 2, 2014 [Geoffrey Hinton](http://www.cs.toronto.edu/~hinton/) gave a [talk](http://www.iro.umontreal.ca/~bengioy/cifar/NCAP2014-summerschool/slides/geoff_hinton_dark14.pdf) on what he calls "dark knowledge" which
+On Thursday, October 2, 2014 [Geoffrey Hinton](http://www.cs.toronto.edu/~hinton/) gave a talk ([slides](http://www.iro.umontreal.ca/~bengioy/cifar/NCAP2014-summerschool/slides/geoff_hinton_dark14.pdf), [video](https://www.youtube.com/watch?v=phmEyJa4I7o)) on what he calls "dark knowledge" which
 he claims is most of what [deep learning methods](http://deeplearning.net/)
 actually learn.  The talk presented an idea that had been introduced in
 [(Caruana, 2006)](http://www.cs.cornell.edu/~caruana/compression.kdd06.pdf)
