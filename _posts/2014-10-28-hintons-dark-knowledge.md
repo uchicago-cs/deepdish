@@ -84,11 +84,11 @@ The loss function becomes
 $$ L ^ \mathrm{(soft)} = \sum _ {n=1}^NL(\mathbf{x} _ n,y _ n;\boldsymbol{\Theta}^\mathrm{(small)}) = -\sum _ {n=1}^N \sum _ {c=1}^C y ^ \mathrm{(target)} _ {n, c} \log \hat{\mathbb{P}}(y _ c \mid \mathbf{x} _ n ; \boldsymbol{\Theta} ^ \mathrm{(small)}).
 $$
 
-Hinton mentioned that the best results by combining the two loss functions. At
+Hinton mentioned that the best results are achieved by combining the two loss functions. At
 first, we thought he meant alternating between them, as in train one batch with
 \\( L ^ \mathrm{(hard)} \\) and the other with \\( L ^ \mathrm{(soft)} \\).
 However, after a discussion with a professor that also attended the talk, it
-seems as though Hinton took the a convex combination of the two loss functions
+seems as though Hinton took a convex combination of the two loss functions
 
 $$ L = \alpha L ^ \mathrm{(soft)} + (1 - \alpha) L ^ \mathrm{(hard)}, $$
 
