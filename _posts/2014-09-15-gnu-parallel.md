@@ -11,8 +11,10 @@ they need to resize a large number of images. It struck me that they might not
 be aware of [GNU Parallel](http://www.gnu.org/software/parallel/), since it
 is a great tool for this task. I recommend it to any data scientist out there
 since it is so simple to use and like many other GNU tools, with good chance
-already installed on your computer (if not, `apt-get install moreutils` on
-Debian).
+already installed on your computer. If not, run `apt-get install parallel` on
+Debian. It might tell you to install `moreutil` to get parallel, but this
+installs the wrong parallel
+([explanation](http://www.gnu.org/software/parallel/history.html)).
 
 In the writeup, it says that the author used his own MapReduce framework to do
 it, but it can also be done sequentially as:
@@ -71,28 +73,23 @@ Note how we now used `{1}` and `{2}` to refer to the input. We also quoted the
 command, which is optional and might make things clearer (if you want to use
 pipes inside your command, it is required). Using multiple inputs is great for
 doing grid searches of parameters. However, let's say we don't want to do all
-combinations in the product and instead want to specify each pair of input
-manually. First create a file with the input and name it `input.txt`:
+combinations of the product and instead want to specify each pair of input
+manually. This behavior is easily achieved using the `--xapply` option:
 
-```
-A 10
-B 20
-C 10
+```bash
+prallel --xapply "echo {1}: {2}" ::: A B C D ::: {1..8}
 ```
 
-Now, use `--colsep` to specify the delimiter:
+Note how the letters will wrap around.
 
-```sh
-parallel --colsep=' ' "echo {1}: {2}" < input.txt
-```
-
-If you did this to test a variety of parameters, you might find it easier to
-create a file, `commands.sh`,  with all the commands written out:
+In some settings, you might find it easier to create a file, `commands.sh`,
+with all the commands written out:
 
 ```sh
 ./experiment 10.0 1.5 > exp1.txt
 ./experiment 20.0 1.5 --extra-param 3.0 > exp2.txt
 ```
+
 Now run them in parallel by:
 
 ```
@@ -100,7 +97,7 @@ parallel < commands.sh          # OR
 parallel :::: commands.sh
 ```
 
-The latter is a newer syntax (note that it has *four* semicolons), which again I
+The latter is a newer syntax (note that it has *four* colons), which again I
 prefer since it can be stringed together multiple times and you can freely mix
 `:::` and `::::`.
 
@@ -133,6 +130,8 @@ For more information I recommend:
 * [GNU Parallel Tutorial](http://www.gnu.org/software/parallel/parallel_tutorial.html) - Very readable with lots of information
 * [GNU Parallel Videos](https://www.youtube.com/playlist?list=PL284C9FF2488BC6D1) - Screencasts by the author of Parallel
 * [Parallel Batch Job Submission](http://docs.rcc.uchicago.edu/software/scheduler/parallel/README.html) - How to use Parallel on a SLURM cluster
+
+*Thanks to Ole Tange, the author of GNU Parallel, for pointing out errors in this post.*
 
 <!---
 ## Multiple computers using a cluster
