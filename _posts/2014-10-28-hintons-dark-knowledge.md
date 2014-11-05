@@ -34,7 +34,7 @@ The parameters of the entire network are collected in \\( \boldsymbol{\Theta}
 \\).  Usually, the parameters are learned by minimizing the log loss for all
 training samples
 
-$$ \sum _ {n=1}^NL(\mathbf{x} _ n,y _ n;\boldsymbol{\Theta}) 
+$$ L ^ \mathrm{(hard)} = \sum _ {n=1}^NL(\mathbf{x} _ n,y _ n;\boldsymbol{\Theta}) 
  = -\sum _ {n=1}^N\sum _ {c=1}^C 1 _ \{\\{y _ n=c\\}\} \log \hat{\mathbb{P}}(y _ c \mid \mathbf{x} _ n ; \boldsymbol{\Theta} ), $$
 
 which is the negative of the log-likelihood of the data under the logistic
@@ -81,12 +81,19 @@ $$ \mathbf{y} ^ \mathrm{(target)} _ n = g(\mathbf{y} ^ \mathrm{(big)} _ n; T). $
 
 The loss function becomes
 
-$$ \sum _ {n=1}^NL(\mathbf{x} _ n,y _ n;\boldsymbol{\Theta}^\mathrm{(small)}) = -\sum _ {n=1}^N \sum _ {c=1}^C y ^ \mathrm{(target)} _ {n, c} \log \hat{\mathbb{P}}(y _ c \mid \mathbf{x} _ n ; \boldsymbol{\Theta} ^ \mathrm{(small)}).
+$$ L ^ \mathrm{(soft)} = \sum _ {n=1}^NL(\mathbf{x} _ n,y _ n;\boldsymbol{\Theta}^\mathrm{(small)}) = -\sum _ {n=1}^N \sum _ {c=1}^C y ^ \mathrm{(target)} _ {n, c} \log \hat{\mathbb{P}}(y _ c \mid \mathbf{x} _ n ; \boldsymbol{\Theta} ^ \mathrm{(small)}).
 $$
 
-The simpler model is now trained by alternating between the original loss function 
-where we use 1-hot label vectors and the log loss above using the
-temperature-adjusted softmax outputs from the complicated model.
+Hinton mentioned that the best results by combining the two loss functions. At
+first, we thought he meant alternating between them, as in train one batch with
+\\( L ^ \mathrm{(hard)} \\) and the other with \\( L ^ \mathrm{(soft)} \\).
+However, after a discussion with a professor that also attended the talk, it
+seems as though Hinton took the a convex combination of the two loss functions
+
+$$ L = \alpha L ^ \mathrm{(soft)} + (1 - \alpha) L ^ \mathrm{(hard)}, $$
+
+where \\( \alpha \\) is a parameter. This professor had the impression
+that an appropriate value was \\( \alpha = 0.9 \\) after asking Hinton about it.
 
 One of the main settings for where this is useful is in the context of
 speech recognition.  Here an ensemble phone recognizer may achieve a low phone
