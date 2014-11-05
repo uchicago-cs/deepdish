@@ -7,8 +7,18 @@ author: gustav, mark
 On Thursday, October 2, 2014 [Geoffrey Hinton](http://www.cs.toronto.edu/~hinton/) gave a [talk](http://www.iro.umontreal.ca/~bengioy/cifar/NCAP2014-summerschool/slides/geoff_hinton_dark14.pdf) on what he calls "dark knowledge" which
 he claims is most of what [deep learning methods](http://deeplearning.net/)
 actually learn.  The talk presented an idea that had been introduced in
-[this paper](http://www.cs.cornell.edu/~caruana/compression.kdd06.pdf)
-although with a very different implementation.  The most interesting part of the talk
+[(Caruana, 2006)](http://www.cs.cornell.edu/~caruana/compression.kdd06.pdf)
+where a more complex model is used to train a simpler, compressed model. 
+The main point of the talk introduces the idea that classifiers built from
+a [softmax function](http://en.wikipedia.org/wiki/Softmax_function) have
+a great deal more information contained in them than just a classifier, the
+correlations in the softmax outputs are very informative. For example, when 
+building a computer vision system to detect `cats`,`dogs`, and `boats` the output
+entries for `cat` and `dog` in a softmax classifier will always have more
+correlation than `cat` and `boat` since `cats` look similar to `dogs`.
+
+
+The most interesting part of the talk
 was the analysis of why the model compression worked and the reports of how it
 could be used to improve large scale image classification at Google.
 
