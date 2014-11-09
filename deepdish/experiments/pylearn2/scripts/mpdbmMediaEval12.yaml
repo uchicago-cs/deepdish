@@ -50,7 +50,7 @@
     algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
         monitoring_dataset : {
             raw_valid: !obj:pylearn2.datasets.hdf5.HDF5 {
-            	       filename: '/share/data/mediaeval/stoehr/mediaMFCCs.hdf5',
+                       filename: '/share/data/mediaeval/stoehr/mediaMFCCs.hdf5',
                        X: 'X_dev',
                        y: 'y_dev',
                        load_all: False
