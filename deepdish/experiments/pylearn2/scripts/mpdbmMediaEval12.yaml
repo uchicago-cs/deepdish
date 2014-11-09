@@ -17,7 +17,6 @@
               niter: 14,
               visible_layer: !obj:pylearn2.models.dbm.GaussianVisLayer {
                 nvis: 741,
-                bias_from_marginals: None,
               },
               hidden_layers: [
                 !obj:pylearn2.models.dbm.BinaryVectorMaxPool {
