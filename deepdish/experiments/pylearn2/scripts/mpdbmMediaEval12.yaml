@@ -5,7 +5,7 @@
 # Obtained raw_valid_err of 0.085
 # When originally run in 2013, obtained raw_valid_err of 0.076
 !obj:pylearn2.train.Train {
-    dataset: &train !obj:pylearn2.datasets.hdf5.HDF5 {
+    dataset: &train !obj:pylearn2.datasets.hdf5.HDF5Dataset {
         filename: '/share/data/mediaeval/stoehr/mediaMFCCs.hdf5',
         X: 'X_train',
         y: 'y_train',
@@ -49,7 +49,7 @@
     },
     algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
         monitoring_dataset : {
-            raw_valid: !obj:pylearn2.datasets.hdf5.HDF5 {
+            raw_valid: !obj:pylearn2.datasets.hdf5.HDF5Dataset {
                        filename: '/share/data/mediaeval/stoehr/mediaMFCCs.hdf5',
                        X: 'X_dev',
                        y: 'y_dev',
