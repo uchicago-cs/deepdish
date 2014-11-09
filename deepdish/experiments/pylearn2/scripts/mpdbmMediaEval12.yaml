@@ -6,11 +6,11 @@
 # When originally run in 2013, obtained raw_valid_err of 0.076
 !obj:pylearn2.train.Train {
     dataset: &train !obj:pylearn2.datasets.hdf5.HDF5 {
-      filename: '/share/data/mediaeval/stoehr/mediaMFCCs.hdf5,
-      X: 'X_train',
-      y: 'y_train',
-      load_all: False
-      },
+        filename: '/share/data/mediaeval/stoehr/mediaMFCCs.hdf5,
+        X: 'X_train',
+        y: 'y_train',
+        load_all: False
+        },
     model: !obj:pylearn2.models.dbm.DBM {
         inference_procedure: !obj:pylearn2.models.dbm.SuperWeightDoubling {},
               batch_size : 100,
@@ -49,12 +49,12 @@
     },
     algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
         monitoring_dataset : {
-            raw_valid: !obj:pylearn2.datasets.mnist.MNIST {
-                                which_set: "train",
-                                shuffle: 0,
-                                start: 50000,
-                                stop: 60000
-                            },
+            raw_valid: !obj:pylearn2.datasets.hdf5.HDF5 {
+            	       filename: '/share/data/mediaeval/stoehr/mediaMFCCs.hdf5,
+                       X: 'X_dev',
+                       y: 'y_dev',
+                       load_all: False
+        	       },
                },
          learning_rate: 15.146493,
         init_momentum: .5,
