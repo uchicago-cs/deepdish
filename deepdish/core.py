@@ -40,7 +40,7 @@ def info(*args, **kwargs):
 
 def warning(*args, **kwargs):
     """
-    Output warning, such as numerical instabilities.
+    Output warning message.
     """
     if not _is_silent:
         print("WARNING: " + args[0], *args[1:], **kwargs)

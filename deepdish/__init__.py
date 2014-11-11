@@ -14,9 +14,9 @@ from .core import (set_verbose,
 
 # Lazy load these?
 import deepdish.io
-#import deepdish.util
-#import deepdish.plot
-#from . import image
+import deepdish.util
+import deepdish.plot
+from . import image
 
 __all__ = ['deepdish',
            'set_verbose',
