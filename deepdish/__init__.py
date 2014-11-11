@@ -7,7 +7,8 @@ from .core import (set_verbose,
                    bytesize,
                    humanize_bytesize,
                    memsize,
-                   #apply_once,
+                   span,
+                   apply_once,
                    )
 
 
@@ -24,11 +25,9 @@ __all__ = ['deepdish',
            'bytesize',
            'humanize_bytesize',
            'memsize',
-           #'apply_once',
+           'span',
+           'apply_once',
            'io',
-           #'util',
-           #'plot',
-           #'image',
            ]
 
 VERSION = (0, 0, 0)
