@@ -178,8 +178,16 @@ def save(path, data):
         path = path.name
 
     h5file = tables.open_file(path, mode='w')
-    group = h5file.root
-    _save_level(h5file, group, data, name='top')
+
+    # If the data is a dictionary, put it flatly in the root
+    if isinstance(data, dict):
+        group = h5file.root
+        for key, value in data.items():
+            _save_level(h5file, group, value, name=key)
+
+    else:
+        group = h5file.root
+        _save_level(h5file, group, data, name='_top')
     h5file.close()
 
 
@@ -207,7 +215,13 @@ def load(path):
     if not isinstance(path, str):
         path = path.name
 
+
     h5file = tables.open_file(path, mode='r')
-    data = _load_level(h5file.root)['top']
+    root = h5file.root
+    data = _load_level(h5file.root)
+    # Unpack if top is the only one
+    if len(data) == 1 and '_top' in data:
+        data = data['_top']
+
     h5file.close()
     return data
