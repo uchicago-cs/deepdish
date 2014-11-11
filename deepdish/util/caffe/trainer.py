@@ -12,7 +12,7 @@ import subprocess
 from subprocess import Popen, PIPE
 
 TOOLS_DIR = os.path.expandvars('$CAFFE_DIR/build/tools')
-CAFFE_BIN = os.path.join(TOOLS_DIR, 'caffe')
+CAFFE_BIN = os.path.join(TOOLS_DIR, 'caffe.bin')
 
 def temperature(y, T):
     y = y**(1 / T)
