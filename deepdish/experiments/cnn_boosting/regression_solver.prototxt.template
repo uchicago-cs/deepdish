@@ -15,7 +15,7 @@ weight_decay: 0.004
 # The learning rate policy
 lr_policy: "fixed"
 # Display every .. iterations
-display: 200
+display: 400
 # The maximum number of iterations
 max_iter: {max_iter}
 # snapshot intermediate results
@@ -23,4 +23,4 @@ snapshot: {snapshot}
 snapshot_prefix: "{out}"
 solver_mode: GPU
 random_seed: {seed}
-device_id: 0
+device_id: {device_id}
