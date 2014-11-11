@@ -9,7 +9,7 @@ import caffe
 import subprocess
 import sys
 
-from .trainer import train_model
+from deepdish.util.caffe.trainer import train_model, temperature
 
 DIR = os.path.abspath('cifar10_hdf5')
 

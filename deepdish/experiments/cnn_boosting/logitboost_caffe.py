@@ -9,7 +9,7 @@ import sys
 import subprocess
 from subprocess import Popen, PIPE
 
-from .trainer import train_model, temperature
+from deepdish.util.caffe.trainer import train_model, temperature
 
 DIR = os.path.abspath('cifar10_hdf5')
 DEVICE_ID = 1
