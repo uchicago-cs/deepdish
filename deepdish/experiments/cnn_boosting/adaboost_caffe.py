@@ -20,13 +20,13 @@ g_rnd = np.random.randint(100000)
 
 def create_weighted_db(X, y, weights):
     X = X.reshape(-1, 3, 32, 32)
-    train_fn = os.path.join(DIR, 'boost.h5')
+    train_fn = os.path.join(DIR, 'adaboost.h5')
 
     with h5py.File(train_fn, 'w') as f:
         f['data'] = X
         f['label'] = y.astype(np.float32)
         f['sample_weight'] = weights
-    with open(os.path.join(DIR, 'boost.txt'), 'w') as f:
+    with open(os.path.join(DIR, 'adaboost.txt'), 'w') as f:
         print(train_fn, file=f)
 
 
@@ -76,8 +76,8 @@ class CNN(BaseEstimator, ClassifierMixin):
         steps = [(0.001, 200, 1000)]
 
         name = 'adaboost_{}_loop{}'.format(g_rnd, g_loop)
-        bare_conf_fn = 'boost_bare.prototxt'
-        conf_fn = 'boost_solver.prototxt.template'
+        bare_conf_fn = 'adaboost_bare.prototxt'
+        conf_fn = 'adaboost_solver.prototxt.template'
 
         net, info = train_model(name, conf_fn, bare_conf_fn, steps, seed=g_seed)
 
