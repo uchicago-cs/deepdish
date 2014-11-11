@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 from .mnist import load_mnist
 from .norb import load_small_norb
 from .casia import load_casia
+from .cifar import load_cifar_10
 
 try:
     import tables
@@ -17,4 +18,4 @@ else:
         raise ImportError("You need PyTables for this function")
     load = save = _f
 
-__all__ = ['load_mnist', 'load_small_norb', 'load_casia']
+__all__ = ['load_mnist', 'load_small_norb', 'load_casia', 'load_cifar_10']
