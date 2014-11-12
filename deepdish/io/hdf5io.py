@@ -1,12 +1,11 @@
 from __future__ import division, print_function, absolute_import
 
-import amitgroup as ag
 import numpy as np
 import tables
 import warnings
 import sys
 
-from amitgroup import six
+from deepdish import six
 
 # Types that should be saved as pytables attribute
 ATTR_TYPES = (int, float, bool, six.string_types,
@@ -84,9 +83,9 @@ def _save_level(handler, group, level, name=None):
         new_group = handler.create_group(group, name, "nonetype:")
 
     else:
-        ag.warning('(amitgroup.io.save) Pickling', level, ': '
-                   'This may cause incompatiblities (for instance between '
-                   'Python 2 and 3) and should ideally be avoided')
+        print('Warning: (deepdish.io.save) Pickling', level, ': '
+              'This may cause incompatiblities (for instance between '
+              'Python 2 and 3) and should ideally be avoided')
         node = handler.create_vlarray(group, name, tables.ObjectAtom())
         node.append(level)
 
@@ -156,7 +155,7 @@ def save(path, data):
 
     A recommendation is to always convert your data to using only these four
     ingredients. That way your data will always be retrievable by any HDF5
-    reader. A class that helps you with this is `amitgroup.util.Saveable`.
+    reader. A class that helps you with this is `deepdish.util.Saveable`.
 
     This function requires the [PyTables] module to be installed.
 
