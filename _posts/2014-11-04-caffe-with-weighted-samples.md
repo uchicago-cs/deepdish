@@ -45,6 +45,13 @@ with open(text_fn, 'w'): as f:
     print(h5_fn, file=f)
 ```
 
+Or, if you have our [deepdish](https://github.com/uchicago-cs/deepdish) package
+installed, saving the HDF5 can be done as follows (also see [this post]({% post_url 2014-11-11-python-dictionary-to-hdf5 %})):
+
+```python
+dd.io.save(h5_fn, dict(data=X, label=y, sample_weight=w))
+```
+
 Now, load the `sample_weight` in your data layer:
 
 ```
