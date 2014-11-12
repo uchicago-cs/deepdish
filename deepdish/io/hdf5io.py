@@ -83,9 +83,9 @@ def _save_level(handler, group, level, name=None):
         new_group = handler.create_group(group, name, "nonetype:")
 
     else:
-        print('Warning: (deepdish.io.save) Pickling', level, ': '
-              'This may cause incompatiblities (for instance between '
-              'Python 2 and 3) and should ideally be avoided')
+        warnings.warn('(deepdish.io.save) Pickling', level, ': '
+                      'This may cause incompatiblities (for instance between '
+                      'Python 2 and 3) and should ideally be avoided')
         node = handler.create_vlarray(group, name, tables.ObjectAtom())
         node.append(level)
 
