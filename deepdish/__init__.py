@@ -7,15 +7,16 @@ from .core import (set_verbose,
                    bytesize,
                    humanize_bytesize,
                    memsize,
-                   #apply_once,
+                   span,
+                   apply_once,
                    )
 
 
 # Lazy load these?
 import deepdish.io
-#import deepdish.util
-#import deepdish.plot
-#from . import image
+import deepdish.util
+import deepdish.plot
+from . import image
 
 __all__ = ['deepdish',
            'set_verbose',
@@ -24,11 +25,9 @@ __all__ = ['deepdish',
            'bytesize',
            'humanize_bytesize',
            'memsize',
-           #'apply_once',
+           'span',
+           'apply_once',
            'io',
-           #'util',
-           #'plot',
-           #'image',
            ]
 
 VERSION = (0, 0, 0)
