@@ -29,10 +29,11 @@ import numpy as np
 X = np.zeros((100, 3, 32, 32))
 y = np.zeros(100)
 
-dd.io.save('test.h5', {'data': X, 'label': y})
+dd.io.save('test.h5', {'data': X, 'label': y}, compress=False)
 ```
 
-Let's take a look at it:
+Note that Caffe does not like the compressed version, so we are turning off
+compression.  Let's take a look at it:
 
 ```bash
 $ h5ls test.h5
