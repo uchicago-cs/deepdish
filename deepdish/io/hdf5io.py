@@ -21,7 +21,7 @@ except Exception:
     COMPRESSION = tables.Filters()
 
 
-def _save_level(handler, group, level, name=None):
+def _save_level(handler, group, level, name=None, compress=True):
     if isinstance(level, dict):
         # First create a new group
         new_group = handler.create_group(group, name,
@@ -70,9 +70,14 @@ def _save_level(handler, group, level, name=None):
 
     elif isinstance(level, np.ndarray):
         atom = tables.Atom.from_dtype(level.dtype)
-        node = handler.create_carray(group, name, atom=atom, shape=level.shape,
-                                     chunkshape=level.shape,
-                                     filters=COMPRESSION)
+        if compress:
+            node = handler.create_carray(group, name, atom=atom,
+                                         shape=level.shape,
+                                         chunkshape=level.shape,
+                                         filters=COMPRESSION)
+        else:
+            node = handler.create_array(group, name, atom=atom,
+                                        shape=level.shape)
         node[:] = level
 
     elif isinstance(level, ATTR_TYPES):
@@ -136,7 +141,7 @@ def _load_level(level):
         return level[:]
 
 
-def save(path, data):
+def save(path, data, compress=True):
     """
     Save any Python structure to an HDF5 file. It is particularly suited for
     Numpy arrays. This function works similar to ``numpy.save``, except if you
@@ -167,6 +172,8 @@ def save(path, data):
         Data to be saved. This can be anything from a Numpy array, a string, an
         object, or a dictionary containing all of them including more
         dictionaries.
+    compress : boolean
+        Turn off data compression.
 
     See also
     --------
@@ -182,11 +189,11 @@ def save(path, data):
     if isinstance(data, dict):
         group = h5file.root
         for key, value in data.items():
-            _save_level(h5file, group, value, name=key)
+            _save_level(h5file, group, value, name=key, compress=compress)
 
     else:
         group = h5file.root
-        _save_level(h5file, group, data, name='_top')
+        _save_level(h5file, group, data, name='_top', compress=compress)
     h5file.close()
 
 
