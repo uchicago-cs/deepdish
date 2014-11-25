@@ -1,7 +1,7 @@
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import 
 import numpy as np
+import amitgroup as ag
 import deepdish as dd
-import h5py
 import os
 import caffe
 import re
@@ -9,9 +9,17 @@ import sys
 import subprocess
 from subprocess import Popen, PIPE
 
-from deepdish.util.caffe.trainer import train_model, temperature
+from deepdish.util.caffe.trainer import train_model
 
-DIR = os.path.abspath('cifar10_hdf5')
+CONF_DIR = 'confs'
+DATASET = 'cifar10'
+conf_name = 'regression'
+
+
+if DATASET == 'cifar100':
+    DIR = os.path.abspath('cifar100_hdf5')
+else:
+    DIR = os.path.abspath('cifar10_hdf5')
 DEVICE_ID = 1
 
 g_seed = 0
@@ -26,34 +34,50 @@ def transform(x):
     return X1
 
 
-def create_weighted_db(X, y, weights):
+def create_weighted_db(X, y, weights, name='regression'):
     X = X.reshape(-1, 3, 32, 32)
-    train_fn = os.path.join(DIR, 'regression.h5')
+    train_fn = os.path.join(DIR, '{}.h5'.format(name))
 
-    with h5py.File(train_fn, 'w') as f:
-        f['data'] = X
-        f['label'] = y.astype(np.float32)
-        f['sample_weight'] = weights
-    with open(os.path.join(DIR, 'regression.txt'), 'w') as f:
+    dd.io.save(train_fn, dict(data=X,
+                              label=y.astype(np.float32),
+                              sample_weight=weights), compress=False)
+    with open(os.path.join(DIR, '{}.txt'.format(name)), 'w') as f:
         print(train_fn, file=f)
 
 
-mean_x = dd.io.load(os.path.join(DIR, 'tr40k-mean.h5'))
-X = np.concatenate([dd.io.load_cifar_10('training', ret='x', count=10000, offset=10000*i, x_dtype=np.float32) for i in range(4)])
+#mean_x = dd.io.load(os.path.join(DIR, 'tr40k-mean.h5'))
+if DATASET == 'cifar100':
+    X = np.concatenate([ag.io.load_cifar_100('training', ret='x', count=10000, offset=10000*i, x_dtype=np.float32) for i in range(5)])
+else:
+    X = np.concatenate([ag.io.load_cifar_10('training', ret='x', count=10000, offset=10000*i, x_dtype=np.float32) for i in range(4)])
+
+X *= 255.0
+mean_x = X.mean(0)
 N = X.shape[0]
 #X = X.transpose(0, 2, 3, 1)
-X *= 255.0
 X -= mean_x
 
-y = np.concatenate([dd.io.load_cifar_10('training', ret='y', count=10000, offset=10000*i) for i in range(4)])
+if DATASET == 'cifar100':
+    y = np.concatenate([ag.io.load_cifar_100('training', ret='y', count=10000, offset=10000*i) for i in range(5)])
+else:
+    y = np.concatenate([ag.io.load_cifar_10('training', ret='y', count=10000, offset=10000*i) for i in range(4)])
 
-te_X, te_y = dd.io.load_cifar_10('testing', x_dtype=np.float32)
+if DATASET == 'cifar100':
+    te_X, te_y = ag.io.load_cifar_100('testing', x_dtype=np.float32)
+else:
+    te_X, te_y = ag.io.load_cifar_10('testing', x_dtype=np.float32)
 te_X *= 255.0
 te_X -= mean_x
 te_N = te_X.shape[0]
 
+K = len(np.unique(y))
+te_Y = np.zeros((te_N, K))
+te_Y[np.arange(te_N), te_y] = 1
+
+create_weighted_db(te_X, te_Y, np.ones((te_X.shape[0], K), dtype=np.float32), name='regression_test')
+
 if 0:
-    x, y = dd.io.load_mnist('training')
+    x, y = ag.io.load_mnist('training')
     II = selection(y)
     x = x[II]
     y = y[II]
@@ -62,7 +86,7 @@ if 0:
 
     X1 = transform(x)
 
-    te_x, te_y = dd.io.load_mnist('testing')
+    te_x, te_y = ag.io.load_mnist('testing')
     te_N = te_y.shape[0]
     te_II = selection(te_y)
     te_x = te_x[te_II]
@@ -70,8 +94,6 @@ if 0:
     te_y -= te_y.min()
 
     te_X1 = transform(te_x)
-
-K = 10
 
 w = np.empty((N, K))
 p = np.ones((N, K)) / K
@@ -87,8 +109,8 @@ te_FXs = np.zeros((te_N, K))
 Y = np.zeros((N, K))
 Y[np.arange(N), y] = 1
 
-if len(sys.argv) == 0:
-    rnd = sys.argv[0]
+if len(sys.argv) == 2:
+    rnd = sys.argv[1]
 else:
     rnd = np.random.randint(100000)
 
@@ -99,7 +121,7 @@ all_losses = []
 
 with open(log_fn, 'w') as logfile:
 
-    for loop in range(200):
+    for loop in range(0, 20):
         w[:] = p * (1 - p)
         print('normalize constant', w.mean())
         wN = w / w.mean(1).sum() * N
@@ -107,7 +129,11 @@ with open(log_fn, 'w') as logfile:
         #w[:] = np.arange(w.size).reshape(w.shape)
         #w[:] = 1.0
         z = (Y - p) / w
-        z /= 3
+
+        #z = 0.37 * z - 0.7
+
+        zstd = 15 #z.std()
+        z /= zstd
         eps = 3
         print('min/max z', z.min(), z.max())
         #z = z.clip(-eps, eps)
@@ -117,34 +143,48 @@ with open(log_fn, 'w') as logfile:
 
         create_weighted_db(X, z, wN)
 
-        name = 'regression_{}_loop{}'.format(rnd, loop)
-        bare_conf_fn = 'regression_bare.prototxt'
-        conf_fn = 'regression_solver.prototxt.template2'
+        name = '{}_{}_loop{}'.format(conf_name, rnd, loop)
+        conf_fn = os.path.join(CONF_DIR, '{}.prototxt'.format(conf_name))
+        bare_conf_fn = os.path.join(CONF_DIR, '{}_bare.prototxt'.format(conf_name))
+        solver_conf_fn = os.path.join(CONF_DIR, 'solver.prototxt.template')
 
-        #steps = [(0.001, 400, 400), (0.0001, 400, 800), (0.00001, 400, 1200)]
-        steps = [(0.001, 60000, 60000), (0.0001, 5000, 65000), (0.00001, 5000, 70000)]
-        #steps = [(0.001, 60000, 70000+60000), (0.0001, 5000, 70000+65000), (0.00001, 5000, 70000 + 70000)]
-        #steps = [(0.001, 1000, 1000)]
-        #steps = [(0.001, 1000, 1000), (0.0001, 1000, 2000), (0.00001, 1000, 3000)]
-        base = 'models/regression_basic_loop0_iter_70000'
+        steps = \
+        [
+            (0.001, 0.004, 100),
+            (0.0001, 0.004, 100),
+        ]
 
         if loop == 0 and False:
-            # Just load a pre-calculated version instead
-            model_fn = base + '.caffemodel'
-            net = caffe.Classifier(bare_conf_fn, model_fn, image_dims=(32, 32))
-            net.set_phase_test()
-            net.set_mode_gpu()
-            net.set_device(DEVICE_ID)
+            net = caffe.Classifier(bare_conf_fn, 'models/regression100_51458_loop0_iter_70000.caffemodel')
+            all_fmj = net.forward_all(data=X).values()[0].squeeze(axis=(2,3))
+            all_te_fmj = net.forward_all(data=te_X).values()[0].squeeze(axis=(2,3))
+
+            all_fmj *= zstd
+            all_te_fmj *= zstd
             info = {}
 
-            all_fmj = dd.io.load('all_fmj0.h5')
-            all_te_fmj = dd.io.load('all_te_fmj0.h5')
+            if 0:
+                # Just load a pre-calculated version instead
+                model_fn = base + '.caffemodel'
+                net = caffe.Classifier(bare_conf_fn, model_fn, image_dims=(32, 32))
+                net.set_phase_test()
+                net.set_mode_gpu()
+                net.set_device(DEVICE_ID)
+
+                all_fmj = dd.io.load('all_fmj0_eps_inf.h5')
+                all_te_fmj = dd.io.load('all_te_fmj0_eps_inf.h5')
         else:
             #warmstart_fn = base + '.solverstate'
-            net, info = train_model(name, conf_fn, bare_conf_fn, steps, seed=g_seed, logfile=logfile, device_id=DEVICE_ID)#, warmstart=warmstart_fn)
+            #warmstart_fn = 'models/regression100_6916_loop0_iter_70000.solverstate'
+            #warmstart_fn = 'models/adaboost100_35934_loop0_iter_70000.solverstate'
+            warmstart_fn = None
+            net, info = train_model(name, solver_conf_fn, conf_fn, bare_conf_fn, steps, seed=g_seed, logfile=logfile, device_id=DEVICE_ID, warmstart=warmstart_fn)
 
-            all_fmj = net.predict(X.transpose(0, 2, 3, 1), oversample=False)
-            all_te_fmj = net.predict(te_X.transpose(0, 2, 3, 1), oversample=False)
+            all_fmj = net.forward_all(data=X).values()[0].squeeze(axis=(2,3))
+            all_te_fmj = net.forward_all(data=te_X).values()[0].squeeze(axis=(2,3))
+
+            all_fmj *= zstd
+            all_te_fmj *= zstd
 
         g_seed += 1
 
@@ -152,23 +192,22 @@ with open(log_fn, 'w') as logfile:
             #dd.io.save('all_fmj0_eps_inf.h5', all_fmj)
             #dd.io.save('all_te_fmj0_eps_inf.h5', all_te_fmj)
 
-        fs = (K - 1) / K * (all_fmj - dd.apply_once(np.mean, all_fmj, [1]))
-        te_fs = (K - 1) / K * (all_te_fmj - dd.apply_once(np.mean, all_te_fmj, [1]))
+        fs = (K - 1) / K * (all_fmj - ag.apply_once(np.mean, all_fmj, [1]))
+        te_fs = (K - 1) / K * (all_te_fmj - ag.apply_once(np.mean, all_te_fmj, [1]))
 
-        FXs += fs
-        te_FXs += te_fs
+        T = 200.0
+
+        FXs += fs / T
+        te_FXs += te_fs / T
         exp_FXs = np.exp(FXs)
-        p[:] = exp_FXs / dd.apply_once(np.sum, exp_FXs, [1])
+        p[:] = exp_FXs / ag.apply_once(np.sum, exp_FXs, [1])
 
-        T = 100.0
-
-        # Raise temperature
-        p[:] = temperature(p, T) 
-
-        print('test rate:', (te_FXs.argmax(-1) == te_y).mean(), 'train rate:', (FXs.argmax(-1) == y).mean())
+        print(loop+1, 'test rate:', (te_FXs.argmax(-1) == te_y).mean(), 'train rate:', (FXs.argmax(-1) == y).mean())
 
         all_losses.append(info)
 
-losses_fn = 'losses/losses_{}.h5'.format(rnd)
-print('Saving losses to ', losses_fn)
+losses_fn = 'info/info_{}.h5'.format(rnd)
+print('Saving info to ', losses_fn)
 dd.io.save(losses_fn, all_losses)
+
+print('Output saved to', log_fn)
