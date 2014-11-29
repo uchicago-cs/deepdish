@@ -86,6 +86,10 @@ I used the `pylearn2.models.dbm.DBM` class for my model.  To specify the model w
 - `inference_procedure`: a class that represents the procedure for performing mean field inference in a DBM
 
 
+The `visible_layer` I used for my experiments was `pylearn2.models.dbm.layer.GaussianVisLayer` which inherits
+from `pylearn2.models.dbm.layer.Visiblelayer` which inherits from `pylearn2.models.dbm.layers.Layer`
+which inherits from `pylearn2.models.model.Model`.
+
 According to the [pylearn2 tutorial](http://deeplearning.net/software/pylearn2/theano_to_pylearn2_tutorial.html)
 there are two main things that need to be set in your deep learning model.  They are:
 
