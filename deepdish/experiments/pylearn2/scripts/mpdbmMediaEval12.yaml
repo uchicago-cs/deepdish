@@ -95,5 +95,7 @@
                     decay_factor: 0.020379
                 }
         ],
+    save_path: "/share/data/mediaeval2013/stoehr/pylearnModels2",
+    save_freq: 1,
 }
     
