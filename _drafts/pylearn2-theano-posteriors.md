@@ -21,15 +21,25 @@ My work is focusing on this latter scenario where there is little annotation.
 explore this task by performing [dynamic time warping](https://www.ll.mit.edu/mission/communications/ist/publications/2009_12_13_Hazen_ASRU_FP.pdf) on the posteriors of a DBM with a soft-max output layer at the top.  As a baseline
 in my own work I am beginning by attempting to reproduce their results.
 
-In this post I will explain how I trained a DBM and computed posteriors over a speech dataset using [`pylearn2`](https://github.com/lisa-lab/pylearn2).
+In this post I will explain how I trained a DBM and computed posteriors over a speech dataset using [`pylearn2`](https://github.com/lisa-lab/pylearn2).  The steps are as follows:
 
-because the recent advances in speech
-recognition with deep neural networks
+- Assemble the data into an HDF5 file using `h5py`
+- Write a training script to use a DBM
+- Compute the posteriors
+- Perform DTW over the computed features
 
-does for music, but we are applying it to the specific
-domain of speech. The goal is to allow an individual to search a large database of speech
- without any annotated data: this is particularly useful when 
-so that we can perform queries on unknown target languages.
+# Saving the features
+
+# `pylearn2` DBM training script
+
+# `pylearn2` DBM posteriors
+
+# DBM
+
+I will write this up in a future post since I am using.
+
+
+
  The main task to accomplish is to train a 
 and then use the posteriors from such a system as input features
 to a dynamic time warping-based detection system.  The setting we consider
