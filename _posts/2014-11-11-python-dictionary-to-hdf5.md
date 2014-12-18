@@ -8,7 +8,7 @@ I used to be a big fan of Numpy's
 [savez](http://docs.scipy.org/doc/numpy/reference/generated/numpy.savez.html)
 and
 [load](http://docs.scipy.org/doc/numpy/reference/generated/numpy.load.html),
-since you can throw any Python structure in there that you want to save.  
+since you can throw any Python structure in there that you want to save.
 However, these files are not compatible between Python 2 and 3, so they do not
 fit my needs anymore since I have computers running both versions. I took the
 matter to
