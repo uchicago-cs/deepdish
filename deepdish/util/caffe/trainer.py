@@ -16,8 +16,8 @@ def temperature(y, T):
     y = y**(1 / T)
     return y / ag.apply_once(np.sum, y, [1])
 
-def train_model(name, solver_conf_fn, conf_fn, bare_conf_fn, steps, logfile=None, seed=0,
-        models_dir='models', confs_dir='confs-gen', device_id=0, warmstart=None,
+def train_model(name, conf_fn, bare_conf_fn, steps, logfile=None, seed=0,
+        models_dir='models', confs_dir='confs', device_id=0, warmstart=None, start_iter=0,
         image_dims=(32, 32)):
     iters = []
     losses = []
@@ -25,17 +25,17 @@ def train_model(name, solver_conf_fn, conf_fn, bare_conf_fn, steps, logfile=None
 
     output_matcher = re.compile(r'Iteration (\d+), loss = ([0-9.]+)')
     accuracy_matcher = re.compile(r'Test net output #0: accuracy = ([\d.]+)')
-    with open(solver_conf_fn) as f:
+    with open(conf_fn) as f:
         raw_conf = f.read()
     last_iter = None
-    max_iter = 0
+    max_iter = start_iter
     for i, (base_lr, weight_decay, plus_iter) in enumerate(steps):
         max_iter += plus_iter
         out = os.path.join(models_dir, name)
         conf = raw_conf.format(seed=seed, base_lr=base_lr, snapshot=0,
-                               weight_decay=weight_decay, prototxt=conf_fn, out=out, max_iter=max_iter, device_id=device_id)
-        solver_conf_fn = '{name}_solver_{i}.prototxt'.format(name=name, i=i)
-        full_conf_fn = os.path.join(confs_dir, solver_conf_fn)
+                               weight_decay=weight_decay, out=out, max_iter=max_iter, device_id=device_id)
+        conf_fn = '{name}_solver_{i}.prototxt'.format(name=name, i=i)
+        full_conf_fn = os.path.join(confs_dir, conf_fn)
 
         with open(full_conf_fn, 'w') as f:
             f.write(conf)
@@ -50,8 +50,8 @@ def train_model(name, solver_conf_fn, conf_fn, bare_conf_fn, steps, logfile=None
             else:
                 warmstart_str = ""
 
-        cmd = """{bin} train --solver={solver_conf_fn} {warmstart}""".format(
-                bin=CAFFE_BIN, solver_conf_fn=full_conf_fn, warmstart=warmstart_str)
+        cmd = """{bin} train --solver={conf_fn} {warmstart}""".format(
+                bin=CAFFE_BIN, conf_fn=full_conf_fn, warmstart=warmstart_str)
         print('+' + cmd)
         pr = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 
@@ -84,5 +84,6 @@ def train_model(name, solver_conf_fn, conf_fn, bare_conf_fn, steps, logfile=None
     net.set_device(device_id)
     info = dict(iterations=np.array(iters, dtype=np.int64),
                 losses=np.asarray(losses),
-                learning_rates=np.asarray(learning_rates))
+                learning_rates=np.asarray(learning_rates),
+                last_iter=max_iter)
     return net, info

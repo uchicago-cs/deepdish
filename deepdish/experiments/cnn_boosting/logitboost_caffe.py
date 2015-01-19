@@ -12,8 +12,8 @@ from subprocess import Popen, PIPE
 from deepdish.util.caffe.trainer import train_model
 
 CONF_DIR = 'confs'
-DATASET = 'cifar10'
-conf_name = 'regression'
+DATASET = 'cifar100'
+conf_name = 'regression100'
 
 
 if DATASET == 'cifar100':
