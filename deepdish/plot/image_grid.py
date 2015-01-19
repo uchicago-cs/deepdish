@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
-import amitgroup as ag
+import deepdish as dd
 
 # If skimage is available, the image returned will be wrapped
 # in the Image class. This is nice since it will be automatically
@@ -55,7 +55,7 @@ class ImageGrid:
     Examples
     --------
 
-    >>> import amitgroup as ag
+    >>> import deepdish as dd
     >>> import numpy as np
     >>> import matplotlib.pylab as plt
     >>> from matplotlib.pylab import cm
@@ -69,7 +69,7 @@ class ImageGrid:
 
     Creating the image grid:
 
-    >>> grid = ag.plot.ImageGrid(data, cmap=cm.hsv)
+    >>> grid = dd.plot.ImageGrid(data, cmap=cm.hsv)
     >>> img = grid.scaled_image(scale=5)
     >>> plt.imshow(img)
     >>> plt.show()
@@ -156,7 +156,7 @@ class ImageGrid:
 
     @classmethod
     def fromarray(cls, *args, **kwargs):
-        ag.info('Deprecation warning: Use ImageGrid(...) instead of '
+        dd.info('Deprecation warning: Use ImageGrid(...) instead of '
                 'ImageGrid.fromarray(...)')
         return cls(*args, **kwargs)
 
@@ -193,7 +193,7 @@ class ImageGrid:
         """
         import matplotlib as mpl
         from matplotlib.pylab import cm
-        from amitgroup.plot.resample import resample_and_arrange_image
+        from deepdish.plot.resample import resample_and_arrange_image
 
         if cmap is None:
             cmap = cm.gray
