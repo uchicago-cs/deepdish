@@ -23,8 +23,8 @@ def trainer(name, iters, seeds):
     d['seeds'] = seeds - 1
     s = Template("""#!/bin/bash
 #SBATCH --job-name=mk${name}
-#SBATCH --output=log.out
-#SBATCH --error=log.err
+#SBATCH --output=backup-log.out
+#SBATCH --error=backup-log.err
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --account=pi-yaliamit
@@ -37,6 +37,9 @@ set -euo pipefail
 IFS=$$'\\n\\t'
 
 BIN=$$CAFFE_DIR/build/tools/caffe.bin
+
+echo "LOG: OUT" > log.out
+echo "LOG: ERR" > log.err
 
 for SEED in {0..$seeds}; do
 """).substitute(d)
@@ -53,7 +56,7 @@ for SEED in {0..$seeds}; do
         if i != 0:
             s += """ --snapshot={fn}.solverstate""".format(fn=caffemodels[i-1])
 
-        s += "\n"
+        s += " >> >(tee log.out) 2>> >(tee log.err >&2) \n"
         s += "    fi\n"
         cur_iter += it
 
