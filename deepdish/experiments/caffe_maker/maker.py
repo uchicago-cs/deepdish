@@ -23,8 +23,8 @@ def trainer(name, iters, seeds):
     d['seeds'] = seeds - 1
     s = Template("""#!/bin/bash
 #SBATCH --job-name=mk${name}
-#SBATCH --output=mk${name}-%j.out
-#SBATCH --error=mk${name}-%j.err
+#SBATCH --output=log.out
+#SBATCH --error=log.err
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --account=pi-yaliamit
@@ -32,7 +32,6 @@ def trainer(name, iters, seeds):
 #SBATCH --mail-user=larsson
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
-#SBATCH --constraint=k20m
 
 set -euo pipefail
 IFS=$$'\\n\\t'
@@ -50,7 +49,7 @@ for SEED in {0..$seeds}; do
     cur_iter = 0
     for i, it in enumerate(iters):
         s += "    if [ ! -f {fn}.caffemodel ]; then\n".format(fn=caffemodels[i])
-        s += "         $BIN train --solver=solver{i}_s${{SEED}}.prototxt ".format(i=i, seed=seed)
+        s += "         $BIN train --solver=solver{i}_s${{SEED}}.prototxt ".format(i=i)
         if i != 0:
             s += """ --snapshot={fn}.solverstate""".format(fn=caffemodels[i-1])
 
@@ -60,7 +59,6 @@ for SEED in {0..$seeds}; do
 
     s += "done"
     return s
-
 
 
 def solver(seed=0, device=0, lr=0.001, decay=0.001, it=10000, snapshot=10000):
@@ -167,6 +165,7 @@ layers {
 
     return name, name, 1, new_netsize, s, s
 
+
 def f_pool(last_layer, layer_no, netsize, size, stride, operation, g={}):
     name = 'pool{}'.format(layer_no)
     op = operation.upper()
@@ -188,6 +187,7 @@ layers {
 
     return name, name, 0, new_netsize, s, s
 
+
 def f_relu(last_layer, layer_no, netsize, g=None):
     name = 'relu{}'.format(layer_no)
     s = Template("""
@@ -198,6 +198,22 @@ layers {
   top: "$last_name"
 }
     """).substitute(dict(name=name, last_name=last_layer))
+    return name, last_layer, 0, netsize, s, s
+
+
+def f_dropout(last_layer, layer_no, netsize, rate, g=None):
+    name = 'drop{}'.format(layer_no)
+    s = Template("""
+layers {
+  name: "$name"
+  type: DROPOUT
+  bottom: "$last_name"
+  top: "$last_name"
+  dropout_param {
+    dropout_ratio: $rate
+  }
+}
+    """).substitute(dict(name=name, last_name=last_layer, rate=rate))
     return name, last_layer, 0, netsize, s, s
 
 
@@ -289,6 +305,7 @@ PATTERNS = [
     (re.compile(r'c(\d+)-(\d+)'), f_conv),
     (re.compile(r'ip(\d+)(?:\[(\d+)\])?'), f_ip),
     (re.compile(r'relu'), f_relu),
+    (re.compile(r'dropout([\d.]+)'), f_dropout),
     (re.compile(r'lrn(?:(\d+))?'), f_lrn),
     (re.compile(r'softmax'), f_softmax),
 ]
@@ -339,8 +356,7 @@ def generate_network_files(path, parts, seed=0, device=0, lr=0.001,
         with open(os.path.join(path, '{}.prototxt'.format(m)), 'w') as f:
             print("".join(ret[m]), file=f)
 
-
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--device', default=0, type=str)
     parser.add_argument('-n', '--number', default=1, type=int)
@@ -370,3 +386,6 @@ if __name__ == '__main__':
         s = trainer(args.caption, args.iter, args.number)
         print(s, file=f)
 
+
+if __name__ == '__main__':
+    main()
