@@ -2,6 +2,7 @@
 _gh_pages
 _site
 .ruby-version
+build
 
 # Numerous always-ignore extensions
 *.diff
@@ -14,6 +15,9 @@ _site
 *.zip
 *.vi
 *~
+*.pyc
+*.c
+*.so
 
 # OS or Editor folders
 .DS_Store

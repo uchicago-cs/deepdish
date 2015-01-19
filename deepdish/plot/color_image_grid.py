@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
-import amitgroup as ag
+import deepdish as dd
 
 # If skimage is available, the image returned will be wrapped
 # in the Image class. This is nice since it will be automatically
@@ -267,7 +267,7 @@ class ColorImageGrid:
             pixel a 5x5 rectangle in the output.
         """
         data = self.scaled_image(scale)
-        ag.image.save(path, data)
+        dd.image.save(path, data)
 
     def __repr__(self):
         return ('ColorImageGrid(rows={rows}, cols={cols}, shape={shape})'.
