@@ -2,11 +2,12 @@ from __future__ import division, print_function, absolute_import
 import argparse
 import re
 import os
+import sys
 import numpy as np
 from string import Template
 import shutil
 
-__version__ = 2
+__version__ = 3
 
 DATA_DIR = os.environ['MAKER_DATA_DIR']
 
@@ -137,7 +138,9 @@ input_dim: $dim2
 
     return 'data', 'data', 0, tuple(dim), s, s_bare
 
-def f_conv(last_layer, layer_no, netsize, size, num, g={}):
+def f_conv(last_layer, layer_no, netsize, size, num, std, g={}):
+    if std is None:
+        std = 0.01
     name = 'conv{}'.format(layer_no+1)
     pad = int(size) // 2
     s = Template("""
@@ -155,14 +158,14 @@ layers {
     stride: 1
     weight_filler {
       type: "gaussian"
-      std: 0.01
+      std: $std
     }
     bias_filler {
       type: "constant"
     }
   }
 }
-    """).substitute(dict(name=name, last_name=last_layer, size=size, num=num, pad=pad))
+    """).substitute(dict(name=name, last_name=last_layer, size=size, num=num, pad=pad, std=std))
 
     new_netsize = (int(num),) + tuple([(ns + 2*pad) - (int(size) - 1) for ns in netsize[1:]])
 
@@ -241,7 +244,7 @@ layers {
     return name, name, 0, netsize, s, s
 
 
-def f_ip(last_layer, layer_no, netsize, num, decay, g={}):
+def f_ip(last_layer, layer_no, netsize, num, std, decay, g={}):
     if decay is None: decay = 1
     name = 'ip{}'.format(layer_no+1)
     s = Template("""
@@ -258,14 +261,14 @@ layers {
     num_output: $num
     weight_filler {
       type: "gaussian"
-      std: 0.01
+      std: $std
     }
     bias_filler {
       type: "constant"
     }
   }
 }
-    """).substitute(dict(name=name, last_name=last_layer, num=num, decay=decay))
+    """).substitute(dict(name=name, last_name=last_layer, num=num, decay=decay, std=std))
     new_netsize = (int(num), 1, 1)
     return name, name, 1, new_netsize, s, s
 
@@ -305,8 +308,8 @@ layers {
 PATTERNS = [
     (re.compile(r'd-([a-z0-9]+)(?:/(\d+))?'), f_data),
     (re.compile(r'p(\d+)-(\d+)-(\w+)'), f_pool),
-    (re.compile(r'c(\d+)-(\d+)'), f_conv),
-    (re.compile(r'ip(\d+)(?:\[(\d+)\])?'), f_ip),
+    (re.compile(r'c(\d+)-(\d+)(?:-([\d.]+))?'), f_conv),
+    (re.compile(r'ip(\d+)-([\d.]+)(?:\[(\d+)\])?'), f_ip),
     (re.compile(r'relu'), f_relu),
     (re.compile(r'dropout([\d.]+)'), f_dropout),
     (re.compile(r'lrn(?:(\d+))?'), f_lrn),
@@ -378,6 +381,10 @@ def main():
         shutil.rmtree(path)
     os.mkdir(path)
     os.mkdir(os.path.join(path, 'models'))
+
+    # Write the command line that was used to file
+    with open(os.path.join(path, 'command'), 'w') as f:
+        print("\n    ".join(sys.argv), file=f)
 
     for seed in range(args.number):
         print('generate', seed)
