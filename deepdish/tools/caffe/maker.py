@@ -56,7 +56,7 @@ for SEED in {0..$seeds}; do
         if i != 0:
             s += """ --snapshot={fn}.solverstate""".format(fn=caffemodels[i-1])
 
-        s += " >> >(tee log.out) 2>> >(tee log.err >&2) \n"
+        s += " > >(tee -a log.out) 2> >(tee -a log.err >&2) \n"
         s += "    fi\n"
         cur_iter += it
 
