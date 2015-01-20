@@ -44,6 +44,7 @@ echo "LOG: ERR" > log.err
 
 for SEED in {0..$seeds}; do
 """).substitute(d)
+    s += """    echo "----- seed $SEED --------------------\n"""
     cur_iter = 0
     caffemodels = []
     for i, it in enumerate(iters):
