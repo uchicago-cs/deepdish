@@ -8,6 +8,7 @@ if __name__ == '__main__':
     parser.add_argument('data', type=str)
     parser.add_argument('bare', type=str)
     parser.add_argument('caffemodel', type=str)
+    parser.add_argument('-o', '--output', type=str)
     parser.add_argument('-d', '--device', default=0, type=int)
 
     args = parser.parse_args()
@@ -23,6 +24,8 @@ if __name__ == '__main__':
 
     yhat = net.forward_all(data=x).values()[0].squeeze((2, 3)).argmax(-1)
 
+    if args.output:
+        dd.io.save(args.output, dict(scores=yhat, labels=y))
 
     success = (yhat == y).mean()
     error = 1 - success
