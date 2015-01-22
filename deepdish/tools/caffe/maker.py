@@ -387,7 +387,7 @@ def generate_network_files(path, parts, seed=0, device=0, lr=0.001,
                 last_layer = last_name
                 last_size = cur_size
                 found = True
-                info[name] = dict(args=m.groups(), kwargs=params)
+                info['layers'][name] = dict(args=m.groups(), kwargs=params)
         if not found:
             raise Exception("Could not parse {}".format(part))
 
