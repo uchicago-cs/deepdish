@@ -12,10 +12,10 @@ __version__ = 4
 DATA_DIR = os.environ['MAKER_DATA_DIR']
 
 DATASETS = {
-    'cifar10w40': ([3, 32, 32], ('cifar10_w_tr40k.txt', 'cifar10_w_val.txt')),
-    'cifar100w40': ([3, 32, 32], ('cifar100_w_tr40k.txt', 'cifar100_w_val.txt')),
-    'cifar10': ([3, 32, 32], ('cifar10_train.txt', 'cifar10_test.txt')),
-    'cifar100': ([3, 32, 32], ('cifar100_train.txt', 'cifar100_test.txt')),
+    'cifar10w40': ([3, 32, 32], ('cifar10_w_tr40k', 'cifar10_w_val')),
+    'cifar100w40': ([3, 32, 32], ('cifar100_w_tr40k', 'cifar100_w_val')),
+    'cifar10': ([3, 32, 32], ('cifar10_train', 'cifar10_test')),
+    'cifar100': ([3, 32, 32], ('cifar100_train', 'cifar100_test')),
 }
 
 def _parse_params(rest):
@@ -90,7 +90,7 @@ for SEED in {0..$seeds}; do
     _, testfile = DATASETS[network['layers']['data']['args'][0]][1]
 
     args = "{data} {bare} {caffemodel} -o scores/score_s{seed}.h5".format(
-            data=testfile,
+            data=os.path.join(MAKER_DATA_DIR, testfile + '.h5'),
             bare='bare.prototxt',
             caffemodel=caffemodels[-1] + '.caffemodel',
             seed='${SEED}')
@@ -143,7 +143,7 @@ layers {
   top: "label"
   top: "sample_weight"
   hdf5_data_param {
-    source: "$train"
+    source: "$train.txt"
     batch_size: $batch
   }
   include: { phase: TRAIN }
@@ -156,7 +156,7 @@ layers {
   top: "label"
   top: "sample_weight"
   hdf5_data_param {
-    source: "$test"
+    source: "$test.txt"
     batch_size: $batch
   }
   include: { phase: TEST }
