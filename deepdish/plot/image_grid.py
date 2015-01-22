@@ -5,11 +5,13 @@ import deepdish as dd
 # If skimage is available, the image returned will be wrapped
 # in the Image class. This is nice since it will be automatically
 # displayed in an IPython notebook.
-try:
-    from skimage.io import Image
-except ImportError:
-    def Image(x):
-        return x
+def _load_image_class():
+    try:
+        from skimage.io import Image
+    except ImportError:
+        def Image(x):
+            return x
+    return Image
 
 
 class ImageGrid:
@@ -165,6 +167,7 @@ class ImageGrid:
         """
         Returns the image as a skimage.io.Image class.
         """
+        Image = _load_image_class()
         return Image(self._data)
 
     def set_image(self, image, row, col, cmap=None, vmin=None, vmax=None,
@@ -191,7 +194,7 @@ class ImageGrid:
             specify neither `vmin` or `vmax` or only `vmax` together with this
             option.
         """
-        import matplotlib as mpl
+        from matplotlib import colors
         from matplotlib.pylab import cm
         from deepdish.plot.resample import resample_and_arrange_image
 
@@ -217,7 +220,7 @@ class ImageGrid:
 
         nan_mask = np.isnan(image).astype(np.uint8)
 
-        lut = mpl.colors.makeMappingArray(256, cmap)
+        lut = colors.makeMappingArray(256, cmap)
         rgb = resample_and_arrange_image(image_indices, nan_mask, self._shape,
                                          lut)
 
@@ -292,6 +295,7 @@ class ImageGrid:
             from skimage.transform import resize
             data = resize(self._data, tuple([self._data.shape[i] * scale
                                              for i in range(2)]), order=0)
+            Image = _load_image_class()
             return Image(data)
 
     def save(self, path, scale=1):

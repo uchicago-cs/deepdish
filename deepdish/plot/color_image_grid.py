@@ -5,11 +5,13 @@ import deepdish as dd
 # If skimage is available, the image returned will be wrapped
 # in the Image class. This is nice since it will be automatically
 # displayed in an IPython notebook.
-try:
-    from skimage.io import Image
-except ImportError:
-    def Image(x):
-        return x
+def _load_image_class():
+    try:
+        from skimage.io import Image
+    except ImportError:
+        def Image(x):
+            return x
+    return Image
 
 
 # TODO: ImageGrid and ColorImageGrid need to be integrated more. Since both
@@ -130,6 +132,7 @@ class ColorImageGrid:
         """
         Returns the image as a skimage.io.Image class.
         """
+        Image = _load_image_class()
         return Image(self._data)
 
     def set_image(self, image, row, col, vmin=0.0, vmax=1.0, vsym=False):
@@ -252,6 +255,7 @@ class ColorImageGrid:
             from skimage.transform import resize
             data = resize(self._data, tuple([self._data.shape[i] * scale
                                              for i in range(2)]), order=0)
+            Image = _load_image_class()
             return Image(data)
 
     def save(self, path, scale=1):
