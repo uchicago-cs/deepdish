@@ -7,7 +7,7 @@ import numpy as np
 from string import Template
 import shutil
 
-__version__ = 3
+__version__ = 4
 
 DATA_DIR = os.environ['MAKER_DATA_DIR']
 
@@ -18,7 +18,15 @@ DATASETS = {
     'cifar100': ([3, 32, 32], ('cifar100_train.txt', 'cifar100_test.txt')),
 }
 
-def trainer(name, iters, seeds):
+def _parse_params(rest):
+    params = {}
+    v = rest.split('/')
+    for s in v:
+        key, value = s.split('=', 1)
+        params[key] = value
+    return params
+
+def trainer(network, name, iters, seeds, init=''):
     d = {}
     d['name'] = name
     d['seeds'] = seeds - 1
@@ -47,26 +55,53 @@ for SEED in {0..$seeds}; do
     s  += """    echo "----- seed $SEED --------------------" > >(tee -a log.err) \n"""
     cur_iter = 0
     caffemodels = []
-    for i, it in enumerate(iters):
+    base_model = 'models/v{version}_model_s${{SEED}}_base_iter_0'.format(version=__version__)
+    for i, it in enumerate([0] + iters):
         cur_iter += it
         caffemodels.append('models/v{version}_model_s${{SEED}}_iter_{iter}'.format(iter=cur_iter, version=__version__))
 
+    # If we're doing external initialization, run python script here
+    if init:
+        s += "    $BIN train --solver=solver0_s${{SEED}}.prototxt \n".format(i=1+i)
+
+        ret = init.split('/', 1)
+        if len(ret) == 1:
+            rest = ''
+        else:
+            rest = ret[1]
+        init_params = _parse_params(rest)
+
+        settings = " ".join('--{} {}'.format(key, value) for key, value in init_params.items())
+        s += "    python -m deepdish.tools.caffe.initialize -i {i} -o {o} {initstyle}\n"\
+                        .format(i=base_model, o=caffemodels[0], initstyle=init)
+
     cur_iter = 0
     for i, it in enumerate(iters):
-        s += "    if [ ! -f {fn}.caffemodel ]; then\n".format(fn=caffemodels[i])
-        s += "         $BIN train --solver=solver{i}_s${{SEED}}.prototxt ".format(i=i)
-        if i != 0:
-            s += """ --snapshot={fn}.solverstate""".format(fn=caffemodels[i-1])
+        s += "    if [ ! -f {fn}.caffemodel ]; then\n".format(fn=caffemodels[i+1])
+        s += "         $BIN train --solver=solver{i}_s${{SEED}}.prototxt ".format(i=1+i)
+        if i != 0 or init:
+            s += """ --snapshot={fn}.solverstate""".format(fn=caffemodels[i])
 
         s += " > >(tee -a log.out) 2> >(tee -a log.err >&2) \n"
         s += "    fi\n"
-        cur_iter += it
+
+
+    # Test model (TODO: this is an ugly and brittle line)
+    _, testfile = DATASETS[network['layers']['data']['args'][0]][1]
+
+    args = "{data} {bare} {caffemodel} -o scores/score_s{seed}.h5".format(
+            data=testfile,
+            bare='bare.prototxt',
+            caffemodel=caffemodels[-1] + '.caffemodel',
+            seed='${SEED}')
+    s += "    python -m deepdish.tools.caffe.tester {}\n".format(args)
+    cur_iter += it
 
     s += "done"
     return s
 
 
-def solver(seed=0, device=0, lr=0.001, decay=0.001, it=10000, snapshot=10000):
+def solver(seed=0, device=0, lr=0.001, decay=0.001, it=10000, snapshot=10000, base=False):
     d = {}
     d['version'] = __version__
     d['seed'] = seed
@@ -76,6 +111,7 @@ def solver(seed=0, device=0, lr=0.001, decay=0.001, it=10000, snapshot=10000):
     d['momentum'] = 0.9
     d['decay'] = decay
     d['snapshot'] = snapshot
+    d['base_suffix'] = '_base' if base else ''
     s = Template("""# version: $version
 net: "main.prototxt"
 test_iter: 100
@@ -87,15 +123,14 @@ lr_policy: "fixed"
 display: 500
 max_iter: $iter
 snapshot: $snapshot
-snapshot_prefix: "models/v${version}_model_s${seed}"
+snapshot_prefix: "models/v${version}_model_s${seed}${base_suffix}"
 solver_mode: GPU
 random_seed: ${seed}
 device_id: ${device_id}
 """).substitute(d)
     return s
 
-def f_data(last_layer, layer_no, netsize, dataset, batch, g={}):
-    if batch is None: batch = 100
+def f_data(last_layer, layer_no, netsize, dataset, params={}, g={}):
     dim, files = DATASETS[dataset]
     train = os.path.join(DATA_DIR, files[0])
     test = os.path.join(DATA_DIR, files[1])
@@ -126,7 +161,8 @@ layers {
   }
   include: { phase: TEST }
 }
-""").substitute(dict(train=train, test=test, batch=batch, version=__version__))
+""").substitute(dict(train=train, test=test,
+                     batch=params.get('batch', 100), version=__version__))
 
     s_bare = Template("""# version: $version
 name: "bare"
@@ -139,9 +175,7 @@ input_dim: $dim2
 
     return 'data', 'data', 0, tuple(dim), s, s_bare
 
-def f_conv(last_layer, layer_no, netsize, size, num, std, g={}):
-    if std is None:
-        std = 0.01
+def f_conv(last_layer, layer_no, netsize, size, num, params={}, g={}):
     name = 'conv{}'.format(layer_no+1)
     pad = int(size) // 2
     s = Template("""
@@ -166,14 +200,15 @@ layers {
     }
   }
 }
-    """).substitute(dict(name=name, last_name=last_layer, size=size, num=num, pad=pad, std=std))
+    """).substitute(dict(name=name, last_name=last_layer, size=size, num=num, pad=pad,
+                         std=params.get('std', 0.01)))
 
     new_netsize = (int(num),) + tuple([(ns + 2*pad) - (int(size) - 1) for ns in netsize[1:]])
 
     return name, name, 1, new_netsize, s, s
 
 
-def f_pool(last_layer, layer_no, netsize, size, stride, operation, g={}):
+def f_pool(last_layer, layer_no, netsize, size, stride, operation, params={}, g={}):
     name = 'pool{}'.format(layer_no)
     op = operation.upper()
     s = Template("""
@@ -195,7 +230,7 @@ layers {
     return name, name, 0, new_netsize, s, s
 
 
-def f_relu(last_layer, layer_no, netsize, g=None):
+def f_relu(last_layer, layer_no, netsize, params={}, g=None):
     name = 'relu{}'.format(layer_no)
     s = Template("""
 layers {
@@ -208,7 +243,7 @@ layers {
     return name, last_layer, 0, netsize, s, s
 
 
-def f_dropout(last_layer, layer_no, netsize, rate, g=None):
+def f_dropout(last_layer, layer_no, netsize, rate, params={}, g=None):
     name = 'drop{}'.format(layer_no)
     s = Template("""
 layers {
@@ -224,7 +259,7 @@ layers {
     return name, last_layer, 0, netsize, s, s
 
 
-def f_lrn(last_layer, layer_no, netsize, size, g={}):
+def f_lrn(last_layer, layer_no, netsize, size, params={}, g={}):
     if size is None:
         size = 3
     name = 'norm{}'.format(layer_no)
@@ -245,8 +280,7 @@ layers {
     return name, name, 0, netsize, s, s
 
 
-def f_ip(last_layer, layer_no, netsize, num, std, decay, g={}):
-    if decay is None: decay = 1
+def f_ip(last_layer, layer_no, netsize, num, params={}, g={}):
     name = 'ip{}'.format(layer_no+1)
     s = Template("""
 layers {
@@ -269,11 +303,13 @@ layers {
     }
   }
 }
-    """).substitute(dict(name=name, last_name=last_layer, num=num, decay=decay, std=std))
+    """).substitute(dict(name=name, last_name=last_layer, num=num,
+                         decay=params.get('decay', 1),
+                         std=params.get('std', 0.01)))
     new_netsize = (int(num), 1, 1)
     return name, name, 1, new_netsize, s, s
 
-def f_softmax(last_layer, layer_no, netsize):
+def f_softmax(last_layer, layer_no, netsize, params={}, g=None):
     s = Template("""
 layers {
   name: "accuracy"
@@ -307,14 +343,14 @@ layers {
 
 
 PATTERNS = [
-    (re.compile(r'd-([a-z0-9]+)(?:/(\d+))?'), f_data),
-    (re.compile(r'p(\d+)-(\d+)-(\w+)'), f_pool),
-    (re.compile(r'c(\d+)-(\d+)(?:-([\d.]+))?'), f_conv),
-    (re.compile(r'ip(\d+)-([\d.]+)(?:\[(\d+)\])?'), f_ip),
-    (re.compile(r'relu'), f_relu),
-    (re.compile(r'dropout([\d.]+)'), f_dropout),
-    (re.compile(r'lrn(?:(\d+))?'), f_lrn),
-    (re.compile(r'softmax'), f_softmax),
+    (re.compile(r'^d-([a-z0-9]+)'), f_data),
+    (re.compile(r'^p(\d+)-(\d+)-(\w+)'), f_pool),
+    (re.compile(r'^c(\d+)-(\d+)'), f_conv),
+    (re.compile(r'^ip(\d+)'), f_ip),
+    (re.compile(r'^relu'), f_relu),
+    (re.compile(r'^dropout([\d.]+)'), f_dropout),
+    (re.compile(r'^lrn(?:(\d+))?'), f_lrn),
+    (re.compile(r'^softmax'), f_softmax),
 ]
 
 def generate_network_files(path, parts, seed=0, device=0, lr=0.001, 
@@ -326,12 +362,19 @@ def generate_network_files(path, parts, seed=0, device=0, lr=0.001,
     last_layer = None
     cur_size = None
     last_size = None
+    info = {}
+    info['layers'] = {}
     for i, part in enumerate(parts):
         found = False
+        params = {}
+        if part.find('/') != -1:
+            part, rest = part.split('/', 1)
+            params = _parse_params(rest)
+
         for pattern, func in PATTERNS:
             m = pattern.match(part)
             if m:
-                name, last_name, delta, cur_size, s, s_bare = func(last_layer, cur_layer, cur_size, *m.groups())
+                name, last_name, delta, cur_size, s, s_bare = func(last_layer, cur_layer, cur_size, *m.groups(), params=params)
                 if seed == 0:
                     if last_size is None or last_size != cur_size:
                         cs = '{!s:15s} {}'.format(cur_size, np.prod(cur_size))
@@ -344,24 +387,28 @@ def generate_network_files(path, parts, seed=0, device=0, lr=0.001,
                 last_layer = last_name
                 last_size = cur_size
                 found = True
+                info[name] = dict(args=m.groups(), kwargs=params)
         if not found:
             raise Exception("Could not parse {}".format(part))
 
     cur_iter = 0
     cur_lr = lr
-    for i, it in enumerate(iters):
+    for i, it in enumerate([0] + iters):
         snapshot = cur_iter
         cur_iter += it
-        s = solver(seed=seed, device=device, lr=cur_lr, it=cur_iter, snapshot=cur_iter-snapshot, decay=decay)
+        s = solver(seed=seed, device=device, lr=cur_lr, it=cur_iter, snapshot=cur_iter-snapshot, decay=decay, base=(i == 0))
 
         with open(os.path.join(path, 'solver{}_s{}.prototxt'.format(i, seed)), 'w') as f:
             print(s, file=f)
 
-        cur_lr /= 10
+        if i != 0:
+            cur_lr /= 10
 
     for m in 'main', 'bare':
         with open(os.path.join(path, '{}.prototxt'.format(m)), 'w') as f:
             print("".join(ret[m]), file=f)
+
+    return info
 
 def main():
     parser = argparse.ArgumentParser()
@@ -370,6 +417,7 @@ def main():
     parser.add_argument('-c', '--caption', default='A', type=str)
     parser.add_argument('-l', '--decay', default=0.001, type=float)
     parser.add_argument('-r', '--rate', default=0.001, type=float)
+    parser.add_argument('--init', type=str)
     parser.add_argument('--iter', nargs='+', default=[10000], type=int)
     parser.add_argument('network', nargs='+', type=str)
 
@@ -382,6 +430,7 @@ def main():
         shutil.rmtree(path)
     os.mkdir(path)
     os.mkdir(os.path.join(path, 'models'))
+    os.mkdir(os.path.join(path, 'scores'))
 
     # Write the command line that was used to file
     with open(os.path.join(path, 'command'), 'w') as f:
@@ -394,7 +443,7 @@ def main():
                                          iters=args.iter, decay=args.decay)
 
     with open(os.path.join(path, 'train.sh'), 'w') as f:
-        s = trainer(args.caption, args.iter, args.number)
+        s = trainer(network, args.caption, args.iter, args.number, init=args.init)
         print(s, file=f)
 
 
