@@ -92,11 +92,12 @@ for SEED in {0..$seeds}; do
     # Test model (TODO: this is an ugly and brittle line)
     _, testfile = DATASETS[network['layers']['data']['args'][0]][1]
 
-    args = "{data} {bare} {caffemodel} -o scores/score_s{seed}.h5".format(
+    args = "{data} {bare} {caffemodel} -o scores/score_s{seed}.h5 -n {name}".format(
             data=os.path.join(DATA_DIR, testfile + '.h5'),
             bare='bare.prototxt',
             caffemodel=caffemodels[-1] + '.caffemodel',
-            seed='${SEED}')
+            seed='${SEED}',
+            name=name)
     s += "    python -m deepdish.tools.caffe.tester {}\n".format(args)
     cur_iter += it
 
