@@ -11,6 +11,9 @@ __version__ = 4
 
 DATA_DIR = os.environ['MAKER_DATA_DIR']
 
+# The data files should be hdf5 and located in $MAKER_DATA_DIR. Each hdf5 should have
+# a corresponding .txt file (same name before the extension) with the absolute path
+# to the hdf5 file.
 DATASETS = {
     'cifar10w40': ([3, 32, 32], ('cifar10_w_tr40k', 'cifar10_w_val')),
     'cifar100w40': ([3, 32, 32], ('cifar100_w_tr40k', 'cifar100_w_val')),
@@ -90,7 +93,7 @@ for SEED in {0..$seeds}; do
     _, testfile = DATASETS[network['layers']['data']['args'][0]][1]
 
     args = "{data} {bare} {caffemodel} -o scores/score_s{seed}.h5".format(
-            data=os.path.join(MAKER_DATA_DIR, testfile + '.h5'),
+            data=os.path.join(DATA_DIR, testfile + '.h5'),
             bare='bare.prototxt',
             caffemodel=caffemodels[-1] + '.caffemodel',
             seed='${SEED}')
