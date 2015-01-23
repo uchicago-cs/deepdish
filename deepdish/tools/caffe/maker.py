@@ -21,6 +21,7 @@ DATASETS = {
     'cifar100': ([3, 32, 32], ('cifar100_train', 'cifar100_test')),
 }
 
+
 def _parse_params(rest):
     params = {}
     v = rest.split('/')
@@ -29,7 +30,9 @@ def _parse_params(rest):
         params[key] = value
     return params
 
-def trainer(network, name, iters, seeds, init=''):
+
+def trainer(network, name, iters, seeds, device=0, init='',
+            test_scores=False, test_responses=False):
     d = {}
     d['name'] = name
     d['seeds'] = seeds - 1
@@ -92,13 +95,23 @@ for SEED in {0..$seeds}; do
     # Test model (TODO: this is an ugly and brittle line)
     _, testfile = DATASETS[network['layers']['data']['args'][0]][1]
 
-    args = "{data} {bare} {caffemodel} -o scores/score_s{seed}.h5 -n {name}".format(
+    base_args = "{data} {bare} {caffemodel} -d {device}".format(
             data=os.path.join(DATA_DIR, testfile + '.h5'),
             bare='bare.prototxt',
             caffemodel=caffemodels[-1] + '.caffemodel',
-            seed='${SEED}',
-            name=name)
-    s += "    python -m deepdish.tools.caffe.tester {}\n".format(args)
+            device=device)
+
+    if test_scores:
+        ext_args = "-o scores/score_s{seed}.h5 -n {name}".format(
+                seed='${SEED}',
+                name=name)
+        s += "    python -m deepdish.tools.caffe.tester {} {}\n".format(base_args, ext_args)
+
+    if test_responses:
+        ext_args = "-o responses/response_s{seed}.h5 -c 5000".format(
+                seed='${SEED}')
+        s += "    python -m deepdish.tools.caffe.measure_responses {} {}\n".format(base_args, ext_args)
+
     cur_iter += it
 
     s += "done"
@@ -424,6 +437,8 @@ def main():
     parser.add_argument('--init', type=str)
     parser.add_argument('--iter', nargs='+', default=[10000], type=int)
     parser.add_argument('network', nargs='+', type=str)
+    parser.add_argument('--calc-scores', action='store_true')
+    parser.add_argument('--calc-responses', action='store_true')
 
     args = parser.parse_args()
 
@@ -433,8 +448,8 @@ def main():
     if os.path.isdir(path):
         shutil.rmtree(path)
     os.mkdir(path)
-    os.mkdir(os.path.join(path, 'models'))
-    os.mkdir(os.path.join(path, 'scores'))
+    for d in ['models', 'scores', 'responses']:
+        os.mkdir(os.path.join(path, d))
 
     # Write the command line that was used to file
     with open(os.path.join(path, 'command'), 'w') as f:
@@ -447,7 +462,9 @@ def main():
                                          iters=args.iter, decay=args.decay)
 
     with open(os.path.join(path, 'train.sh'), 'w') as f:
-        s = trainer(network, args.caption, args.iter, args.number, init=args.init)
+        s = trainer(network, args.caption, args.iter, args.number,
+                    device=args.device, init=args.init,
+                    test_scores=args.calc_scores, test_responses=args.calc_responses)
         print(s, file=f)
 
 
