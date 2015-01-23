@@ -7,7 +7,7 @@ import numpy as np
 from string import Template
 import shutil
 
-__version__ = 4
+__version__ = 5
 
 DATA_DIR = os.environ['MAKER_DATA_DIR']
 
