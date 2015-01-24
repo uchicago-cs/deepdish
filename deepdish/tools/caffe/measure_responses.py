@@ -9,6 +9,7 @@ import deepdish as dd
 import itertools as itr
 import caffe
 import re
+import os
 
 def _interesting_layer(layer):
     return re.match(r'conv\d+', layer) or re.match(r'ip\d+', layer)
@@ -23,8 +24,26 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--device', default=0, type=int)
     parser.add_argument('-c', '--count', default=5000, type=int)
     parser.add_argument('--layers', nargs='+', type=str)
+    parser.add_argument('-n', '--name', type=str)
+    # Recommended to allow automatic detection
+    parser.add_argument('-s', '--seed', type=str)
 
     args = parser.parse_args()
+    if args.name is None:
+        name = args.caffemodel
+    else:
+        name = args.name
+
+    if args.seed is None:
+        pattern = re.compile(r'_s(\d+)')
+        m = pattern.search(os.path.basename(args.caffemodel))
+        if m:
+            seed = int(m.group(1))
+        else:
+            raise ValueError('Could not automatically determine seed')
+    else:
+        seed = args.seed
+    print('Seed:', seed)
 
     X = dd.io.load(args.data)
     if isinstance(X, dict):
@@ -73,4 +92,4 @@ if __name__ == '__main__':
     for key in data:
         data[key] = np.asarray(data[key])
 
-    dd.io.save(args.output, data)
+    dd.io.save(args.output, dict(responses=data, name=name, seed=seed))
