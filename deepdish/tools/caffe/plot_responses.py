@@ -46,6 +46,7 @@ def main():
         plt.xticks(np.arange(len(y)), layers)
     plt.ylabel('<- Redundancy / Identity-like ->')
     plt.legend(loc=4)
+    plt.ylim((0, 1))
     plt.savefig(vz.impath('svg'))
     plt.close()
 
