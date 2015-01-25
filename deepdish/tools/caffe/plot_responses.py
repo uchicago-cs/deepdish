@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import 
 import matplotlib as mpl
 mpl.use('Agg')
+mpl.rc('font', size=8)
 import pylab as plt
 from vzlog import VzLog
 import deepdish as dd
@@ -13,14 +14,16 @@ def main():
     parser.add_argument('-t', '--title', default='', type=str)
     parser.add_argument('-o', '--output', default='log-responses', type=str)
     parser.add_argument('-l', '--layers', nargs='?', type=str)
+    parser.add_argument('-a', '--alpha', default=0.99, type=float)
 
     args = parser.parse_args()
+    alpha = args.alpha
 
     vz = VzLog(args.output)
     vz.title(args.title)
+    vz.log('alpha =', alpha)
 
-    alpha = 0.98
-    plt.figure(figsize=(10, 8))
+    plt.figure()
 
     layers = args.layers
 
