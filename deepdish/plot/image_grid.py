@@ -311,7 +311,7 @@ class ImageGrid:
             pixel a 5x5 rectangle in the output.
         """
         data = self.scaled_image(scale)
-        ag.image.save(path, data)
+        dd.image.save(path, data)
 
     def __repr__(self):
         return 'ImageGrid(rows={rows}, cols={cols}, shape={shape})'.format(
