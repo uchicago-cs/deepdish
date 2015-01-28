@@ -6,6 +6,7 @@ import sys
 import numpy as np
 from string import Template
 import shutil
+import json
 
 __version__ = 5
 
@@ -70,16 +71,17 @@ for SEED in {0..$seeds}; do
     if init:
         s += "    $BIN train --solver=solver0_s${{SEED}}.prototxt \n".format(i=1+i)
 
-        ret = init.split('/', 1)
-        if len(ret) == 1:
-            rest = ''
-        else:
-            rest = ret[1]
-        init_params = _parse_params(rest)
-
-        settings = " ".join('--{} {}'.format(key, value) for key, value in init_params.items())
-        s += "    python -m deepdish.tools.caffe.initialize -i {i} -o {o} {initstyle}\n"\
-                        .format(i=base_model, o=caffemodels[0], initstyle=init)
+        if 0:
+            ret = init.split('/', 1)
+            if len(ret) == 1:
+                rest = ''
+            else:
+                rest = ret[1]
+            init_params = _parse_params(rest)
+            settings = " ".join('--{} {}'.format(key, value) for key, value in init_params.items())
+        s += """    python -m deepdish.tools.caffe.initialize -i {i} -o {o} -s {seed} "{initstyle}"\n"""\
+                        .format(i=base_model, o=caffemodels[0], seed='${SEED}',
+                                initstyle=init)
 
     cur_iter = 0
     for i, it in enumerate(iters):
@@ -117,16 +119,17 @@ for SEED in {0..$seeds}; do
     return s
 
 
-def solver(seed=0, device=0, lr=0.001, decay=0.001, it=10000, snapshot=10000, base=False):
+def solver(seed=0, device=0, lr=0.001, decay=0.001, it=10000,
+           snapshot=10000, base=False, params={}):
     d = {}
     d['version'] = __version__
     d['seed'] = seed
     d['lr'] = lr
     d['iter'] = it
     d['device_id'] = device
-    d['momentum'] = 0.9
+    d['momentum'] = params.get('momentum', 0.9)
     d['decay'] = decay
-    d['snapshot'] = snapshot
+    d['snapshot'] = min(snapshot, params.get('snapshot', snapshot))
     d['base_suffix'] = '_base' if base else ''
     s = Template("""# version: $version
 net: "main.prototxt"
@@ -370,7 +373,7 @@ PATTERNS = [
 ]
 
 def generate_network_files(path, parts, seed=0, device=0, lr=0.001, 
-                           decay=0.001, iters=[10000]):
+                           decay=0.001, iters=[10000], solver_params={}):
     ret = {}
     ret['main'] = []
     ret['bare'] = []
@@ -412,7 +415,7 @@ def generate_network_files(path, parts, seed=0, device=0, lr=0.001,
     for i, it in enumerate([0] + iters):
         snapshot = cur_iter
         cur_iter += it
-        s = solver(seed=seed, device=device, lr=cur_lr, it=cur_iter, snapshot=cur_iter-snapshot, decay=decay, base=(i == 0))
+        s = solver(seed=seed, device=device, lr=cur_lr, it=cur_iter, snapshot=cur_iter-snapshot, decay=decay, base=(i == 0), params=solver_params)
 
         with open(os.path.join(path, 'solver{}_s{}.prototxt'.format(i, seed)), 'w') as f:
             print(s, file=f)
@@ -436,6 +439,7 @@ def main():
     parser.add_argument('--init', type=str)
     parser.add_argument('--iter', nargs='+', default=[10000], type=int)
     parser.add_argument('network', nargs='+', type=str)
+    parser.add_argument('-p', '--params', default='{}', type=str)
     parser.add_argument('--calc-scores', action='store_true')
     parser.add_argument('--calc-responses', action='store_true')
 
@@ -450,6 +454,8 @@ def main():
     for d in ['models', 'scores', 'responses']:
         os.mkdir(os.path.join(path, d))
 
+    params = json.loads(args.params.replace("'", '"'))
+
     # Write the command line that was used to file
     with open(os.path.join(path, 'command'), 'w') as f:
         print("\n    ".join(sys.argv), file=f)
@@ -458,7 +464,8 @@ def main():
         print('generate', seed)
         network = generate_network_files(path, args.network,
                                          seed=seed, device=args.device, lr=args.rate,
-                                         iters=args.iter, decay=args.decay)
+                                         iters=args.iter, decay=args.decay,
+                                         solver_params=params)
 
     with open(os.path.join(path, 'train.sh'), 'w') as f:
         s = trainer(network, args.caption, args.iter, args.number,
