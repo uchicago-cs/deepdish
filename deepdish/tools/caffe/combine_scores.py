@@ -8,10 +8,7 @@ def concat(x, y):
     if x is None:
         return np.asarray([y])
     else:
-        try:
-            return np.concatenate([x, [y]])
-        except:
-            import pdb; pdb.set_trace()
+        return np.concatenate([x, [y]])
 
 if __name__ == '__main__':
     import argparse
