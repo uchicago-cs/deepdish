@@ -17,10 +17,9 @@ def main():
 
     args = parser.parse_args()
 
-    data = dd.io.load(args.scores)
-
     rs = np.random.RandomState(0)
 
+    data = dd.io.load(args.scores)
     scores = data['scores']
     y = data['labels']
     names = data['names']

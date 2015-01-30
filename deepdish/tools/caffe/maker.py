@@ -69,16 +69,7 @@ for SEED in {0..$seeds}; do
 
     # If we're doing external initialization, run python script here
     if init:
-        s += "    $BIN train --solver=solver0_s${{SEED}}.prototxt \n".format(i=1+i)
-
-        if 0:
-            ret = init.split('/', 1)
-            if len(ret) == 1:
-                rest = ''
-            else:
-                rest = ret[1]
-            init_params = _parse_params(rest)
-            settings = " ".join('--{} {}'.format(key, value) for key, value in init_params.items())
+        s += """    $BIN train --solver=solver0_s${{SEED}}.prototxt \n""".format(i=1+i)
         s += """    python -m deepdish.tools.caffe.initialize -i {i} -o {o} -s {seed} "{initstyle}"\n"""\
                         .format(i=base_model, o=caffemodels[0], seed='${SEED}',
                                 initstyle=init)
@@ -131,6 +122,7 @@ def solver(seed=0, device=0, lr=0.001, decay=0.001, it=10000,
     d['decay'] = decay
     d['snapshot'] = min(snapshot, params.get('snapshot', snapshot))
     d['base_suffix'] = '_base' if base else ''
+    d['solver'] = params.get('solver_type', 'SGD')
     s = Template("""# version: $version
 net: "main.prototxt"
 test_iter: 100
@@ -139,10 +131,11 @@ base_lr: $lr
 momentum: $momentum
 weight_decay: $decay
 lr_policy: "fixed"
-display: 500
+display: 400
 max_iter: $iter
 snapshot: $snapshot
 snapshot_prefix: "models/v${version}_model_s${seed}${base_suffix}"
+solver_type: $solver
 solver_mode: GPU
 random_seed: ${seed}
 device_id: ${device_id}
@@ -203,8 +196,8 @@ layers {
   type: CONVOLUTION
   bottom: "$last_name"
   top: "$name"
-  blobs_lr: 1
-  blobs_lr: 2
+  blobs_lr: $lr
+  blobs_lr: $bias_lr
   convolution_param {
     num_output: $num
     pad: $pad
@@ -220,7 +213,8 @@ layers {
   }
 }
     """).substitute(dict(name=name, last_name=last_layer, size=size, num=num, pad=pad,
-                         std=params.get('std', 0.01)))
+                         std=params.get('std', 0.01), lr=params.get('lr', 1),
+                         bias_lr=params.get('bias_lr', params.get('lr', 2))))
 
     new_netsize = (int(num),) + tuple([(ns + 2*pad) - (int(size) - 1) for ns in netsize[1:]])
 
@@ -415,7 +409,14 @@ def generate_network_files(path, parts, seed=0, device=0, lr=0.001,
     for i, it in enumerate([0] + iters):
         snapshot = cur_iter
         cur_iter += it
-        s = solver(seed=seed, device=device, lr=cur_lr, it=cur_iter, snapshot=cur_iter-snapshot, decay=decay, base=(i == 0), params=solver_params)
+        s = solver(seed=seed,
+                   device=device,
+                   lr=cur_lr,
+                   it=cur_iter,
+                   snapshot=cur_iter-snapshot,
+                   decay=decay,
+                   base=(i == 0),
+                   params=solver_params)
 
         with open(os.path.join(path, 'solver{}_s{}.prototxt'.format(i, seed)), 'w') as f:
             print(s, file=f)
