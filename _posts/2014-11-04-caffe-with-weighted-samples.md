@@ -62,13 +62,15 @@ layers {
     top: "label"
     top: "sample_weight"  # <-- add this
     hdf5_data_param {
-        source: "/path/to/data.h5"  # same as h5_fn
+        source: "/path/to/data.txt"
         batch_size: 100
     }
 }
 ```
 
-Hook it up to the softmax layer as:
+The file `data.txt` should contain a single line with the absolute path to
+`h5_fn`, for instance `/path/to/data.h5`. Next, hook it up to the softmax layer
+as:
 
 ```
 layers {
