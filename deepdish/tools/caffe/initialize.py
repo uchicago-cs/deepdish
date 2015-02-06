@@ -117,7 +117,10 @@ def gaussian(cmdline, mm, rs):
                         #j = rs.randint(shape[0])
                         #X[i, j, shape[2]//2, shape[3]//2] = 1.0
             else:
-                X = rs.normal(loc=0.0, scale=std, size=shape)
+                if std == 0:
+                    X = np.zeros(shape)
+                else:
+                    X = rs.normal(loc=0.0, scale=std, size=shape)
             _set_from_ndarray(blob_filters, X)
 
             blob_biases = layer.blobs[1]
@@ -125,6 +128,23 @@ def gaussian(cmdline, mm, rs):
 
             X = np.zeros(shape)
             _set_from_ndarray(blob_biases, X)
+
+
+def velocity(cmdline, ss, rs):
+    import json
+    params = json.loads(cmdline.replace("'", '"'))
+
+    std = params['std']
+    print('std = {}'.format(std))
+
+    for h in ss.history:
+        #print('Initializing layer {}'.format(layer.name))
+        #assert len(layer.blobs) == 2
+
+        #blob_filters = layer.blobs[0]
+        shape = _blob_shape(h)
+        X = rs.normal(loc=0.0, scale=std, size=shape)
+        _set_from_ndarray(h, X)
 
 
 def main():
@@ -139,9 +159,12 @@ def main():
     rs = np.random.RandomState(args.seed)
 
     mm = caffe.proto.caffe_pb2.NetParameter()
-
     with open(args.input + '.caffemodel', 'rb') as f:
         mm.ParseFromString(f.read())
+
+    ss = caffe.proto.caffe_pb2.SolverState()
+    with open(args.input + '.solverstate', 'rb') as f:
+        ss.ParseFromString(f.read())
 
     style, param_str = args.style.split('/', 1)
 
@@ -151,6 +174,9 @@ def main():
         gaussian(param_str, mm, rs)
     elif style == 'gaussian0':
         gaussian0(param_str, mm, rs)
+    elif style == 'velocity':
+        gaussian("{'std': 0}", mm, rs)
+        velocity(param_str, ss, rs)
     else:
         raise ValueError('Unknown initialization style')
 
@@ -159,14 +185,7 @@ def main():
     with open(caffemodel_fn, 'wb') as f:
         f.write(mm.SerializeToString())
 
-    # Now write a new solverstate
-    ss = caffe.proto.caffe_pb2.SolverState()
-
-    with open(args.input + '.solverstate', 'rb') as f:
-        ss.ParseFromString(f.read())
-
     ss.learned_net = caffemodel_fn
-
     with open(args.output + '.solverstate', 'wb') as f:
         f.write(ss.SerializeToString())
 
