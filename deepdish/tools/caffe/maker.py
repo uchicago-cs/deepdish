@@ -162,7 +162,7 @@ layers {
 }
 
 layers {
-  name: "cifar"
+  name: "main"
   type: HDF5_DATA
   top: "data"
   top: "label"
@@ -301,8 +301,8 @@ layers {
   type: INNER_PRODUCT
   bottom: "$last_name"
   top: "$name"
-  blobs_lr: 1
-  blobs_lr: 2
+  blobs_lr: $lr
+  blobs_lr: $bias_lr
   weight_decay: $decay
   weight_decay: 0
   inner_product_param {
@@ -318,7 +318,8 @@ layers {
 }
     """).substitute(dict(name=name, last_name=last_layer, num=num,
                          decay=params.get('decay', 1),
-                         std=params.get('std', 0.01)))
+                         std=params.get('std', 0.01), lr=params.get('lr', 1),
+                         bias_lr=params.get('bias_lr', params.get('lr', 2))))
     new_netsize = (int(num), 1, 1)
     return name, name, 1, new_netsize, s, s
 

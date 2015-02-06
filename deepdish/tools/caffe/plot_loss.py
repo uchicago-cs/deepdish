@@ -16,6 +16,7 @@ def main():
     parser.add_argument('losses', nargs='+', type=str)
     parser.add_argument('-o', '--output', default='log-loss', type=str)
     parser.add_argument('--dataset', default='Test', type=str)
+    parser.add_argument('--captions', nargs='+', type=str)
 
     args = parser.parse_args()
 
@@ -23,9 +24,10 @@ def main():
 
 
     vz = VzLog(args.output)
+    print(args.captions)
 
     plt.figure()
-    for loss_fn in args.losses:
+    for i, loss_fn in enumerate(args.losses):
         print('file', loss_fn)
         data = dd.io.load(loss_fn)
         for seed, info in enumerate(data):
@@ -33,7 +35,11 @@ def main():
                 continue
             print('info', info.keys())
             values = info[args.dataset]
-            plt.plot(values[0], values[2], label=loss_fn)
+            if args.captions:
+                caption = args.captions[i]
+            else:
+                caption = loss_fn
+            plt.plot(values[0], values[2], label=caption)
 
     plt.legend()
     plt.ylabel('Loss')
@@ -42,7 +48,7 @@ def main():
     plt.close()
 
     plt.figure()
-    for loss_fn in args.losses:
+    for i, loss_fn in enumerate(args.losses):
         print('file', loss_fn)
         data = dd.io.load(loss_fn)
         for seed, info in enumerate(data):
@@ -50,7 +56,11 @@ def main():
                 continue
             print('info', info.keys())
             values = info[args.dataset]
-            plt.plot(values[0], 100*(1-values[1]), label=loss_fn)
+            if args.captions:
+                caption = args.captions[i]
+            else:
+                caption = loss_fn
+            plt.plot(values[0], 100*(1-values[1]), label=caption)
 
     plt.legend()
     plt.ylabel('Error rate (%)')
