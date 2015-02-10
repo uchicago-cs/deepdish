@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import 
 import numpy as np
-import amitgroup as ag
+import deepdish as dd
 import h5py
 import os
 import caffe
@@ -14,7 +14,7 @@ CAFFE_BIN = os.path.join(TOOLS_DIR, 'caffe')
 
 def temperature(y, T):
     y = y**(1 / T)
-    return y / ag.apply_once(np.sum, y, [1])
+    return y / dd.apply_once(np.sum, y, [1])
 
 def train_model(name, conf_fn, bare_conf_fn, steps, logfile=None, seed=0,
         models_dir='models', confs_dir='confs', device_id=0, warmstart=None, start_iter=0,

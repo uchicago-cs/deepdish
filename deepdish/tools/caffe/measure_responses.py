@@ -2,7 +2,6 @@ from __future__ import division, print_function, absolute_import
 
 import matplotlib as mpl
 mpl.use('Agg')
-import amitgroup as ag
 import matplotlib.pylab as plt
 import numpy as np
 import deepdish as dd

@@ -261,7 +261,7 @@ def extract_patches(images, patch_shape, samples_per_image=40, seed=0,
 
     Examples
     --------
-    >>> import amitgroup as ag
+    >>> import deepdish as dd
     >>> import matplotlib.pylab as plt
     >>> import itertools
     >>> images = ag.io.load_example('mnist')
@@ -269,12 +269,12 @@ def extract_patches(images, patch_shape, samples_per_image=40, seed=0,
     Now, let us say we want to exact patches from the these, where each patch
     has at least some activity.
 
-    >>> gen = ag.image.extract_patches(images, (5, 5))
+    >>> gen = dd.image.extract_patches(images, (5, 5))
     >>> gen = (x for x in gen if x.mean() > 0.1)
     >>> patches = np.array(list(itertools.islice(gen, 25)))
     >>> patches.shape
     (25, 5, 5)
-    >>> ag.plot.images(patches)
+    >>> dd.plot.images(patches)
     >>> plt.show()
 
     """

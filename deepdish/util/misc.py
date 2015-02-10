@@ -23,13 +23,13 @@ def pad(data, padwidth, value=0.0):
 
     Examples
     --------
-    >>> import amitgroup as ag
+    >>> import deepdish as dd
     >>> import numpy as np
 
     Pad an array with zeros.
 
     >>> x = np.ones((3, 3))
-    >>> ag.util.pad(x, (1, 2), value=0.0)
+    >>> dd.util.pad(x, (1, 2), value=0.0)
     array([[ 0.,  0.,  0.,  0.,  0.,  0.,  0.],
            [ 0.,  0.,  1.,  1.,  1.,  0.,  0.],
            [ 0.,  0.,  1.,  1.,  1.,  0.,  0.],
@@ -83,13 +83,13 @@ def pad_to_size(data, shape, value=0.0):
 
     Examples
     --------
-    >>> import amitgroup as ag
+    >>> import deepdish as dd
     >>> import numpy as np
 
     Pad an array with zeros.
 
     >>> x = np.ones((4, 2))
-    >>> ag.util.pad_to_size(x, (5, 5))
+    >>> dd.util.pad_to_size(x, (5, 5))
     array([[ 0.,  1.,  1.,  0.,  0.],
            [ 0.,  1.,  1.,  0.,  0.],
            [ 0.,  1.,  1.,  0.,  0.],
@@ -124,14 +124,14 @@ def pad_repeat_border(data, padwidth):
 
     Examples
     --------
-    >>> import amitgroup as ag
+    >>> import deepdish as dd
     >>> import numpy as np
 
     Pad an array by repeating its borders:
 
     >>> shape = (3, 4)
     >>> x = np.arange(np.prod(shape)).reshape(shape)
-    >>> ag.util.pad_repeat_border(x, 2)
+    >>> dd.util.pad_repeat_border(x, 2)
     array([[ 0,  0,  0,  1,  2,  3,  3,  3],
            [ 0,  0,  0,  1,  2,  3,  3,  3],
            [ 0,  0,  0,  1,  2,  3,  3,  3],
@@ -186,14 +186,14 @@ def pad_repeat_border_corner(data, shape):
 
     Examples
     --------
-    >>> import amitgroup as ag
+    >>> import deepdish as dd
     >>> import numpy as np
 
     Pad an array by repeating its upper borders.
 
     >>> shape = (3, 4)
     >>> x = np.arange(np.prod(shape)).reshape(shape)
-    >>> ag.util.pad_repeat_border_corner(x, (5, 5))
+    >>> dd.util.pad_repeat_border_corner(x, (5, 5))
     array([[  0.,   1.,   2.,   3.,   3.],
            [  4.,   5.,   6.,   7.,   7.],
            [  8.,   9.,  10.,  11.,  11.],

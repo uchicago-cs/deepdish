@@ -12,7 +12,7 @@ warnings.simplefilter("ignore", np.ComplexWarning)
 
 def set_verbose(is_verbose):
     """
-    Choose whether or not to display output from calls to ``amitgroup.info``.
+    Choose whether or not to display output from calls to ``deepdish.info``.
 
     Parameters
     ----------
@@ -31,7 +31,7 @@ def info(*args, **kwargs):
     function with a description of the status is recommended.
 
     This function takes the same arguments as Python 3's ``print`` function.
-    The only difference is that if ``amitgroup.set_verbose(True)`` has not be
+    The only difference is that if ``deepdish.set_verbose(True)`` has not be
     called, it will suppress any output.
     """
     if _is_verbose:
@@ -132,7 +132,7 @@ def apply_once(func, arr, axes, keepdims=True):
 
     Examples
     --------
-    >>> import amitgroup as ag
+    >>> import deepdish as dd
     >>> import numpy as np
     >>> rs = np.random.RandomState(0)
     >>> x = rs.uniform(size=(10, 3, 3))
@@ -153,7 +153,7 @@ def apply_once(func, arr, axes, keepdims=True):
             0.26928468,  0.20081239,  0.33052397,  0.29950855,  0.26535717])
 
     This is exactly what this function does for you:
-    >>> ag.apply_once(np.std, x, [1, 2], keepdims=False)
+    >>> dd.apply_once(np.std, x, [1, 2], keepdims=False)
     array([ 0.17648981,  0.32849108,  0.29409526,  0.25547501,  0.23649064,
             0.26928468,  0.20081239,  0.33052397,  0.29950855,  0.26535717])
     """
@@ -214,18 +214,18 @@ def Timer(name='(no name)', file=sys.stdout):
 
     Examples
     --------
-    >>> import amitgroup as ag
+    >>> import deepdish as dd
     >>> import time
 
     The Timer is a context manager, so everything inside the ``with`` block
     will be timed. The results will be printed to standard output.
 
-    >>> with ag.Timer('Sleep'):  # doctest: +SKIP
+    >>> with dd.Timer('Sleep'):  # doctest: +SKIP
             time.sleep(1)
     TIMER Sleep: 1.001035451889038 s
 
     >>> x = np.empty(1)
-    >>> with ag.Timer('Sleep', file=x):  # doctest: +SKIP
+    >>> with dd.Timer('Sleep', file=x):  # doctest: +SKIP
             time.sleep(1)
     >>> x[0]  # doctest: +SKIP
     1.0010406970977783
