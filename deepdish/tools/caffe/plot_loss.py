@@ -65,7 +65,7 @@ def main():
     plt.legend()
     plt.ylabel('Error rate (%)')
     plt.xlabel('Iteration')
-    plt.savefig(vz.impath('svg'))
+    vz.savefig(plt)
     plt.close()
 
 if __name__ == '__main__':
