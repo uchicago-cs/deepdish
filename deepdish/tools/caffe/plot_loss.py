@@ -37,6 +37,8 @@ def main():
         else:
             caption = loss_fn
 
+        caption = '{} ({:.3f})'.format(caption, losses[-1])
+
         plt.errorbar(iter, losses, yerr=losses_std, label=caption)
 
     plt.legend()
@@ -57,6 +59,8 @@ def main():
             caption = args.captions[i]
         else:
             caption = loss_fn
+
+        caption = '{} ({:.2f}%)'.format(caption, rates[-1])
 
         plt.errorbar(iter, rates, yerr=rates_std, label=caption)
 
