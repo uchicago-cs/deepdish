@@ -8,7 +8,7 @@ from string import Template
 import shutil
 import json
 
-__version__ = 5
+__version__ = 6
 
 DATA_DIR = os.environ['MAKER_DATA_DIR']
 
@@ -33,7 +33,8 @@ def _parse_params(rest):
 
 
 def trainer(network, name, iters, seeds, device=0, init='',
-            test_scores=False, test_responses=False):
+            test_scores=False, test_responses=False, 
+            plot_loss=False, solver_params={}):
     d = {}
     d['name'] = name
     d['seeds'] = seeds - 1
@@ -62,6 +63,7 @@ for SEED in {0..$seeds}; do
     s  += """    echo "----- seed $SEED --------------------" > >(tee -a log.err) \n"""
     cur_iter = 0
     caffemodels = []
+    batch = solver_params.get('batch', 100)
     base_model = 'models/v{version}_model_s${{SEED}}_base_iter_0'.format(version=__version__)
     for i, it in enumerate([0] + iters):
         cur_iter += it
@@ -74,15 +76,11 @@ for SEED in {0..$seeds}; do
                         .format(i=base_model, o=caffemodels[0], seed='${SEED}',
                                 initstyle=init)
 
-    cur_iter = 0
-    for i, it in enumerate(iters):
-        s += "    if [ ! -f {fn}.caffemodel ]; then\n".format(fn=caffemodels[i+1])
-        s += "         $BIN train --solver=solver{i}_s${{SEED}}.prototxt ".format(i=1+i)
-        if i != 0 or init:
-            s += """ --snapshot={fn}.solverstate""".format(fn=caffemodels[i])
-
-        s += " > >(tee -a log.out) 2> >(tee -a log.err >&2) \n"
-        s += "    fi\n"
+    #cur_iter = 0
+    s += "    $BIN train --solver=solver{i}_s${{SEED}}.prototxt ".format(i=1)
+    if init:
+        s += """ --snapshot={fn}.solverstate""".format(fn=caffemodels[0])
+    s += " > >(tee -a log.out) 2> >(tee -a log.err >&2) \n"
 
 
     # Test model (TODO: this is an ugly and brittle line)
@@ -96,13 +94,45 @@ for SEED in {0..$seeds}; do
             name=name,
             seed='${SEED}')
 
+    if test_responses:
+        if 1:
+            ext_args = "-o responses/response_s{}.h5 -c 5000".format('${SEED}')
+            s += "    python -m deepdish.tools.caffe.measure_responses {} {}\n".format(base_args, ext_args)
+        else:
+            #import glob
+            #grammar = re.compile(r'v\d+_model_s(\d+)_iter_(\d+)\.caffemodel')
+            for seed in range(seeds):
+                for iteration in range(1000, cur_iter+1, 1000):
+                    #m = grammar.match(fn)
+                    #seed = int(m.group(1))
+                    #iteration = int(m.group(2))
+                    fn = 'models/v{version}_model_s{seed}_iter_{iter}.caffemodel'.format(
+                            version=__version__,
+                            seed=seed,
+                            iter=iteration)
+
+
+                    base_args = "{data} {bare} {caffemodel} -d {device} -n {name} -s {seed}".format(
+                            data=os.path.join(DATA_DIR, testfile + '.h5'),
+                            bare='bare.prototxt',
+                            caffemodel=fn,
+                            device=device,
+                            name=name,
+                            seed=seed)
+                    ext_args = "-o responses/response_s{}_iter_{}.h5 -c 5000".format(seed, iteration)
+                    s += "    python -m deepdish.tools.caffe.measure_responses {} {}\n".format(base_args, ext_args)
+
+
+            #ext_args = 
+
     if test_scores:
         ext_args = "-o scores/score_s{}.h5".format('${SEED}')
         s += "    python -m deepdish.tools.caffe.tester {} {}\n".format(base_args, ext_args)
 
-    if test_responses:
-        ext_args = "-o responses/response_s{}.h5 -c 5000".format('${SEED}')
-        s += "    python -m deepdish.tools.caffe.measure_responses {} {}\n".format(base_args, ext_args)
+    if plot_loss:
+        s += "    python -m deepdish.tools.caffe.parse_log log.err -o loss.h5\n"
+        s += "    python -m deepdish.tools.caffe.plot_loss loss.h5 -o log-loss\n"
+
 
     cur_iter += it
 
@@ -110,28 +140,52 @@ for SEED in {0..$seeds}; do
     return s
 
 
-def solver(seed=0, device=0, lr=0.001, decay=0.001, it=10000,
-           snapshot=10000, base=False, params={}):
+def solver(seed=0, device=0, lr=0.001, decay=0.001, 
+           iters=[0], snapshot=10000, base=False, params={}):
     d = {}
+    newdef = params.get('new-definition')
+    momentum = params.get('momentum', 0.9)
+    if newdef:
+        lr0 = lr * (1 - momentum)
+    else:
+        lr0 = lr
     d['version'] = __version__
     d['seed'] = seed
-    d['lr'] = lr
-    d['iter'] = it
+    d['lr'] = lr0
+    d['momentum'] = momentum
+    batch = params.get('batch', 100)
+    #d['iter'] = (it * 100) // batch
     d['device_id'] = device
-    d['momentum'] = params.get('momentum', 0.9)
+
     d['decay'] = decay
     d['snapshot'] = min(snapshot, params.get('snapshot', snapshot))
     d['base_suffix'] = '_base' if base else ''
     d['solver'] = params.get('solver_type', 'SGD')
+    # TODO: Read this 10000 from the datasets
+    d['test_iter'] = 100#00 // batch
+    d['test_interval'] = 1000#00 // batch
+    d['display'] = 400#00 // batch
+    d['gamma'] = params.get('gamma', 0.1)
+
+    steps = ""
+    cur_iter = 0
+    for iter in iters:
+        cur_iter += iter
+        steps += "stepvalue: {}\n".format(cur_iter)
+
+    d['steps'] = steps
+    d['iter'] = cur_iter
     s = Template("""# version: $version
 net: "main.prototxt"
-test_iter: 100
-test_interval: 1000
+test_iter: $test_iter
+test_interval: $test_interval
 base_lr: $lr
 momentum: $momentum
 weight_decay: $decay
-lr_policy: "fixed"
-display: 400
+lr_policy: "multistep"
+gamma: $gamma
+$steps
+display: $display
 max_iter: $iter
 snapshot: $snapshot
 snapshot_prefix: "models/v${version}_model_s${seed}${base_suffix}"
@@ -142,7 +196,7 @@ device_id: ${device_id}
 """).substitute(d)
     return s
 
-def f_data(last_layer, layer_no, netsize, dataset, params={}, g={}):
+def f_data(last_layer, layer_no, netsize, dataset, params={}, solver_params={}):
     dim, files = DATASETS[dataset]
     train = os.path.join(DATA_DIR, files[0])
     test = os.path.join(DATA_DIR, files[1])
@@ -153,7 +207,7 @@ layers {
   type: HDF5_DATA
   top: "data"
   top: "label"
-  top: "sample_weight"
+  #top: "sample_weight"
   hdf5_data_param {
     source: "$train.txt"
     batch_size: $batch
@@ -166,7 +220,7 @@ layers {
   type: HDF5_DATA
   top: "data"
   top: "label"
-  top: "sample_weight"
+  #top: "sample_weight"
   hdf5_data_param {
     source: "$test.txt"
     batch_size: $batch
@@ -174,7 +228,8 @@ layers {
   include: { phase: TEST }
 }
 """).substitute(dict(train=train, test=test,
-                     batch=params.get('batch', 100), version=__version__))
+                     batch=solver_params.get('batch', 100),
+                     version=__version__))
 
     s_bare = Template("""# version: $version
 name: "bare"
@@ -187,15 +242,27 @@ input_dim: $dim2
 
     return 'data', 'data', 0, tuple(dim), s, s_bare
 
-def f_conv(last_layer, layer_no, netsize, size, num, params={}, g={}):
+def f_conv(last_layer, layer_no, netsize, size, num, params={}, solver_params={}):
     name = 'conv{}'.format(layer_no+1)
     pad = int(size) // 2
+    init_method = params.get('initialization', solver_params.get('initialization'))
+
+    if init_method == 'xavier':
+        weight_filler = """
+          type: "xavier" """
+    else:
+        weight_filler = """
+          type: "gaussian"
+          std: {std}""".format(std=params.get('std', solver_params.get('std', 0.01)))
+
     s = Template("""
 layers {
   name: "$name"
   type: CONVOLUTION
   bottom: "$last_name"
   top: "$name"
+  weight_decay: $decay
+  weight_decay: 0
   blobs_lr: $lr
   blobs_lr: $bias_lr
   convolution_param {
@@ -204,8 +271,7 @@ layers {
     kernel_size: $size
     stride: 1
     weight_filler {
-      type: "gaussian"
-      std: $std
+        $weight_filler
     }
     bias_filler {
       type: "constant"
@@ -213,7 +279,8 @@ layers {
   }
 }
     """).substitute(dict(name=name, last_name=last_layer, size=size, num=num, pad=pad,
-                         std=params.get('std', 0.01), lr=params.get('lr', 1),
+                         lr=params.get('lr', 1), weight_filler=weight_filler,
+                         decay=params.get('decay', 1),
                          bias_lr=params.get('bias_lr', params.get('lr', 2))))
 
     new_netsize = (int(num),) + tuple([(ns + 2*pad) - (int(size) - 1) for ns in netsize[1:]])
@@ -221,7 +288,7 @@ layers {
     return name, name, 1, new_netsize, s, s
 
 
-def f_pool(last_layer, layer_no, netsize, size, stride, operation, params={}, g={}):
+def f_pool(last_layer, layer_no, netsize, size, stride, operation, params={}, solver_params={}):
     name = 'pool{}'.format(layer_no)
     op = operation.upper()
     s = Template("""
@@ -243,7 +310,7 @@ layers {
     return name, name, 0, new_netsize, s, s
 
 
-def f_relu(last_layer, layer_no, netsize, params={}, g=None):
+def f_relu(last_layer, layer_no, netsize, params={}, solver_params=None):
     name = 'relu{}'.format(layer_no)
     s = Template("""
 layers {
@@ -256,7 +323,7 @@ layers {
     return name, last_layer, 0, netsize, s, s
 
 
-def f_dropout(last_layer, layer_no, netsize, rate, params={}, g=None):
+def f_dropout(last_layer, layer_no, netsize, rate, params={}, solver_params=None):
     name = 'drop{}'.format(layer_no)
     s = Template("""
 layers {
@@ -272,7 +339,7 @@ layers {
     return name, last_layer, 0, netsize, s, s
 
 
-def f_lrn(last_layer, layer_no, netsize, size, params={}, g={}):
+def f_lrn(last_layer, layer_no, netsize, size, params={}, solver_params={}):
     if size is None:
         size = 3
     name = 'norm{}'.format(layer_no)
@@ -293,7 +360,7 @@ layers {
     return name, name, 0, netsize, s, s
 
 
-def f_ip(last_layer, layer_no, netsize, num, params={}, g={}):
+def f_ip(last_layer, layer_no, netsize, num, params={}, solver_params={}):
     name = 'ip{}'.format(layer_no+1)
     s = Template("""
 layers {
@@ -323,7 +390,7 @@ layers {
     new_netsize = (int(num), 1, 1)
     return name, name, 1, new_netsize, s, s
 
-def f_softmax(last_layer, layer_no, netsize, params={}, g=None):
+def f_softmax(last_layer, layer_no, netsize, params={}, solver_params=None):
     s = Template("""
 layers {
   name: "accuracy"
@@ -339,7 +406,7 @@ layers {
   type: SOFTMAX_LOSS
   bottom: "$last_name"
   bottom: "label"
-  bottom: "sample_weight"
+  #bottom: "sample_weight"
   top: "loss"
 }
     """).substitute(dict(last_name=last_layer))
@@ -358,9 +425,9 @@ layers {
 
 PATTERNS = [
     (re.compile(r'^d-([a-z0-9]+)'), f_data),
-    (re.compile(r'^p(\d+)-(\d+)-(\w+)'), f_pool),
-    (re.compile(r'^c(\d+)-(\d+)'), f_conv),
-    (re.compile(r'^ip(\d+)'), f_ip),
+    (re.compile(r'^p(?:ool)?(\d+)-(\d+)-(\w+)'), f_pool),
+    (re.compile(r'^c(?:onv)?(\d+)-(\d+)'), f_conv),
+    (re.compile(r'^(?:ip|fc)(\d+)'), f_ip),
     (re.compile(r'^relu'), f_relu),
     (re.compile(r'^dropout([\d.]+)'), f_dropout),
     (re.compile(r'^lrn(?:(\d+))?'), f_lrn),
@@ -388,7 +455,7 @@ def generate_network_files(path, parts, seed=0, device=0, lr=0.001,
         for pattern, func in PATTERNS:
             m = pattern.match(part)
             if m:
-                name, last_name, delta, cur_size, s, s_bare = func(last_layer, cur_layer, cur_size, *m.groups(), params=params)
+                name, last_name, delta, cur_size, s, s_bare = func(last_layer, cur_layer, cur_size, *m.groups(), params=params, solver_params=solver_params)
                 if seed == 0:
                     if last_size is None or last_size != cur_size:
                         cs = '{!s:15s} {}'.format(cur_size, np.prod(cur_size))
@@ -405,25 +472,31 @@ def generate_network_files(path, parts, seed=0, device=0, lr=0.001,
         if not found:
             raise Exception("Could not parse {}".format(part))
 
-    cur_iter = 0
-    cur_lr = lr
-    for i, it in enumerate([0] + iters):
-        snapshot = cur_iter
-        cur_iter += it
-        s = solver(seed=seed,
-                   device=device,
-                   lr=cur_lr,
-                   it=cur_iter,
-                   snapshot=cur_iter-snapshot,
-                   decay=decay,
-                   base=(i == 0),
-                   params=solver_params)
+    snapshot = 10000
+    s = solver(seed=seed,
+               device=device,
+               lr=lr,
+               iters=[0],
+               snapshot=0,
+               decay=decay,
+               base=True,
+               params=solver_params)
 
-        with open(os.path.join(path, 'solver{}_s{}.prototxt'.format(i, seed)), 'w') as f:
-            print(s, file=f)
+    with open(os.path.join(path, 'solver0_s{}.prototxt'.format(seed)), 'w') as f:
+        print(s, file=f)
 
-        if i != 0:
-            cur_lr /= 10
+    snapshot = 10000
+    s = solver(seed=seed,
+               device=device,
+               lr=lr,
+               iters=iters,
+               snapshot=snapshot,
+               decay=decay,
+               base=(i == 0),
+               params=solver_params)
+
+    with open(os.path.join(path, 'solver1_s{}.prototxt'.format(seed)), 'w') as f:
+        print(s, file=f)
 
     for m in 'main', 'bare':
         with open(os.path.join(path, '{}.prototxt'.format(m)), 'w') as f:
@@ -444,6 +517,7 @@ def main():
     parser.add_argument('-p', '--params', default='{}', type=str)
     parser.add_argument('--calc-scores', action='store_true')
     parser.add_argument('--calc-responses', action='store_true')
+    parser.add_argument('--plot-loss', action='store_true')
 
     args = parser.parse_args()
 
@@ -472,7 +546,10 @@ def main():
     with open(os.path.join(path, 'train.sh'), 'w') as f:
         s = trainer(network, args.caption, args.iter, args.number,
                     device=args.device, init=args.init,
-                    test_scores=args.calc_scores, test_responses=args.calc_responses)
+                    test_scores=args.calc_scores,
+                    test_responses=args.calc_responses,
+                    plot_loss=args.plot_loss,
+                    solver_params=params)
         print(s, file=f)
 
 

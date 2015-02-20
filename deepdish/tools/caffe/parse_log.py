@@ -17,7 +17,7 @@ def main():
     #regex_accu = re.compile(r'(\w+) net output #\d+
 
     infos = [{}]
-    output_names = OrderedDict()
+    #output_names = OrderedDict()
 
     cur_info = 0
 
@@ -34,7 +34,6 @@ def main():
                     cur_info += 1
                     infos.append({})
                     info = infos[cur_info]
-                    break
 
                 #print('Iteration: {}'.format(m.group(1)))
                 cur_iter = iter
@@ -55,25 +54,42 @@ def main():
                 if dataset == 'Test' and output == 0:
                     print(cur_iter, loss)
 
-                output_names[m.group(3)] = None
+                #output_names[m.group(3)] = None
                 continue
 
-    output_names = list(output_names.keys())
+    #import pdb; pdb.set_trace()
 
-    new_infos = []
-    for info in infos:
-        new_info = {}
-        for key in info.keys():
-            #if key != 'Train':
-                #info[key] = np.asarray(info[key])
-            #else:
-                #del info[key]
+    iterations = []
+    rates = []
+    losses = []
+    for i in range(3):
+        for info in infos:
+            ii = info['Test']
+            iterations.append(ii[0])
+            rates.append(ii[1])
+            losses.append(ii[2])
 
-            if key == 'Test':
-                new_info[key] = np.asarray(info[key])
-        new_infos.append(new_info)
+    dd.io.save(args.output, dict(iterations=np.asarray(iterations),
+                                 rates=np.asarray(rates),
+                                 losses=np.asarray(losses)))
 
-    dd.io.save(args.output, new_infos)
+    #output_names = list(output_names.keys())
+
+    if 0:
+        new_infos = []
+        for info in infos:
+            new_info = {}
+            for key in info.keys():
+                #if key != 'Train':
+                    #info[key] = np.asarray(info[key])
+                #else:
+                    #del info[key]
+
+                if key == 'Test':
+                    new_info[key] = np.asarray(info[key])
+            new_infos.append(new_info)
+
+        dd.io.save(args.output, new_infos)
 
 if __name__ == '__main__':
     main()

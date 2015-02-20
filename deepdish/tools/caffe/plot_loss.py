@@ -15,57 +15,55 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('losses', nargs='+', type=str)
     parser.add_argument('-o', '--output', default='log-loss', type=str)
-    parser.add_argument('--dataset', default='Test', type=str)
+    #parser.add_argument('--dataset', default='Test', type=str)
     parser.add_argument('--captions', nargs='+', type=str)
 
     args = parser.parse_args()
 
     rs = np.random.RandomState(0)
 
-
     vz = VzLog(args.output)
-    print(args.captions)
 
     plt.figure()
     for i, loss_fn in enumerate(args.losses):
         print('file', loss_fn)
         data = dd.io.load(loss_fn)
-        for seed, info in enumerate(data):
-            if seed > 0:
-                continue
-            print('info', info.keys())
-            values = info[args.dataset]
-            if args.captions:
-                caption = args.captions[i]
-            else:
-                caption = loss_fn
-            plt.plot(values[0], values[2], label=caption)
+        iter = data['iterations'][0]
+        losses = data['losses'].mean(0)
+        losses_std = data['losses'].std(0)
+
+        if args.captions:
+            caption = args.captions[i]
+        else:
+            caption = loss_fn
+
+        plt.errorbar(iter, losses, yerr=losses_std, label=caption)
 
     plt.legend()
     plt.ylabel('Loss')
     plt.xlabel('Iteration')
-    plt.savefig(vz.impath('svg'))
+    vz.savefig()
     plt.close()
 
     plt.figure()
     for i, loss_fn in enumerate(args.losses):
         print('file', loss_fn)
         data = dd.io.load(loss_fn)
-        for seed, info in enumerate(data):
-            if seed > 0:
-                continue
-            print('info', info.keys())
-            values = info[args.dataset]
-            if args.captions:
-                caption = args.captions[i]
-            else:
-                caption = loss_fn
-            plt.plot(values[0], 100*(1-values[1]), label=caption)
+        iter = data['iterations'][0]
+        rates = 100*(1-data['rates'].mean(0))
+        rates_std = 100*data['rates'].std(0)
+
+        if args.captions:
+            caption = args.captions[i]
+        else:
+            caption = loss_fn
+
+        plt.errorbar(iter, rates, yerr=rates_std, label=caption)
 
     plt.legend()
     plt.ylabel('Error rate (%)')
     plt.xlabel('Iteration')
-    vz.savefig(plt)
+    vz.savefig()
     plt.close()
 
 if __name__ == '__main__':
