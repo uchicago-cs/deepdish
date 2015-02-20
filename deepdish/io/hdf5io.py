@@ -197,7 +197,7 @@ def save(path, data, compress=True):
     h5file.close()
 
 
-def load(path):
+def load(path, unpack=True):
     """
     Loads an HDF5 saved with `save`.
 
@@ -207,6 +207,10 @@ def load(path):
     ----------
     path : file-like object or string
         File or filename from which to load the data.
+    unpack : bool
+        If True, a single-entry dictionaries will be unpacked and the value
+        will be returned directly. That is, if you save ``dict(a=100)``, only
+        ``100`` will be loaded.
 
     Returns
     --------
@@ -226,8 +230,11 @@ def load(path):
     root = h5file.root
     data = _load_level(h5file.root)
     # Unpack if top is the only one
-    if len(data) == 1 and '_top' in data:
-        data = data['_top']
+    if isinstance(data, dict) and len(data) == 1:
+        if '_top' in data:
+            data = data['_top']
+        elif unpack:
+            data = data.values()[0]
 
     h5file.close()
     return data
