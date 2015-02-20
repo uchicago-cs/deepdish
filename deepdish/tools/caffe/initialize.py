@@ -64,11 +64,11 @@ def gaussian0(cmdline, mm, rs):
 
             blob_filters = layer.blobs[0]
             shape = _blob_shape(blob_filters)
-            if layer.name in ['conv2', 'conv4', 'conv6']:
-                X = rs.normal(loc=0.0, scale=0.25, size=shape)
+            #if layer.name in ['conv2', 'conv4', 'conv6']:
+                #X = rs.normal(loc=0.0, scale=0.25, size=shape)
 
-            else:
-                X = rs.normal(loc=0.0, scale=std, size=shape)
+            #else:
+            X = rs.normal(loc=0.0, scale=std, size=shape)
             _set_from_ndarray(blob_filters, X)
 
             blob_biases = layer.blobs[1]
@@ -76,6 +76,35 @@ def gaussian0(cmdline, mm, rs):
             X = np.zeros(shape)
             _set_from_ndarray(blob_biases, X)
 
+
+
+def xavier(cmdline, mm, rs):
+    import json
+    params = json.loads(cmdline.replace("'", '"'))
+
+    #std = params['std']
+    #print('std = {}'.format(std))
+
+    for layer in mm.layers:
+        if layer.blobs:
+            print('Initializing layer {}'.format(layer.name))
+            assert len(layer.blobs) == 2
+
+            blob_filters = layer.blobs[0]
+            shape = _blob_shape(blob_filters)
+            size = blob_filters.width * blob_filters.height
+            #n = (blob_filters.num + blob_filters.channels) / 2
+            a = np.sqrt(6 / (size * (blob_filters.num + blob_filters.channels)))
+            print('a = ', a)
+
+            X = rs.uniform(-a, a, size=shape)
+            _set_from_ndarray(blob_filters, X)
+
+            blob_biases = layer.blobs[1]
+            shape = _blob_shape(blob_biases)
+
+            X = np.zeros(shape)
+            _set_from_ndarray(blob_biases, X)
 
 
 def gaussian(cmdline, mm, rs):
@@ -95,19 +124,18 @@ def gaussian(cmdline, mm, rs):
             if layer.name in ['conv2', 'conv4', 'conv7']:
                 X = rs.normal(loc=0.0, scale=0.25, size=shape)
 
-                if 0:
-                    for i in range(shape[0]):
-                        X[i, i, shape[2]//2, shape[3]//2] = 1.0
+                for i in range(shape[0]):
+                    X[i, i, shape[2]//2, shape[3]//2] = 1.0
 
 
-                        # Add another one
-                        for k in range(6):
-                            j = rs.randint(shape[0])
-                            X[i, j, shape[2]//2, shape[3]//2] = 1.0
+                    # Add another one
+                    for k in range(6):
+                        j = rs.randint(shape[0])
+                        X[i, j, shape[2]//2, shape[3]//2] = 1.0
 
             elif layer.name in ['conv5', 'conv8']:
-                #X = rs.normal(loc=0.0, scale=0.001, size=shape)
-                X = np.zeros(shape)
+                X = rs.normal(loc=0.0, scale=0.001, size=shape)
+                #X = np.zeros(shape)
 
                 for i in range(shape[0]):
                     X[i, i, shape[2]//2, shape[3]//2] = 1.0
@@ -175,8 +203,10 @@ def main():
     elif style == 'gaussian0':
         gaussian0(param_str, mm, rs)
     elif style == 'velocity':
-        gaussian("{'std': 0}", mm, rs)
+        gaussian0("{'std': 0.01}", mm, rs)
         velocity(param_str, ss, rs)
+    elif style == 'xavier':
+        xavier(param_str, mm, rs)
     else:
         raise ValueError('Unknown initialization style')
 
