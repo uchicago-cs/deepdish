@@ -18,10 +18,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    caffe.set_mode_gpu()
+    caffe.set_device(args.device)
+
     data = dd.io.load(args.data)
     net = caffe.Classifier(args.bare, args.caffemodel)
-    net.set_mode_gpu()
-    net.set_device(args.device)
 
 
     x = data['data']

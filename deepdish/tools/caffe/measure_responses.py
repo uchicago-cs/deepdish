@@ -51,9 +51,10 @@ if __name__ == '__main__':
     data = {}
     N = args.count
 
+    caffe.set_mode_gpu()
+    caffe.set_device(args.device)
+
     net = caffe.Classifier(args.bare, args.caffemodel)
-    net.set_mode_gpu()
-    net.set_device(args.device)
 
     if args.layers is None:
         # Extract all interesting layers
@@ -91,4 +92,5 @@ if __name__ == '__main__':
     for key in data:
         data[key] = np.asarray(data[key])
 
-    dd.io.save(args.output, dict(responses=data, name=name, seed=seed))
+    dd.io.save(args.output, dict(responses=data, name=name, seed=seed,
+                                 layers=np.asarray(layers)))
