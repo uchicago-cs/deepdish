@@ -171,7 +171,7 @@ def solver(seed=0, device=0, lr=0.001, decay=0.001,
     d['solver'] = params.get('solver_type', 'SGD')
     # TODO: Read this 10000 from the datasets
     #d['test_iter'] = 100#00 // batch
-    d['test_iter'] = 400#00 // batch
+    d['test_iter'] = 100#00 // batch
     d['test_interval'] = 1000#00 // batch
     d['display'] = 400#00 // batch
     d['gamma'] = params.get('gamma', 0.1)
