@@ -203,7 +203,7 @@ def main():
     elif style == 'gaussian0':
         gaussian0(param_str, mm, rs)
     elif style == 'velocity':
-        gaussian0("{'std': 0.01}", mm, rs)
+        #gaussian0("{'std': 0.01}", mm, rs)
         velocity(param_str, ss, rs)
     elif style == 'xavier':
         xavier(param_str, mm, rs)
