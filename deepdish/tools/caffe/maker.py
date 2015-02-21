@@ -18,6 +18,7 @@ DATA_DIR = os.environ['MAKER_DATA_DIR']
 DATASETS = {
     'cifar10w40': ([3, 32, 32], ('cifar10_w_tr40k', 'cifar10_w_val')),
     'cifar100w40': ([3, 32, 32], ('cifar100_w_tr40k', 'cifar100_w_val')),
+    'cifar100wT': ([3, 32, 32], ('cifar100_w_tr40k', 'cifar100_w_tr40k')),
     'cifar10': ([3, 32, 32], ('cifar10_train', 'cifar10_test')),
     'cifar100': ([3, 32, 32], ('cifar100_train', 'cifar100_test')),
 }
@@ -144,7 +145,13 @@ def solver(seed=0, device=0, lr=0.001, decay=0.001,
            iters=[0], snapshot=10000, base=False, params={}):
     d = {}
     newdef = params.get('new-definition')
+    momenta = ""
     momentum = params.get('momentum', 0.9)
+    if isinstance(momentum, list):
+        for m in momentum:
+            momenta += "momenta: {}\n".format(m)
+        momentum = 0.0
+
     if newdef:
         lr0 = lr * (1 - momentum)
     else:
@@ -153,6 +160,7 @@ def solver(seed=0, device=0, lr=0.001, decay=0.001,
     d['seed'] = seed
     d['lr'] = lr0
     d['momentum'] = momentum
+    d['momenta'] = momenta
     batch = params.get('batch', 100)
     #d['iter'] = (it * 100) // batch
     d['device_id'] = device
@@ -162,7 +170,8 @@ def solver(seed=0, device=0, lr=0.001, decay=0.001,
     d['base_suffix'] = '_base' if base else ''
     d['solver'] = params.get('solver_type', 'SGD')
     # TODO: Read this 10000 from the datasets
-    d['test_iter'] = 100#00 // batch
+    #d['test_iter'] = 100#00 // batch
+    d['test_iter'] = 400#00 // batch
     d['test_interval'] = 1000#00 // batch
     d['display'] = 400#00 // batch
     d['gamma'] = params.get('gamma', 0.1)
@@ -175,12 +184,15 @@ def solver(seed=0, device=0, lr=0.001, decay=0.001,
 
     d['steps'] = steps
     d['iter'] = cur_iter
+    d['momentum_correction'] = params.get('momentum_correction', 1)
     s = Template("""# version: $version
 net: "main.prototxt"
 test_iter: $test_iter
 test_interval: $test_interval
 base_lr: $lr
+momentum_correction: $momentum_correction
 momentum: $momentum
+$momenta
 weight_decay: $decay
 lr_policy: "multistep"
 gamma: $gamma
@@ -424,7 +436,7 @@ layers {
 
 
 PATTERNS = [
-    (re.compile(r'^d-([a-z0-9]+)'), f_data),
+    (re.compile(r'^d-([a-zA-Z0-9-]+)'), f_data),
     (re.compile(r'^p(?:ool)?(\d+)-(\d+)-(\w+)'), f_pool),
     (re.compile(r'^c(?:onv)?(\d+)-(\d+)'), f_conv),
     (re.compile(r'^(?:ip|fc)(\d+)'), f_ip),
