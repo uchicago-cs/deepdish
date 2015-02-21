@@ -36,7 +36,7 @@ Torch installed even though some packages failed. Check that this is the case by
 running `which th` and `which luarocks` - it should point to `~/torch`. If this
 is the case, run `th` and type in:
 
-```
+```lua
 > print(package.path)
 > print(package.cpath)
 ```
@@ -45,7 +45,7 @@ Copy these strings to your `LUA_PATH` and `LUA_CPATH`, respectively. Leave out
 any references to `/usr/local/share`! This might look something like this in
 your `~/.bashrc`:
 
-```
+```bash
 export TORCH_DIR=$HOME/torch
 export LUA_PATH="$TORCH_DIR/install/share/lua/5.1/?.lua;$TORCH_DIR/install/share/lua/5.1/?/init.lua;$TORCH_DIR/install/share/luajit-2.1.0-alpha/?.lua"
 export LUA_CPATH="$TORCH_DIR/install/lib/lua/5.1/?.so"
