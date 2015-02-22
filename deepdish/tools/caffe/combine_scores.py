@@ -15,6 +15,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('scores', nargs='+', type=str)
     parser.add_argument('-o', '--output', default='scores.h5', type=str)
+    parser.add_argument('-n', '--name', type=str)
 
     args = parser.parse_args()
 
@@ -28,7 +29,10 @@ if __name__ == '__main__':
     #scores = []
     for s in args.scores:
         data = dd.io.load(s)
-        name = str(data['name'])
+        if args.name:
+            name = args.name
+        else:
+            name = str(data['name'])
         if name not in scores:
             scores[name] = dict(scores=None, seeds=None)
 
