@@ -50,4 +50,4 @@ if __name__ == '__main__':
         std = np.std(the_rates)
         success = 1 - error
         #print('k={}, rate={:.2f}%', rate)
-        print('Success: {:.2f}% / Error: {:.2f}% (std: {:.2f})'.format(success * 100, error * 100, std))
+        print('Success: {:.2f}% / Error: {:.2f}% (std: {:.2f})'.format(success * 100, error * 100, 100 * std))
