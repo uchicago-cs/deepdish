@@ -38,7 +38,10 @@ def trainer(network, name, iters, seeds, device=0, init='',
             plot_loss=False, solver_params={}):
     d = {}
     d['name'] = name
-    d['seeds'] = seeds - 1
+    #d['seeds'] = seeds - 1
+    seed_offset = solver_params.get('seed_offset', 0)
+    d['seed_start'] = seed_offset
+    d['seed_end'] = seed_offset + seeds - 1
     s = Template("""#!/bin/bash
 #SBATCH --job-name=mk${name}
 #SBATCH --output=backup-log.out
@@ -59,7 +62,7 @@ BIN=$$CAFFE_DIR/build/tools/caffe.bin
 echo "LOG: OUT" > log.out
 echo "LOG: ERR" > log.err
 
-for SEED in {0..$seeds}; do
+for SEED in {$seed_start..$seed_end}; do
 """).substitute(d)
     s  += """    echo "----- seed $SEED --------------------" > >(tee -a log.err) \n"""
     cur_iter = 0
