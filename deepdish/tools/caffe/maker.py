@@ -551,7 +551,9 @@ def main():
     with open(os.path.join(path, 'command'), 'w') as f:
         print("\n    ".join(sys.argv), file=f)
 
-    for seed in range(args.number):
+    seed_offset = params.get('seed_offset', 0)
+
+    for seed in range(seed_offset, seed_offset + args.number):
         print('generate', seed)
         network = generate_network_files(path, args.network,
                                          seed=seed, device=args.device, lr=args.rate,
