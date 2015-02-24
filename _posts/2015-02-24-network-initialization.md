@@ -99,7 +99,9 @@ Xavier initialization. If you are using Caffe, the one take-away of this post
 is to use the following on all your layers:
 
 ```
-weight_filler { type: "xavier" }
+weight_filler { 
+    type: "xavier" 
+}
 ```
 
 ### References
