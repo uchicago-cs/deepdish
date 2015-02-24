@@ -80,22 +80,23 @@ signals, since you would lose expressive power (the bias disappears and in the
 case of sigmoids we would be constrained to the linear regime). They solve this
 by re-introducing two parameters per layer, scaling and bias, added again after
 standardization. The training reportedly becomes about 6 times faster and they
-present state-of-the-art results on ImageNet.
+present state-of-the-art results on ImageNet. However, I'm not certain this is
+the solution that will stick.
 
 I reckon we will see a lot more work on this frontier in the next few years.
 Especially since it also relates to the -- right now wildly popular --
 Recurrent Neural Network (RNN), which connects output signals back as inputs.
-The way you train such network is that you unroll the time axis, treating it as
-an extremely deep feedforward network. This greatly exacerbates the vanishing
-gradient problem. A popular solution, called Long-Term Short Memory (LTSM) is
-to introduce a memory cell, a type of teleport that allows a signal to jump
-ahead many many time steps. This means that the gradient is retained for all
-those time steps and can be propagated back to an earlier time without
-vanishing.
+The way you train such network is that you unroll the time axis, treating the
+result as an extremely deep feedforward network. This greatly exacerbates the
+vanishing gradient problem. A popular solution, called Long-Term Short Memory
+(LTSM), is to introduce memory cells, which are a type of teleport that allows
+a signal to jump ahead many time steps. This means that the gradient is
+retained for all those time steps and can be propagated back to a much earlier
+time without vanishing.
 
-Until those advancements have been made, I will be sticking to Xavier
-initialization. If you are using Caffe, the one take-away of this post is to
-use the following on all your layers:
+This area is far from solved, and until then I think I will be sticking to
+Xavier initialization. If you are using Caffe, the one take-away of this post
+is to use the following on all your layers:
 
 ```
 weight_filler { type: "xavier" }
