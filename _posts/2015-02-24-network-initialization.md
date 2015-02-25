@@ -88,8 +88,8 @@ Especially since it also relates to the -- right now wildly popular --
 Recurrent Neural Network (RNN), which connects output signals back as inputs.
 The way you train such network is that you unroll the time axis, treating the
 result as an extremely deep feedforward network. This greatly exacerbates the
-vanishing gradient problem. A popular solution, called Long-Term Short Memory
-(LTSM), is to introduce memory cells, which are a type of teleport that allows
+vanishing gradient problem. A popular solution, called Long Short-Term Memory
+(LSTM), is to introduce memory cells, which are a type of teleport that allows
 a signal to jump ahead many time steps. This means that the gradient is
 retained for all those time steps and can be propagated back to a much earlier
 time without vanishing.
