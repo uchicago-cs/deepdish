@@ -5,23 +5,31 @@ import numpy as np
 import argparse
 import re
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('caffelog', type=str)
     parser.add_argument('-o', '--output', default='loss.h5', type=str)
+    parser.add_argument('--dataset', default='Test', type=str)
+    parser.add_argument('--id', default=0, type=int)
 
     args = parser.parse_args()
 
-    regex_iter = re.compile(r'Iteration (\d+)')
-    regex_loss = re.compile(r'(\w+) net output #(\d+): (\w+) = ([\d.]+)')
-    #regex_accu = re.compile(r'(\w+) net output #\d+
+    tid = args.id
 
-    infos = [{}]
-    #output_names = OrderedDict()
+    regex_iter = re.compile(r'Iteration (\d+), Testing net \(#(\d+)\)'.format(tid))
+    gr = r'{} net output #(\d+): (\w+) = ([\d.]+)'.format(args.dataset)
+    regex_loss = re.compile(gr)
+
+    infos = []
 
     cur_info = 0
+    cur_id = 0
 
     with open(args.caffelog) as f:
+        infos = [
+            [[], [], []]
+        ]
         info = infos[cur_info]
         cur_iter = None
         cur_accuracy = None
@@ -29,67 +37,51 @@ def main():
             m = regex_iter.search(line)
             if m:
                 iter = int(m.group(1))
+                cur_id = int(m.group(2))
 
                 if iter < cur_iter:
                     cur_info += 1
-                    infos.append({})
+                    infos.append([[], [], []])
                     info = infos[cur_info]
 
-                #print('Iteration: {}'.format(m.group(1)))
                 cur_iter = iter
                 continue
 
             m = regex_loss.search(line)
-            if m:
-                dataset = m.group(1)
-                output = int(m.group(2))
-                loss = float(m.group(4))
-                #print('LOSS: {} {}'.format(m.group(1), m.group(2)))
-                if dataset not in info:
-                    info[dataset] = [[], [], []]
+            if m and cur_id == tid:
+                assert cur_iter is not None
+                output = int(m.group(1))
+                loss = float(m.group(3))
 
                 if output == 0:
-                    info[dataset][0].append(cur_iter)
-                info[dataset][1+output].append(loss)
-                if dataset == 'Test' and output == 0:
+                    info[0].append(cur_iter)
+                info[1+output].append(loss)
+                if output == 0:
                     print(cur_iter, loss)
 
-                #output_names[m.group(3)] = None
                 continue
-
-    #import pdb; pdb.set_trace()
+        infos.append(info)
 
     iterations = []
     rates = []
     losses = []
-    for i in range(3):
-        for info in infos:
-            ii = info['Test']
-            iterations.append(ii[0])
-            rates.append(ii[1])
+    for ii in infos:
+        iterations.append(ii[0])
+        rates.append(ii[1])
+        if ii[2]:
             losses.append(ii[2])
 
-    dd.io.save(args.output, dict(iterations=np.asarray(iterations),
-                                 rates=np.asarray(rates),
-                                 losses=np.asarray(losses)))
+    if not losses:
+        raise Exception("Empty stuff")
 
-    #output_names = list(output_names.keys())
+    d = {}
+    d['iterations'] = np.asarray(iterations)
+    d['rates'] = np.asarray(rates)
+    if losses:
+        d['losses'] = np.asarray(losses)
 
-    if 0:
-        new_infos = []
-        for info in infos:
-            new_info = {}
-            for key in info.keys():
-                #if key != 'Train':
-                    #info[key] = np.asarray(info[key])
-                #else:
-                    #del info[key]
+    dd.io.save(args.output, d)
 
-                if key == 'Test':
-                    new_info[key] = np.asarray(info[key])
-            new_infos.append(new_info)
-
-        dd.io.save(args.output, new_infos)
 
 if __name__ == '__main__':
     main()

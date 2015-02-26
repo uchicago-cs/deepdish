@@ -8,7 +8,7 @@ from string import Template
 import shutil
 import json
 
-__version__ = 6
+__version__ = 7
 
 DATA_DIR = os.environ['MAKER_DATA_DIR']
 
@@ -16,11 +16,10 @@ DATA_DIR = os.environ['MAKER_DATA_DIR']
 # a corresponding .txt file (same name before the extension) with the absolute path
 # to the hdf5 file.
 DATASETS = {
-    'cifar10w40': ([3, 32, 32], ('cifar10_w_tr40k', 'cifar10_w_val')),
-    'cifar100w40': ([3, 32, 32], ('cifar100_w_tr40k', 'cifar100_w_val')),
-    'cifar100wT': ([3, 32, 32], ('cifar100_w_tr40k', 'cifar100_w_tr40k')),
-    'cifar10': ([3, 32, 32], ('cifar10_train', 'cifar10_test')),
-    'cifar100': ([3, 32, 32], ('cifar100_train', 'cifar100_test')),
+    'cifar10w40': ([3, 32, 32], ('cifar10_w_tr40k', 'cifar10_w_val'), (40000, 10000)),
+    'cifar100w40': ([3, 32, 32], ('cifar100_w_tr40k', 'cifar100_w_val'), (40000, 10000)),
+    'cifar10': ([3, 32, 32], ('cifar10_train', 'cifar10_test'), (50000, 10000)),
+    'cifar100': ([3, 32, 32], ('cifar100_train', 'cifar100_test'), (50000, 10000)),
 }
 
 
@@ -81,14 +80,17 @@ for SEED in {$seed_start..$seed_end}; do
                                 initstyle=init)
 
     #cur_iter = 0
+    s += "    date +%s > start.time\n"
     s += "    $BIN train --solver=solver{i}_s${{SEED}}.prototxt ".format(i=1)
     if init:
         s += """ --snapshot={fn}.solverstate""".format(fn=caffemodels[0])
     s += " > >(tee -a log.out) 2> >(tee -a log.err >&2) \n"
+    s += "    date +%s > end.time\n"
 
 
-    # Test model (TODO: this is an ugly and brittle line)
-    _, testfile = DATASETS[network['layers']['data']['args'][0]][1]
+    # Test model
+    dataset = solver_params['dataset']
+    _, testfile = DATASETS[dataset][1]
 
     base_args = "{data} {bare} {caffemodel} -d {device} -n {name} -s {seed}".format(
             data=os.path.join(DATA_DIR, testfile + '.h5'),
@@ -129,13 +131,17 @@ for SEED in {$seed_start..$seed_end}; do
 
             #ext_args = 
 
+    if plot_loss:
+        s += "    python -m deepdish.tools.caffe.parse_log log.err -o test-loss.h5 --id 0\n"
+        s += "    python -m deepdish.tools.caffe.parse_log log.err -o train-loss.h5 --id 1\n"
+        s += "    python -m deepdish.tools.caffe.plot_loss test-loss.h5 train-loss.h5 -o log-loss\n"
+
+    # Print out elapsed time
+    s += "    python -m deepdish.tools.caffe.print_timediff start.time end.time\n"
+
     if test_scores:
         ext_args = "-o scores/score_s{}.h5".format('${SEED}')
         s += "    python -m deepdish.tools.caffe.tester {} {}\n".format(base_args, ext_args)
-
-    if plot_loss:
-        s += "    python -m deepdish.tools.caffe.parse_log log.err -o loss.h5\n"
-        s += "    python -m deepdish.tools.caffe.plot_loss loss.h5 -o log-loss\n"
 
 
     cur_iter += it
@@ -146,6 +152,7 @@ for SEED in {$seed_start..$seed_end}; do
 
 def solver(seed=0, device=0, lr=0.001, decay=0.001, 
            iters=[0], snapshot=10000, base=False, params={}):
+    dim, files, sizes = DATASETS[params['dataset']]
     d = {}
     newdef = params.get('new-definition')
     momenta = ""
@@ -172,11 +179,10 @@ def solver(seed=0, device=0, lr=0.001, decay=0.001,
     d['snapshot'] = min(snapshot, params.get('snapshot', snapshot))
     d['base_suffix'] = '_base' if base else ''
     d['solver'] = params.get('solver_type', 'SGD')
-    # TODO: Read this 10000 from the datasets
-    #d['test_iter'] = 100#00 // batch
-    d['test_iter'] = 100#00 // batch
-    d['test_interval'] = 1000#00 // batch
-    d['display'] = 400#00 // batch
+    d['train_iter'] = sizes[0] // batch
+    d['test_iter'] = sizes[1] // batch
+    d['test_interval'] = params.get('test_interval', 1000)
+    d['display'] = params.get('display', 400)
     d['gamma'] = params.get('gamma', 0.1)
 
     steps = ""
@@ -191,6 +197,9 @@ def solver(seed=0, device=0, lr=0.001, decay=0.001,
     s = Template("""# version: $version
 net: "main.prototxt"
 test_iter: $test_iter
+test_state: { stage: "test-on-test-set" }
+test_iter: $train_iter
+test_state: { stage: "test-on-train-set" }
 test_interval: $test_interval
 base_lr: $lr
 momentum_correction: $momentum_correction
@@ -211,8 +220,8 @@ device_id: ${device_id}
 """).substitute(d)
     return s
 
-def f_data(last_layer, layer_no, netsize, dataset, params={}, solver_params={}):
-    dim, files = DATASETS[dataset]
+def f_data(last_layer, layer_no, netsize, params={}, solver_params={}):
+    dim, files, _ = DATASETS[solver_params['dataset']]
     train = os.path.join(DATA_DIR, files[0])
     test = os.path.join(DATA_DIR, files[1])
     s = Template("""# version: $version
@@ -222,7 +231,6 @@ layers {
   type: HDF5_DATA
   top: "data"
   top: "label"
-  #top: "sample_weight"
   hdf5_data_param {
     source: "$train.txt"
     batch_size: $batch
@@ -235,12 +243,29 @@ layers {
   type: HDF5_DATA
   top: "data"
   top: "label"
-  #top: "sample_weight"
   hdf5_data_param {
     source: "$test.txt"
     batch_size: $batch
   }
-  include: { phase: TEST }
+  include: {
+    phase: TEST
+    stage: "test-on-test-set"
+  }
+}
+
+layers {
+  name: "main"
+  type: HDF5_DATA
+  top: "data"
+  top: "label"
+  hdf5_data_param {
+    source: "$train.txt"
+    batch_size: $batch
+  }
+  include: {
+    phase: TEST 
+    stage: "test-on-train-set"
+  }
 }
 """).substitute(dict(train=train, test=test,
                      batch=solver_params.get('batch', 100),
@@ -257,18 +282,22 @@ input_dim: $dim2
 
     return 'data', 'data', 0, tuple(dim), s, s_bare
 
-def f_conv(last_layer, layer_no, netsize, size, num, params={}, solver_params={}):
-    name = 'conv{}'.format(layer_no+1)
-    pad = int(size) // 2
+
+def _filler_string(params, solver_params={}):
     init_method = params.get('initialization', solver_params.get('initialization'))
 
     if init_method == 'xavier':
-        weight_filler = """
-          type: "xavier" """
+        weight_filler = """type: "xavier" """
     else:
-        weight_filler = """
-          type: "gaussian"
-          std: {std}""".format(std=params.get('std', solver_params.get('std', 0.01)))
+        weight_filler = """type: "gaussian"
+      std: {std}""".format(std=params.get('std', solver_params.get('std', 0.01)))
+    return weight_filler
+
+
+def f_conv(last_layer, layer_no, netsize, size, num, params={}, solver_params={}):
+    name = 'conv{}'.format(layer_no+1)
+    pad = int(size) // 2
+    weight_filler = _filler_string(params, solver_params)
 
     s = Template("""
 layers {
@@ -286,7 +315,7 @@ layers {
     kernel_size: $size
     stride: 1
     weight_filler {
-        $weight_filler
+      $weight_filler
     }
     bias_filler {
       type: "constant"
@@ -377,6 +406,14 @@ layers {
 
 def f_ip(last_layer, layer_no, netsize, num, params={}, solver_params={}):
     name = 'ip{}'.format(layer_no+1)
+    d = {}
+    d['name'] = name
+    d['last_name'] = last_layer
+    d['num'] = num
+    d['decay'] = params.get('decay', 1)
+    d['lr'] = params.get('lr', 1)
+    d['bias_lr'] = params.get('bias_lr', params.get('lr', 2))
+    d['weight_filler'] = _filler_string(params, solver_params)
     s = Template("""
 layers {
   name: "$name"
@@ -390,18 +427,14 @@ layers {
   inner_product_param {
     num_output: $num
     weight_filler {
-      type: "gaussian"
-      std: $std
+      $weight_filler
     }
     bias_filler {
       type: "constant"
     }
   }
 }
-    """).substitute(dict(name=name, last_name=last_layer, num=num,
-                         decay=params.get('decay', 1),
-                         std=params.get('std', 0.01), lr=params.get('lr', 1),
-                         bias_lr=params.get('bias_lr', params.get('lr', 2))))
+    """).substitute(d)
     new_netsize = (int(num), 1, 1)
     return name, name, 1, new_netsize, s, s
 
@@ -421,7 +454,6 @@ layers {
   type: SOFTMAX_LOSS
   bottom: "$last_name"
   bottom: "label"
-  #bottom: "sample_weight"
   top: "loss"
 }
     """).substitute(dict(last_name=last_layer))
@@ -439,7 +471,7 @@ layers {
 
 
 PATTERNS = [
-    (re.compile(r'^d-([a-zA-Z0-9-]+)'), f_data),
+    (re.compile(r'^data'), f_data),
     (re.compile(r'^p(?:ool)?(\d+)-(\d+)-(\w+)'), f_pool),
     (re.compile(r'^c(?:onv)?(\d+)-(\d+)'), f_conv),
     (re.compile(r'^(?:ip|fc)(\d+)'), f_ip),
@@ -449,7 +481,7 @@ PATTERNS = [
     (re.compile(r'^softmax'), f_softmax),
 ]
 
-def generate_network_files(path, parts, seed=0, device=0, lr=0.001, 
+def generate_network_files(path, parts, seed=0, device=0, lr=0.001,
                            decay=0.001, iters=[10000], solver_params={}):
     ret = {}
     ret['main'] = []
@@ -470,7 +502,9 @@ def generate_network_files(path, parts, seed=0, device=0, lr=0.001,
         for pattern, func in PATTERNS:
             m = pattern.match(part)
             if m:
-                name, last_name, delta, cur_size, s, s_bare = func(last_layer, cur_layer, cur_size, *m.groups(), params=params, solver_params=solver_params)
+                name, last_name, delta, cur_size, s, s_bare = func(
+                        last_layer, cur_layer, cur_size, *m.groups(),
+                        params=params, solver_params=solver_params)
                 if seed == 0:
                     if last_size is None or last_size != cur_size:
                         cs = '{!s:15s} {}'.format(cur_size, np.prod(cur_size))
@@ -526,8 +560,10 @@ def main():
     parser.add_argument('-c', '--caption', default='A', type=str)
     parser.add_argument('-l', '--decay', default=0.001, type=float)
     parser.add_argument('-r', '--rate', default=0.001, type=float)
+    parser.add_argument('-x', '--dataset', default='', type=str, required=True)
     parser.add_argument('--init', type=str)
-    parser.add_argument('--iter', nargs='+', default=[10000], type=int)
+    parser.add_argument('--iter', nargs='+', type=int)
+    parser.add_argument('--epochs', nargs='+', type=int)
     parser.add_argument('network', nargs='+', type=str)
     parser.add_argument('-p', '--params', default='{}', type=str)
     parser.add_argument('--calc-scores', action='store_true')
@@ -546,6 +582,16 @@ def main():
         os.mkdir(os.path.join(path, d))
 
     params = json.loads(args.params.replace("'", '"'))
+    params['dataset'] = args.dataset
+
+    _, _, sizes = DATASETS[params['dataset']]
+    params['epoch_size'] = sizes[0] // params.get('batch', 100)
+    print('epochs', args.epochs)
+    print('iter', args.iter)
+
+    if args.epochs:
+        assert not args.iter
+        args.iter = [epoch * params['epoch_size'] for epoch in args.epochs]
 
     # Write the command line that was used to file
     with open(os.path.join(path, 'command'), 'w') as f:
