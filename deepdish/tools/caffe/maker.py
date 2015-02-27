@@ -85,7 +85,7 @@ for SEED in {$seed_start..$seed_end}; do
     if init:
         s += """ --snapshot={fn}.solverstate""".format(fn=caffemodels[0])
     s += " > >(tee -a log.out) 2> >(tee -a log.err >&2) \n"
-    s += "    date +%s > end.time\n"
+    s += "    date +%s > end.time > >(tee time.txt)\n"
 
 
     # Test model
@@ -162,6 +162,12 @@ def solver(seed=0, device=0, lr=0.001, decay=0.001,
             momenta += "momenta: {}\n".format(m)
         momentum = 0.0
 
+    lrs = ""
+    learning_rate = params.get('learning_rate', [])
+    if isinstance(learning_rate, list):
+        for m in learning_rate:
+            lrs += "stepsize_lr: {}\n".format(m)
+
     if newdef:
         lr0 = lr * (1 - momentum)
     else:
@@ -171,6 +177,7 @@ def solver(seed=0, device=0, lr=0.001, decay=0.001,
     d['lr'] = lr0
     d['momentum'] = momentum
     d['momenta'] = momenta
+    d['lrs'] = lrs
     batch = params.get('batch', 100)
     #d['iter'] = (it * 100) // batch
     d['device_id'] = device
@@ -202,6 +209,7 @@ test_iter: $train_iter
 test_state: { stage: "test-on-train-set" }
 test_interval: $test_interval
 base_lr: $lr
+$lrs
 momentum_correction: $momentum_correction
 momentum: $momentum
 $momenta
@@ -572,7 +580,7 @@ def main():
 
     args = parser.parse_args()
 
-    path = 'maker{}'.format(args.caption)
+    path = 'maker-{}'.format(args.caption)
 
     # Create folder
     if os.path.isdir(path):
