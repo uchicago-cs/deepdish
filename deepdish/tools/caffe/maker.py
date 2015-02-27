@@ -85,7 +85,7 @@ for SEED in {$seed_start..$seed_end}; do
     if init:
         s += """ --snapshot={fn}.solverstate""".format(fn=caffemodels[0])
     s += " > >(tee -a log.out) 2> >(tee -a log.err >&2) \n"
-    s += "    date +%s > end.time > >(tee time.txt)\n"
+    s += "    date +%s > end.time\n"
 
 
     # Test model
@@ -137,7 +137,7 @@ for SEED in {$seed_start..$seed_end}; do
         s += "    python -m deepdish.tools.caffe.plot_loss test-loss.h5 train-loss.h5 -o log-loss\n"
 
     # Print out elapsed time
-    s += "    python -m deepdish.tools.caffe.print_timediff start.time end.time\n"
+    s += "    python -m deepdish.tools.caffe.print_timediff start.time end.time > >(tee time.txt)\n"
 
     if test_scores:
         ext_args = "-o scores/score_s{}.h5".format('${SEED}')
