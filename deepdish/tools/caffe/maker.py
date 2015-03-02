@@ -41,17 +41,15 @@ def trainer(network, name, iters, seeds, device=0, init='',
     seed_offset = solver_params.get('seed_offset', 0)
     d['seed_start'] = seed_offset
     d['seed_end'] = seed_offset + seeds - 1
+    slurm = ''
+    try:
+        with open(os.path.expanduser('~/.slurm-preamble')) as f:
+            slurm = Template(f.read()).substitute(dict(name=name))
+    except IOError:
+        pass
+    d['slurm'] = slurm
     s = Template("""#!/bin/bash
-#SBATCH --job-name=mk${name}
-#SBATCH --output=backup-log.out
-#SBATCH --error=backup-log.err
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --account=pi-yaliamit
-#SBATCH --mail-type=END
-#SBATCH --mail-user=larsson
-#SBATCH --partition=gpu
-#SBATCH --gres=gpu:1
+$slurm
 
 set -euo pipefail
 IFS=$$'\\n\\t'
