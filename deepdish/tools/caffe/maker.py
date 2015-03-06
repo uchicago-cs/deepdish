@@ -17,7 +17,9 @@ DATA_DIR = os.environ['MAKER_DATA_DIR']
 # to the hdf5 file.
 DATASETS = {
     'cifar10w40': ([3, 32, 32], ('cifar10_w_tr40k', 'cifar10_w_val'), (40000, 10000)),
+    'cifar10w': ([3, 32, 32], ('cifar10_w_train', 'cifar10_w_test'), (50000, 10000)),
     'cifar100w40': ([3, 32, 32], ('cifar100_w_tr40k', 'cifar100_w_val'), (40000, 10000)),
+    'cifar100w': ([3, 32, 32], ('cifar100_w_train', 'cifar100_w_test'), (50000, 10000)),
     'cifar10': ([3, 32, 32], ('cifar10_train', 'cifar10_test'), (50000, 10000)),
     'cifar100': ([3, 32, 32], ('cifar100_train', 'cifar100_test'), (50000, 10000)),
 }
@@ -312,7 +314,7 @@ layers {
   bottom: "$last_name"
   top: "$name"
   weight_decay: $decay
-  weight_decay: 0
+  weight_decay: $bias_decay
   blobs_lr: $lr
   blobs_lr: $bias_lr
   convolution_param {
@@ -330,7 +332,7 @@ layers {
 }
     """).substitute(dict(name=name, last_name=last_layer, size=size, num=num, pad=pad,
                          lr=params.get('lr', 1), weight_filler=weight_filler,
-                         decay=params.get('decay', 1),
+                         decay=params.get('decay', 1), bias_decay=params.get('bias_decay', 0),
                          bias_lr=params.get('bias_lr', params.get('lr', 2))))
 
     new_netsize = (int(num),) + tuple([(ns + 2*pad) - (int(size) - 1) for ns in netsize[1:]])
@@ -355,7 +357,7 @@ layers {
 }
     """).substitute(dict(name=name, last_name=last_layer, size=size, stride=stride, op=op))
 
-    new_netsize = (netsize[0],) + tuple([(ns // int(stride)) for ns in netsize[1:]])
+    new_netsize = (netsize[0],) + tuple([int(np.ceil(ns / stride)) for ns in netsize[1:]])
 
     return name, name, 0, new_netsize, s, s
 
@@ -366,6 +368,19 @@ def f_relu(last_layer, layer_no, netsize, params={}, solver_params=None):
 layers {
   name: "$name"
   type: RELU
+  bottom: "$last_name"
+  top: "$last_name"
+}
+    """).substitute(dict(name=name, last_name=last_layer))
+    return name, last_layer, 0, netsize, s, s
+
+
+def f_sigmoid(last_layer, layer_no, netsize, params={}, solver_params=None):
+    name = 'sigmoid{}'.format(layer_no)
+    s = Template("""
+layers {
+  name: "$name"
+  type: SIGMOID
   bottom: "$last_name"
   top: "$last_name"
 }
@@ -482,6 +497,7 @@ PATTERNS = [
     (re.compile(r'^c(?:onv)?(\d+)-(\d+)'), f_conv),
     (re.compile(r'^(?:ip|fc)(\d+)'), f_ip),
     (re.compile(r'^relu'), f_relu),
+    (re.compile(r'^sigmoid'), f_sigmoid),
     (re.compile(r'^dropout([\d.]+)'), f_dropout),
     (re.compile(r'^lrn(?:(\d+))?'), f_lrn),
     (re.compile(r'^softmax'), f_softmax),
