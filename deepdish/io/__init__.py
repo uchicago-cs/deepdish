@@ -7,9 +7,9 @@ from .cifar import load_cifar_10
 try:
     import tables
     _pytables_ok = True
+    del tables
 except ImportError:
     _pytables_ok = False
-del tables
 
 if _pytables_ok:
     from .hdf5io import load, save
