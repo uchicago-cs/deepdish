@@ -79,7 +79,7 @@ def crop_to_bounding_box(im, bb):
     return im[bb[0]:bb[2], bb[1]:bb[3]]
 
 
-def load(path, asfloat=True):
+def load(path, dtype=np.float64):
     """
     Loads an image from file.
 
@@ -87,16 +87,20 @@ def load(path, asfloat=True):
     ----------
     path : str
         Path to image file.
-    asfloat : bool
-        Defaults to True, which means the image will be returned as a float
-        with values between 0 and 1.
+    dtype : np.dtype
+        Defaults to ``np.float64``, which means the image will be returned as a
+        float with values between 0 and 1. If ``np.uint8`` is specified, the
+        values will be between 0 and 255 and no conversion cost will be
+        incurred.
     """
     import skimage.io
     im = skimage.io.imread(path)
-    if asfloat:
-        return im.astype(np.float64) / 255
-    else:
+    if dtype == np.uint8:
         return im
+    elif dtype in {np.float16, np.float32, np.float64}:
+        return im.astype(dtype) / 255
+    else:
+        raise ValueError('Unsupported dtype')
 
 
 def save(path, im):
