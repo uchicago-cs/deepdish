@@ -9,14 +9,19 @@ from .core import (set_verbose,
                    memsize,
                    span,
                    apply_once,
+                   Timer,
                    )
 
-
-# Lazy load these?
 import deepdish.io
 import deepdish.util
 import deepdish.plot
 from . import image
+
+try:
+    import mpi4py
+    from . import parallel
+except ImportError:
+    from . import parallel_fallback as parallel
 
 __all__ = ['deepdish',
            'set_verbose',
@@ -28,6 +33,11 @@ __all__ = ['deepdish',
            'span',
            'apply_once',
            'io',
+           'util',
+           'plot',
+           'image',
+           'parallel',
+           'Timer',
            ]
 
 VERSION = (0, 0, 0)
