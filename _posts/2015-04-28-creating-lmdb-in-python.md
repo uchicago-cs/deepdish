@@ -8,7 +8,6 @@ LMDB is the database of choice when using [Caffe](http://caffe.berkeleyvision.or
 Reasons to use HDF5:
 
 * Simple format to read/write.
-* Can run multiple experiments on separate instances of Caffe on the same dataset (the LMDB has a locking mechanism disallowing this).
 
 Reasons to use LMDB:
 
