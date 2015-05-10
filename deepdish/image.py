@@ -29,6 +29,24 @@ def resize_by_factor(im, factor):
         return im
 
 
+def resize(im, shape=None, max_side=None, min_side=None):
+    if min_side is not None:
+        min = np.min(im.shape[:2])
+        factor = min_side / min
+        return resize_by_factor(im, factor)
+
+    elif max_side is not None:
+        max = np.max(im.shape[:2])
+        factor = max_side / max
+        return resize_by_factor(im, factor)
+
+    else:
+        factor_y = shape[0] / im.shape[0]
+        factor_x = shape[1] / im.shape[1]
+        assert np.fabs(factor_x - factor_y) < 0.5
+        return resize_by_factor(im, factor_x)
+
+
 def asgray(im):
     """
     Takes an image and returns its grayscale version by averaging the color
