@@ -5,6 +5,7 @@ _is_silent = False
 import time
 import warnings
 import numpy as np
+import itertools as itr
 import sys
 from contextlib import contextmanager
 warnings.simplefilter("ignore", np.ComplexWarning)
@@ -196,6 +197,40 @@ def apply_once(func, arr, axes, keepdims=True):
         return collapsed
 
 
+def tupled_argmax(a):
+    """
+    Argmax that returns an index tuple. Note that `numpy.argmax` will return a
+    scalar index as if you had flattened the array.
+
+    Parameters
+    ----------
+    a : array_like
+        Input array.
+
+    Returns
+    -------
+    index : tuple
+        Tuple of index, even if `a` is one-dimensional. Note that this can
+        immediately be used to index `a` as in ``a[index]``.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import deepdish as dd
+    >>> a = np.arange(6).reshape(2,3)
+    >>> a
+    array([[0, 1, 2],
+           [3, 4, 5]])
+    >>> dd.tupled_argmax(a)
+    (1, 2)
+    """
+    return np.unravel_index(np.argmax(a), np.shape(a))
+
+
+def multi_range(*args):
+    return itr.product(*[range(a) for a in args])
+
+
 @contextmanager
 def Timer(name='(no name)', file=sys.stdout):
     """
@@ -207,7 +242,7 @@ def Timer(name='(no name)', file=sys.stdout):
     ----------
     name : str
         Name of the timing block, to identify it.
-    file : file  handler
+    file : file handler
         Which file handler to print the results to. Default is standard output.
         If a numpy array and size 1 is given, the time in seconds will be
         stored inside it.
