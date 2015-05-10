@@ -18,4 +18,4 @@ else:
         raise ImportError("You need PyTables for this function")
     load = save = _f
 
-__all__ = ['load_mnist', 'load_small_norb', 'load_casia', 'load_cifar_10']
+__all__ = ['load', 'save', 'load_mnist', 'load_small_norb', 'load_casia', 'load_cifar_10']
