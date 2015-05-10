@@ -28,6 +28,11 @@ def cython_extension(modpath, mp=False):
                      extra_compile_args=extra_compile_args,
                      extra_link_args=extra_link_args)
 
+
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
+
+
 setup(
     name='deepdish',
     cmdclass={'build_ext': build_ext},
@@ -36,6 +41,7 @@ setup(
     description="Deep Learning experiments from University of Chicago.",
     maintainer='Gustav Larsson',
     maintainer_email='gustav.m.larsson@gmail.com',
+    install_requires=required,
     packages=[
         'deepdish',
         'deepdish.io',
