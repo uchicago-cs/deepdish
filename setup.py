@@ -31,7 +31,7 @@ def cython_extension(modpath, mp=False):
 setup(
     name='deepdish',
     cmdclass={'build_ext': build_ext},
-    version='0.1.1',
+    version='0.1.2',
     url="https://github.com/uchicago-cs/deepdish",
     description="Deep Learning experiments from University of Chicago.",
     maintainer='Gustav Larsson',
