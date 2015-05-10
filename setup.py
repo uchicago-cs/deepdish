@@ -36,7 +36,7 @@ with open('requirements.txt') as f:
 setup(
     name='deepdish',
     cmdclass={'build_ext': build_ext},
-    version='0.1.3',
+    version='0.1.4',
     url="https://github.com/uchicago-cs/deepdish",
     description="Deep Learning experiments from University of Chicago.",
     maintainer='Gustav Larsson',
