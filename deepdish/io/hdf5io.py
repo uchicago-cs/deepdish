@@ -70,6 +70,7 @@ def _save_level(handler, group, level, name=None, compress=True):
 
     elif isinstance(level, np.ndarray):
         atom = tables.Atom.from_dtype(level.dtype)
+        assert np.min(level.shape) > 0, "deepdish.io.save does not support saving numpy arrays with a zero-length axis"
         if compress:
             node = handler.create_carray(group, name, atom=atom,
                                          shape=level.shape,
