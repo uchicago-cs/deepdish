@@ -9,7 +9,7 @@ import os.path
 from Cython.Distutils import build_ext
 
 CLASSIFIERS = """\
-Development Status :: 4 - Beta
+Development Status :: 3 - Alpha
 Intended Audience :: Science/Research
 License :: OSI Approved :: BSD License
 Programming Language :: Python
@@ -31,7 +31,7 @@ def cython_extension(modpath, mp=False):
 setup(
     name='deepdish',
     cmdclass={'build_ext': build_ext},
-    version='0.9.1',
+    version='0.1.0',
     url="https://github.com/uchicago-cs/deepdish",
     description="Deep Learning experiments from University of Chicago.",
     maintainer='Gustav Larsson',
@@ -41,6 +41,7 @@ setup(
         'deepdish.io',
         'deepdish.util',
         'deepdish.plot',
+        'deepdish.tools',
     ],
     ext_modules=[
         cython_extension("deepdish.plot.resample"),
