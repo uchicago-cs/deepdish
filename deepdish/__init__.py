@@ -44,8 +44,8 @@ __all__ = ['deepdish',
            'Timer',
            ]
 
-VERSION = (0, 0, 0)
-ISRELEASED = False
+VERSION = (0, 1, 0)
+ISRELEASED = True
 __version__ = '{0}.{1}.{2}'.format(*VERSION)
 if not ISRELEASED:
     __version__ += '.dev'
