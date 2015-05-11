@@ -10,6 +10,12 @@ _g_available_workers = None
 _g_initialized = False
 
 
+def rank():
+    from mpi4py import MPI
+    rank = MPI.COMM_WORLD.Get_rank()
+    return rank
+
+
 def kill_workers():
     from mpi4py import MPI
     all_workers = range(1, MPI.COMM_WORLD.Get_size())

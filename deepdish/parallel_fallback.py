@@ -12,5 +12,9 @@ starmap_unordered = itr.starmap
 starmap = itr.starmap
 
 
+def rank():
+    return 0
+
+
 def main(name=None):
     return name == '__main__'
