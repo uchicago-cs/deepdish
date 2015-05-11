@@ -235,7 +235,7 @@ def load(path, unpack=True):
         if '_top' in data:
             data = data['_top']
         elif unpack:
-            data = data.values()[0]
+            data = next(iter(data.values()))
 
     h5file.close()
     return data
