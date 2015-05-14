@@ -48,7 +48,7 @@ for i in range(N):
 
     with env.begin(write=True) as txn:
         # txn is a Transaction object
-        # The encode is only essential in Python 3, since str_id can't be unicode
+        # The encode is only essential in Python 3
         txn.put(str_id.encode('ascii'), datum.SerializeToString())
 ```
 
