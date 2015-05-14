@@ -48,7 +48,8 @@ for i in range(N):
 
     with env.begin(write=True) as txn:
         # txn is a Transaction object
-        txn.put(str_id, datum.SerializeToString())
+        # The encode is only essential in Python 3, since str_id can't be unicode
+        txn.put(str_id.encode('ascii'), datum.SerializeToString())
 ```
 
 You can also open up and inspect an extisting LMDB database from Python:
