@@ -24,7 +24,7 @@ activations will saturate and become meaningless, with gradients approaching 0.
 ![Activation functions]({{ site.baseurl }}/public/images/activation-functions.svg)
 
 Let us consider one layer and forget about the bias. Note that the following analysis
-and conclussion is taken from Glorot and Bengio[1]. Consider a weight matrix
+and conclusion is taken from Glorot and Bengio[1]. Consider a weight matrix
 \\( W \in \mathbf{R}^{m \times n} \\), where each element was drawn from an IID
 Guassian with variance \\( \mathrm{Var}(W) \\). Note that we are a bit abusive with notation 
 letting \\( W \\) denote both a matrix and a univariate random variable. We
