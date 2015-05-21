@@ -98,7 +98,7 @@ that an appropriate value was \\( \alpha = 0.9 \\) after asking Hinton about it.
 One of the main settings for where this is useful is in the context of
 speech recognition.  Here an ensemble phone recognizer may achieve a low phone
 error rate, but it may be too slow to process user input on the fly.  A simpler
-model replicated the ensemble method, however, can bring some of the
+model replicating the ensemble method, however, can bring some of the
 classification gains of large-scale ensemble deep network models to practical
 speech systems.
 
