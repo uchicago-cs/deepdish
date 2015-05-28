@@ -36,8 +36,6 @@ def _init():
 
 
 def imap_unordered(f, workloads, star=False):
-    fb.imap_unordered.__doc__
-
     global _g_available_workers, _g_initialized
 
     from mpi4py import MPI
