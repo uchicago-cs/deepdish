@@ -38,6 +38,7 @@ args = dict(
     packages=[
         'deepdish',
         'deepdish.parallel',
+        'deepdish.plot',
         'deepdish.io',
         'deepdish.util',
         'deepdish.tools',
