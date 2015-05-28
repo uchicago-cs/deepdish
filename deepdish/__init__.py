@@ -39,8 +39,8 @@ __all__ = ['deepdish',
            'Timer',
            ]
 
-VERSION = (0, 1, 4)
-ISRELEASED = True
+VERSION = (0, 1, 5)
+ISRELEASED = False
 __version__ = '{0}.{1}.{2}'.format(*VERSION)
 if not ISRELEASED:
     __version__ += '.git'
