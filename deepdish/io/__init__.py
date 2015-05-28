@@ -1,3 +1,25 @@
+"""
+Reading and writing to file.
+
+The main features of this package is `deepdish.io.save` and `deepdish.io.load`.
+They can save most Python data structures into an HDF5 file.
+
+>>> import deepdish as dd
+>>> d = {'foo': np.arange(10), 'bar': np.ones((5, 4, 3))}
+>>> dd.io.save('test.h5', d)
+
+It will try its hardest to save it in a native way to HDF5::
+
+    $ h5ls test.h5
+    bar                      Dataset {5, 4, 3}
+    foo                      Dataset {10}
+
+We can also reconstruct the dictionary from file:
+
+>>> d = dd.io.load('test.h5')
+
+See the `deepdish.io.save` for what data structures it supports.
+"""
 from __future__ import division, print_function, absolute_import
 from .mnist import load_mnist
 from .norb import load_small_norb

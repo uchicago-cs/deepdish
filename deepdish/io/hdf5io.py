@@ -173,7 +173,7 @@ def save(path, data, compress=True):
         Data to be saved. This can be anything from a Numpy array, a string, an
         object, or a dictionary containing all of them including more
         dictionaries.
-    compress : boolean
+    compress : bool
         Turn off data compression.
 
     See also

@@ -26,14 +26,14 @@ class ColorImageGrid:
     Parameters
     ----------
     data : ndarray, ndim in [3, 4, 5]
-        The last two axes should be spatial dimensions of an intensity patch.
-        The rest are used to index them. If `ndim` is 2, then a single image is
-        shown. If `ndim` is 3, then `rows` and `cols` will determine its
-        layout. If `ndim` is 4, then `rows` and `cols` will be ignored and the
-        grid will be layed out according to its first to axes instead.  If data
-        is set to None, then an empty image grid will be initialized. In this
-        case, rows and cols are both required.
-    rows, cols : int or None
+        The last three axes should be spatial dimensions and a color channel.
+        The rest are used to index them. If `ndim` is 3, then a single image is
+        shown. If `ndim` is 4, then `rows` and `cols` will determine its
+        layout. If `ndim` is 5, then `rows` and `cols` will be ignored and the
+        grid will be layed out according to its first two axes instead.  If
+        data is set to None, then an empty image grid will be initialized. In
+        this case, rows and cols are both required.
+    rows/cols : int or None
         The number of rows and columns for the grid. If both are None, the
         minimal square grid that holds all images will be used. If one is
         specified, the other will adapt to hold all images. If both are
@@ -48,6 +48,15 @@ class ColorImageGrid:
     border_width :
         Border with in pixels. If you rescale the image, the border will be
         rescaled with it.
+    cmap/vmin/vmax/vsym :
+        See `ImageGrid.set_image`.
+    global_bounds : bool
+        If this is set to True and either `vmin` or `vmax` is not
+        specified, it will infer it globally for the data. If `vsym` is
+        True, the global bounds will be symmetric around zero. If it is set
+        to False, it determines range per image, which would be the
+        equivalent of calling `set_image` manually with `vmin`, `vmax` and
+        `vsym` set the same.
     """
     def __init__(self, data=None, rows=None, cols=None, shape=None,
                  border_color=1, border_width=1, vmin=0.0,
@@ -145,9 +154,9 @@ class ColorImageGrid:
             The shape should be the same as the `shape` specified when
             constructing the image grid, plus an axis of length 3 for
             the color channels.
-        row, col : int
+        row/col : int
             The zero-index of the row and column to set.
-        vmin, vmax : numerical or None
+        vmin/vmax : numerical or None
             Defines the range of the color palette. None, takes the range of
             the data. Default is vmin=0 and vmax=1, for plotting normal RGB
             images.

@@ -87,17 +87,22 @@ class Saveable(object):
 
 
 class NamedRegistry(object):
+    """
+    This class provides a named hierarchy of classes, where each class is
+    associated with a string name.
+    """
+
     REGISTRY = {}
 
     @property
     def name(self):
-        """Returns the name of the registry entry"""
+        """Returns the name of the registry entry."""
         # Automatically overloaded by 'register'
         return "noname"
 
     @classmethod
     def register(cls, name):
-        """Decorator to register a class"""
+        """Decorator to register a class."""
         def register_decorator(reg_cls):
             def name_func(self):
                 return name
@@ -110,10 +115,16 @@ class NamedRegistry(object):
 
     @classmethod
     def getclass(cls, name):
+        """
+        Returns the class object given its name.
+        """
         return cls.REGISTRY[name]
 
     @classmethod
     def construct(cls, name, *args, **kwargs):
+        """
+        Constructs an instance of an object given its name.
+        """
         return cls.REGISTRY[name](*args, **kwargs)
 
     @classmethod
@@ -131,6 +142,10 @@ class NamedRegistry(object):
 
 
 class SaveableRegistry(Saveable, NamedRegistry):
+    """
+    This combines the features of `deepdish.util.Saveable` and
+    `deepdish.util.NamedRegistry`.
+    """
     @classmethod
     def load(cls, path):
         if path is None:

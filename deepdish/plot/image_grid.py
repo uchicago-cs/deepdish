@@ -26,10 +26,10 @@ class ImageGrid:
         The rest are used to index them. If `ndim` is 2, then a single image is
         shown. If `ndim` is 3, then `rows` and `cols` will determine its
         layout. If `ndim` is 4, then `rows` and `cols` will be ignored and the
-        grid will be layed out according to its first to axes instead.  If data
-        is set to None, then an empty image grid will be initialized. In this
-        case, rows and cols are both required.
-    rows, cols : int or None
+        grid will be layed out according to its first two axes instead.  If
+        data is set to None, then an empty image grid will be initialized. In
+        this case, rows and cols are both required.
+    rows/cols : int or None
         The number of rows and columns for the grid. If both are None, the
         minimal square grid that holds all images will be used. If one is
         specified, the other will adapt to hold all images. If both are
@@ -44,7 +44,7 @@ class ImageGrid:
     border_width :
         Border with in pixels. If you rescale the image, the border will be
         rescaled with it.
-    cmap, vmin, vmax, vsym :
+    cmap/vmin/vmax/vsym :
         See `ImageGrid.set_image`.
     global_bounds : bool
         If this is set to True and either `vmin` or `vmax` is not
@@ -180,11 +180,11 @@ class ImageGrid:
         image : ndarray, ndim=2
             The shape should be the same as the `shape` specified when
             constructing the image grid.
-        row, col : int
+        row/col : int
             The zero-index of the row and column to set.
         cmap : cmap (from matplotlib.pylab.cm)
             The color palette to use. Default is grayscale.
-        vmin, vmax : numerical or None
+        vmin/vmax : numerical or None
             Defines the range of the color palette. None, which is default,
             takes the range of the data.
         vsym : bool

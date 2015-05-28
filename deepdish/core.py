@@ -154,6 +154,7 @@ def apply_once(func, arr, axes, keepdims=True):
             0.26928468,  0.20081239,  0.33052397,  0.29950855,  0.26535717])
 
     This is exactly what this function does for you:
+
     >>> dd.apply_once(np.std, x, [1, 2], keepdims=False)
     array([ 0.17648981,  0.32849108,  0.29409526,  0.25547501,  0.23649064,
             0.26928468,  0.20081239,  0.33052397,  0.29950855,  0.26535717])
