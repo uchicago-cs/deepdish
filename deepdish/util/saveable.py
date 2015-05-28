@@ -143,8 +143,12 @@ class NamedRegistry(object):
 
 class SaveableRegistry(Saveable, NamedRegistry):
     """
-    This combines the features of `deepdish.util.Saveable` and
-    `deepdish.util.NamedRegistry`.
+    This combines the features of :class:`deepdish.util.Saveable` and
+    :class:`deepdish.util.NamedRegistry`.
+
+    See also
+    --------
+    Saveable, NamedRegistry
     """
     @classmethod
     def load(cls, path):

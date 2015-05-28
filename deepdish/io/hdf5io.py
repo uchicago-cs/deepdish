@@ -163,7 +163,8 @@ def save(path, data, compress=True):
     ingredients. That way your data will always be retrievable by any HDF5
     reader. A class that helps you with this is `deepdish.util.Saveable`.
 
-    This function requires the [PyTables] module to be installed.
+    This function requires the `PyTables <http://www.pytables.org/>`_ module to
+    be installed.
 
     Parameters
     ----------
@@ -179,7 +180,6 @@ def save(path, data, compress=True):
     See also
     --------
     load
-
     """
     if not isinstance(path, str):
         path = path.name
@@ -202,7 +202,8 @@ def load(path, unpack=True):
     """
     Loads an HDF5 saved with `save`.
 
-    This function requires the [PyTables] module to be installed.
+    This function requires the `PyTables <http://www.pytables.org/>`_ module to
+    be installed.
 
     Parameters
     ----------
