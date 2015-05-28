@@ -17,7 +17,7 @@ prefer numpy arrays whenever possible. Here's an example:
 >>> d = {'foo': np.arange(10), 'bar': np.ones((5, 4, 3))}
 >>> dd.io.save('test.h5', d)
 
-It will try its hardest to save it in way native to HDF5::
+It will try its best to save it in a way native to HDF5::
 
     $ h5ls test.h5
     bar                      Dataset {5, 4, 3}

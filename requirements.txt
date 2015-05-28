@@ -1,5 +1,4 @@
 numpy
 cython
-scipy
 matplotlib
 scikit-image
