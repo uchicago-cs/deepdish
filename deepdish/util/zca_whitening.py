@@ -40,7 +40,7 @@ def apply_whitening_matrix(X, W, batch=1000):
     return wX
 
 
-def whiten(X, w_epsilon):
+def whiten(X, w_epsilon, batch=1000):
     shape = X.shape
     N = shape[0]
     Xflat = X.reshape((N, -1))

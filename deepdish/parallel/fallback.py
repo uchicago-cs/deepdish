@@ -1,9 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-import sys
 import itertools as itr
-import numpy as np
-from deepdish import six
 
 __all__ = ['rank', 'imap_unordered', 'imap',
            'starmap_unordered', 'starmap', 'main']
