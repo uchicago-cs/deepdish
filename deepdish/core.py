@@ -89,7 +89,7 @@ def memsize(arr):
 
 def span(arr):
     """
-    Calculate and return the min and max of an array.
+    Calculate and return the mininum and maximum of an array.
 
     Parameters
     ----------
@@ -98,9 +98,9 @@ def span(arr):
 
     Returns
     -------
-    min : float
+    min : dtype
         Minimum of array.
-    max : float
+    max : dtype
         Maximum of array.
     """
     # TODO: This could be made faster with a custom ufunc
@@ -233,11 +233,12 @@ def multi_range(*args):
 
 
 @contextmanager
-def Timer(name='(no name)', file=sys.stdout):
+def timed(name=None, file=sys.stdout, callback=None, wall_clock=True):
     """
     Context manager to make it easy to time the execution of a piece of code.
     This timer will never run your code several times and is meant more for
-    simple in-production timing, instead of benchmarking.
+    simple in-production timing, instead of benchmarking. Reports the
+    wall-clock time (using `time.time`) and not the processor time.
 
     Parameters
     ----------
@@ -246,31 +247,43 @@ def Timer(name='(no name)', file=sys.stdout):
     file : file handler
         Which file handler to print the results to. Default is standard output.
         If a numpy array and size 1 is given, the time in seconds will be
-        stored inside it.
+        stored inside it. Ignored if `callback` is set.
+    callback : callable
+        This offer even more flexibility than `file`. The callable will be
+        called at the end of the execution with a single floating point
+        argument with the elapsed time in seconds.
 
     Examples
     --------
     >>> import deepdish as dd
     >>> import time
 
-    The Timer is a context manager, so everything inside the ``with`` block
-    will be timed. The results will be printed to standard output.
+    The `timed` function is a context manager, so everything inside the
+    ``with`` block will be timed. The results will be printed by default to
+    standard output:
 
-    >>> with dd.Timer('Sleep'):  # doctest: +SKIP
+    >>> with dd.timed('Sleep'):  # doctest: +SKIP
     ...     time.sleep(1)
-    TIMER Sleep: 1.001035451889038 s
+    [timed] Sleep: 1.001035451889038 s
 
-    >>> x = np.empty(1)
-    >>> with dd.Timer('Sleep', file=x):  # doctest: +SKIP
-    ...     time.sleep(1)
-    >>> x[0]  # doctest: +SKIP
-    1.0010406970977783
+    Using the `callback` parameter, we can accumulate multiple runs into a
+    list:
+
+    >>> times = []
+    >>> for i in range(3):  # doctest: +SKIP
+    ...     with dd.timed(callback=times.append):
+    ...         time.sleep(1)
+    >>> times  # doctest: +SKIP
+    [1.0035350322723389, 1.0035550594329834, 1.0039470195770264]
     """
     start = time.time()
     yield
     end = time.time()
     delta = end - start
-    if isinstance(file, np.ndarray) and len(file) == 1:
+    if callback is not None:
+        callback(delta)
+    elif isinstance(file, np.ndarray) and len(file) == 1:
         file[0] = delta
     else:
-        print(("TIMER {0}: {1} s".format(name, delta)), file=file)
+        name_str = ' {}'.format(name) if name is not None else ''
+        print(("[timed]{0}: {1} s".format(name_str, delta)), file=file)

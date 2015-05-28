@@ -11,7 +11,7 @@ from deepdish.core import (set_verbose,
                    apply_once,
                    tupled_argmax,
                    multi_range,
-                   Timer,
+                   timed,
                    )
 
 from deepdish import io
@@ -36,7 +36,7 @@ __all__ = ['deepdish',
            'plot',
            'image',
            'parallel',
-           'Timer',
+           'timed',
            ]
 
 VERSION = (0, 1, 5)
