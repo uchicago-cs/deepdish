@@ -4,11 +4,14 @@ import sys
 import itertools as itr
 import numpy as np
 
+__all__ = ['rank', 'imap_unordered', 'imap',
+           'starmap_unordered', 'starmap', 'main']
 
-# Global set of workers - initialized when first called a map function
+# Global set of workers - initialized a map function is first called
 _g_available_workers = None 
 _g_initialized = False
 
+# For docstrings, see deepdish.parallel.fallback
 
 def rank():
     from mpi4py import MPI
@@ -33,6 +36,8 @@ def _init():
 
 
 def imap_unordered(f, workloads, star=False):
+    fb.imap_unordered.__doc__
+
     global _g_available_workers, _g_initialized
 
     from mpi4py import MPI
@@ -136,15 +141,6 @@ def worker():
 
 
 def main(name=None):
-    """
-    Main function.
-
-    Example use:
-
-    if gv.parallel.main(__name__):
-        res = gv.parallel.map_unordered(fun, workload)
-
-    """
     if name is not None and name != '__main__':
         return False
 

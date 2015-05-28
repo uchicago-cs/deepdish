@@ -1,7 +1,7 @@
 from __future__ import print_function, division, absolute_import
 
 # Load the following modules by default
-from .core import (set_verbose,
+from deepdish.core import (set_verbose,
                    info,
                    warning,
                    bytesize,
@@ -14,16 +14,11 @@ from .core import (set_verbose,
                    Timer,
                    )
 
-import deepdish.io
-import deepdish.util
-import deepdish.plot
-from . import image
-
-try:
-    import mpi4py
-    from . import parallel
-except ImportError:
-    from . import parallel_fallback as parallel
+from deepdish import io
+from deepdish import util
+from deepdish import plot
+from deepdish import image
+from deepdish import parallel
 
 __all__ = ['deepdish',
            'set_verbose',
