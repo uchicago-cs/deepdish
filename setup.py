@@ -37,6 +37,10 @@ args = dict(
     install_requires=required,
     packages=[
         'deepdish',
+        'deepdish.parallel',
+        'deepdish.io',
+        'deepdish.util',
+        'deepdish.tools',
     ],
     license='BSD',
     classifiers=CLASSIFIERS,
