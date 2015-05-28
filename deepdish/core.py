@@ -257,12 +257,12 @@ def Timer(name='(no name)', file=sys.stdout):
     will be timed. The results will be printed to standard output.
 
     >>> with dd.Timer('Sleep'):  # doctest: +SKIP
-            time.sleep(1)
+    ...     time.sleep(1)
     TIMER Sleep: 1.001035451889038 s
 
     >>> x = np.empty(1)
     >>> with dd.Timer('Sleep', file=x):  # doctest: +SKIP
-            time.sleep(1)
+    ...     time.sleep(1)
     >>> x[0]  # doctest: +SKIP
     1.0010406970977783
     """
