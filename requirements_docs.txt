@@ -1,3 +1,5 @@
+numpy
+cython
 docutils>=0.10
 Sphinx>=1.2b1
 sphinxcontrib-napoleon
