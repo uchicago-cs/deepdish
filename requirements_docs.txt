@@ -1,4 +1,4 @@
 mock
-docutils>=0.10
-Sphinx>=1.2b1
+docutils
+Sphinx
 sphinxcontrib-napoleon
