@@ -61,7 +61,7 @@ import caffe
 
 env = lmdb.open('mylmdb', readonly=True)
 with env.begin() as txn:
-    raw_datum = env.get(b'00000000')
+    raw_datum = txn.get(b'00000000')
 
 datum = caffe.proto.caffe_pb2.Datum()
 datum.ParseFromString(raw_datum)
