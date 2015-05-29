@@ -102,8 +102,8 @@ def pad_to_size(data, shape, value=0.0):
              for i in range(len(shape))]
     new_data = np.empty(shape)
     new_data[:] = value
-    II = [slice(shape[i]//2 - data.shape[i]//2,
-                shape[i]//2 - data.shape[i]//2 + data.shape[i])
+    II = [slice((shape[i] - data.shape[i])//2,
+                (shape[i] - data.shape[i])//2 + data.shape[i])
           for i in range(len(shape))]
     new_data[II] = data
     return new_data
