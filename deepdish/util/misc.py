@@ -19,7 +19,7 @@ def pad(data, padwidth, value=0.0):
 
     See also
     --------
-    pad_to_size, pad_repeat_border, pad_repeat_upper_border
+    pad_to_size, pad_repeat_border, pad_repeat_border_corner
 
     Examples
     --------
