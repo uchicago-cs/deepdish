@@ -70,3 +70,12 @@ flat_x = np.fromstring(datum.data, dtype=np.uint8)
 x = flat_x.reshape(datum.channels, datum.height, datum.width)
 y = datum.label
 ```
+
+Iterating \<key, value\> pairs is also easy:
+
+```python
+with env.begin() as txn:
+    cursor = txn.cursor()
+    for key, value in cursor:
+        print(key, value)
+```
