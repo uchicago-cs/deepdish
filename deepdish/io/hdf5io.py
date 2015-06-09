@@ -96,6 +96,34 @@ def _save_level(handler, group, level, name=None, compress=True):
         node.append(level)
 
 
+def _load_specific_level(grp, path, selection=None):
+    if path == '':
+        return _load_level(grp)
+    vv = path.split('/', 1)
+    if len(vv) == 1:
+        if hasattr(grp, vv[0]):
+            if selection is not None:
+                return _load_sliced_level(getattr(grp, vv[0]), selection)
+            else:
+                return _load_level(getattr(grp, vv[0]))
+        elif hasattr(grp, '_v_attrs') and vv[0] in grp._v_attrs:
+            v = grp._v_attrs[vv[0]]
+            if isinstance(v, np.string_):
+                v = v.decode('utf-8')
+            return v
+        else:
+            raise ValueError('Unknown type')
+    else:
+        level, rest = vv
+        if level == '':
+            return _load_specific_level(grp.root, rest, selection=selection)
+        else:
+            if hasattr(grp, level):
+                return _load_specific_level(getattr(grp, level), rest, selection=selection)
+            else:
+                raise ValueError('Unknown path')
+
+
 def _load_level(level):
     if isinstance(level, tables.Group):
         dct = {}
@@ -140,6 +168,18 @@ def _load_level(level):
             return level[:]
     elif isinstance(level, tables.Array):
         return level[:]
+
+
+def _load_sliced_level(level, selection):
+    if isinstance(level, tables.VLArray):
+        if level.shape == (1,):
+            return level[0]
+        else:
+            return level[selection]
+    elif isinstance(level, tables.Array):
+        return level[selection]
+    else:
+        raise ValueError("Can't slice path")
 
 
 def save(path, data, compress=True):
@@ -198,7 +238,7 @@ def save(path, data, compress=True):
     h5file.close()
 
 
-def load(path, unpack=True):
+def load(path, group=None, selection=None, unpack=True):
     """
     Loads an HDF5 saved with `save`.
 
@@ -209,6 +249,12 @@ def load(path, unpack=True):
     ----------
     path : file-like object or string
         File or filename from which to load the data.
+    group : string
+        Load a specific group in the HDF5 hierarchy.
+    selection : slice or tuple of slices
+        If you specify `group` and the target is a numpy array, then you can
+        use this to slice it. This is useful for opening subsets of large HDF5
+        files. To compose the selection, you can use `deepdish.slices`.
     unpack : bool
         If True, a single-entry dictionaries will be unpacked and the value
         will be returned directly. That is, if you save ``dict(a=100)``, only
@@ -229,14 +275,16 @@ def load(path, unpack=True):
 
 
     h5file = tables.open_file(path, mode='r')
-    root = h5file.root
-    data = _load_level(h5file.root)
-    # Unpack if top is the only one
-    if isinstance(data, dict) and len(data) == 1:
-        if '_top' in data:
-            data = data['_top']
-        elif unpack:
-            data = next(iter(data.values()))
+    if group is not None:
+        data = _load_specific_level(h5file, group, selection=selection)
+    else:
+        grp = h5file.root
+        data = _load_level(grp)
+        if isinstance(data, dict) and len(data) == 1:
+            if '_top' in data:
+                data = data['_top']
+            elif unpack:
+                data = next(iter(data.values()))
 
     h5file.close()
     return data

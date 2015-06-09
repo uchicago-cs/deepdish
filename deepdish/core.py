@@ -287,3 +287,9 @@ def timed(name=None, file=sys.stdout, callback=None, wall_clock=True):
     else:
         name_str = ' {}'.format(name) if name is not None else ''
         print(("[timed]{0}: {1} s".format(name_str, delta)), file=file)
+
+
+class SlicesClass(object):
+    def __getitem__(self, index):
+        return index
+slices = SlicesClass()
