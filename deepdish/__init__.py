@@ -12,7 +12,7 @@ from deepdish.core import (set_verbose,
                    tupled_argmax,
                    multi_range,
                    timed,
-                   slices,
+                   aslice,
                    )
 
 from deepdish import io
@@ -38,7 +38,7 @@ __all__ = ['deepdish',
            'image',
            'parallel',
            'timed',
-           'slices',
+           'aslice',
            ]
 
 VERSION = (0, 1, 5)

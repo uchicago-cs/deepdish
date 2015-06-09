@@ -289,7 +289,7 @@ def timed(name=None, file=sys.stdout, callback=None, wall_clock=True):
         print(("[timed]{0}: {1} s".format(name_str, delta)), file=file)
 
 
-class SlicesClass(object):
+class SliceClass(object):
     def __getitem__(self, index):
         return index
-slices = SlicesClass()
+aslice = SliceClass()
