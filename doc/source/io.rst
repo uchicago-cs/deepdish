@@ -56,7 +56,7 @@ Numpy arrays of any numeric data type are natively stored in HDF5:
 
 We can inspect the actual values::
 
-    [~](1)$ h5ls -d test.h5
+    $ h5ls -d test.h5
     a                        Dataset {5}
         Data:
             (0) 0, 1, 2, 3, 4
@@ -110,7 +110,7 @@ element):
 >>> dd.io.save('test.h5', x)
 
 The first two elements are stored as ``'i0'`` and ``'i1'``. The third is stored
-as an attribute and thus not visible here:
+as an attribute and thus not visible here::
 
     $ h5ls -r test.h5
     /                        Group
