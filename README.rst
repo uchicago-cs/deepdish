@@ -7,7 +7,7 @@ Deep learning experiments at the University of Chicago.
 
 Installation
 ------------
-::
+Make sure that you have Cython and Numpy installed. Then run::
 
     pip install deepdish
 
