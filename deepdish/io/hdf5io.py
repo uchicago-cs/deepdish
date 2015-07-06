@@ -272,7 +272,7 @@ def load(path, group=None, sel=None, unpack=True):
         path = path.name
 
 
-    with  tables.open_file(path, mode='r') as h5file:
+    with tables.open_file(path, mode='r') as h5file:
         if group is not None:
             data = _load_specific_level(h5file, group, sel=sel)
         else:
