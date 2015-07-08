@@ -29,7 +29,7 @@ CLASSIFIERS = [
 
 args = dict(
     name='deepdish',
-    version='0.1.5',
+    version='0.1.6',
     url="https://github.com/uchicago-cs/deepdish",
     description="Deep Learning experiments from University of Chicago.",
     maintainer='Gustav Larsson',
