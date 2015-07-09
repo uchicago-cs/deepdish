@@ -122,6 +122,20 @@ Note that this is awkward and if the list is long you easily hit HDF5's
 limitation on the number of groups. Therefore, if your list is numeric, always
 make it a numpy array first!
 
+Sparse matrices
+---------------
+Scipy offers many sparse matrix structures. Currently only CSR and CSC are
+supported. This can offer a dramatic space and speed improvement over `mmwrite`
+and `mmread` in `scipy.io`, which saves the file in an ASCII format. I tested
+this on a very large and sparse CSR matrix:
+
+============================  ======  ==============  =========
+File type                     Space   Write time (s)  Read time
+============================  ======  ==============  =========
+`scipy.io.mmwrite` (`.mtx`)   512 MB           127.0      116.0
+`deepdish.io.save` (`.h5`)     69 MB             0.6        0.8
+============================  ======  ==============  =========
+
 Class instances
 ---------------
 Storing classes can be done by converting them to and from dictionary
