@@ -4,8 +4,13 @@ import numpy as np
 import tables
 import warnings
 import sys
+import warnings
+from scipy import sparse
 
 from deepdish import six
+
+IO_VERSION = 2
+DEEPDISH_IO_VERSION_STR = 'DEEPDISH_IO_VERSION'
 
 # Types that should be saved as pytables attribute
 ATTR_TYPES = (int, float, bool, six.string_types,
@@ -19,6 +24,20 @@ try:
 except Exception:
     warnings.warn("Missing BLOSC: no compression will be used.")
     COMPRESSION = tables.Filters()
+
+
+def _save_ndarray(handler, group, name, x, compress=True):
+    atom = tables.Atom.from_dtype(x.dtype)
+    assert np.min(x.shape) > 0, "deepdish.io.save does not support saving numpy arrays with a zero-length axis"
+    if compress:
+        node = handler.create_carray(group, name, atom=atom,
+                                     shape=x.shape,
+                                     chunkshape=x.shape,
+                                     filters=COMPRESSION)
+    else:
+        node = handler.create_array(group, name, atom=atom,
+                                    shape=x.shape)
+    node[:] = x
 
 
 def _save_level(handler, group, level, name=None, compress=True):
@@ -44,8 +63,6 @@ def _save_level(handler, group, level, name=None, compress=True):
                 _save_level(handler, new_group2, k, name='key')
                 _save_level(handler, new_group2, v, name='value')
 
-                #new_name = '__keyvalue_pair_{}'.format(hash(name))
-                #setattr(group._v_attrs, new_name, (name, level))
     elif isinstance(level, list):
         # Lists can contain other dictionaries and numpy arrays, so we don't
         # want to serialize them. Instead, we will store each entry as i0, i1,
@@ -69,17 +86,25 @@ def _save_level(handler, group, level, name=None, compress=True):
             _save_level(handler, new_group, entry, name=level_name)
 
     elif isinstance(level, np.ndarray):
-        atom = tables.Atom.from_dtype(level.dtype)
-        assert np.min(level.shape) > 0, "deepdish.io.save does not support saving numpy arrays with a zero-length axis"
-        if compress:
-            node = handler.create_carray(group, name, atom=atom,
-                                         shape=level.shape,
-                                         chunkshape=level.shape,
-                                         filters=COMPRESSION)
-        else:
-            node = handler.create_array(group, name, atom=atom,
-                                        shape=level.shape)
-        node[:] = level
+        _save_ndarray(handler, group, name, level, compress=compress)
+
+    elif isinstance(level, (sparse.bsr_matrix,
+                            sparse.coo_matrix,
+                            sparse.dia_matrix,
+                            sparse.dok_matrix,
+                            sparse.lil_matrix)):
+        raise NotImplementedError('deepdish.io.save does not support all types of sparse matrices; '
+                                  'please convert to csr or csc before saving.')
+
+    elif isinstance(level, (sparse.csr_matrix, sparse.csc_matrix)):
+        new_group = handler.create_group(group, name, "sparse:")
+
+        _save_ndarray(handler, new_group, 'data', level.data)
+        _save_ndarray(handler, new_group, 'indices', level.indices)
+        _save_ndarray(handler, new_group, 'indptr', level.indptr)
+        _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape))
+        new_group._v_attrs.format = level.format
+        new_group._v_attrs.maxprint = level.maxprint
 
     elif isinstance(level, ATTR_TYPES):
         setattr(group._v_attrs, name, level)
@@ -139,6 +164,8 @@ def _load_level(level):
 
         # Load attributes
         for name in level._v_attrs._f_list():
+            if name == DEEPDISH_IO_VERSION_STR:
+                continue
             v = level._v_attrs[name]
             if isinstance(v, np.string_):
                 v = v.decode('utf-8')
@@ -158,6 +185,30 @@ def _load_level(level):
             return tuple(lst)
         elif level._v_title.startswith('nonetype:'):
             return None
+            #elif isinstance(level, sparse.csr_matrix):
+            #    print('Here we go!')
+            #    return None
+        elif level._v_title.startswith('sparse:'):
+            frm = level._v_attrs.format
+            if frm == 'csr':
+                shape = tuple(level.shape[:])
+                matrix = sparse.csr_matrix(shape)
+                matrix.data = level.data[:]
+                matrix.indices = level.indices[:]
+                matrix.indptr = level.indptr[:]
+                matrix.maxprint = level._v_attrs.maxprint
+                return matrix
+            elif level._v_attrs.format == 'csc':
+                shape = tuple(level.shape[:])
+                matrix = sparse.csc_matrix(shape)
+                matrix.data = level.data[:]
+                matrix.indices = level.indices[:]
+                matrix.indptr = level.indptr[:]
+                matrix.maxprint = level._v_attrs.maxprint
+                return matrix
+            else:
+                raise ValueError('Unknown sparse matrix type: {}'.format(frm))
+
         else:
             return dct
 
@@ -226,13 +277,13 @@ def save(path, data, compress=True):
 
     with tables.open_file(path, mode='w') as h5file:
         # If the data is a dictionary, put it flatly in the root
+        group = h5file.root
+        group._v_attrs[DEEPDISH_IO_VERSION_STR] = IO_VERSION
         if isinstance(data, dict):
-            group = h5file.root
             for key, value in data.items():
                 _save_level(h5file, group, value, name=key, compress=compress)
 
         else:
-            group = h5file.root
             _save_level(h5file, group, data, name='_top', compress=compress)
 
 
@@ -271,17 +322,21 @@ def load(path, group=None, sel=None, unpack=True):
     if not isinstance(path, str):
         path = path.name
 
-
     with tables.open_file(path, mode='r') as h5file:
         if group is not None:
             data = _load_specific_level(h5file, group, sel=sel)
         else:
             grp = h5file.root
             data = _load_level(grp)
+            v = grp._v_attrs[DEEPDISH_IO_VERSION_STR]
+            if v > IO_VERSION:
+                warnings.warn('This file was saved with a newer version of deepdish. '
+                              'Please upgrade to make sure it loads correctly.')
+
             if isinstance(data, dict) and len(data) == 1:
                 if '_top' in data:
                     data = data['_top']
                 elif unpack:
                     data = next(iter(data.values()))
-    
+
     return data
