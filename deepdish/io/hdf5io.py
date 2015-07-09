@@ -99,9 +99,9 @@ def _save_level(handler, group, level, name=None, compress=True):
     elif isinstance(level, (sparse.csr_matrix, sparse.csc_matrix)):
         new_group = handler.create_group(group, name, "sparse:")
 
-        _save_ndarray(handler, new_group, 'data', level.data)
-        _save_ndarray(handler, new_group, 'indices', level.indices)
-        _save_ndarray(handler, new_group, 'indptr', level.indptr)
+        _save_ndarray(handler, new_group, 'data', level.data, compress=compress)
+        _save_ndarray(handler, new_group, 'indices', level.indices, compress=compress)
+        _save_ndarray(handler, new_group, 'indptr', level.indptr, compress=compress)
         _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape))
         new_group._v_attrs.format = level.format
         new_group._v_attrs.maxprint = level.maxprint
