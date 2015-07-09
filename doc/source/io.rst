@@ -124,17 +124,25 @@ make it a numpy array first!
 
 Sparse matrices
 ---------------
-Scipy offers many sparse matrix structures. Currently only CSR and CSC are
-supported. This can offer a dramatic space and speed improvement over `mmwrite`
-and `mmread` in `scipy.io`, which saves the file in an ASCII format. I tested
-this on a very large and sparse CSR matrix:
+Scipy offers several types of sparse matrices. Currently only CSR and CSC are
+supported. This can offer a dramatic space and speed improvement over for
+instance ``mmwrite`` and ``mmread`` in `scipy.io
+<http://docs.scipy.org/doc/scipy/reference/io.html>`__. This is not surprising
+since it saves the file in an ASCII format. Instead, Deepdish saves the
+internal Numpy arrays directly, which means there is no conversion overhead
+whatsoever. Here is a comparison testing this on a large (500 billion elments)
+and sparse (0.01% sparsity) CSR matrix:
 
-============================  ======  ==============  =========
-File type                     Space   Write time (s)  Read time
-============================  ======  ==============  =========
-`scipy.io.mmwrite` (`.mtx`)   512 MB           127.0      116.0
-`deepdish.io.save` (`.h5`)     69 MB             0.6        0.8
-============================  ======  ==============  =========
+=========================================  ==========  ==============  =============
+Method                                     Space (MB)  Write time (s)  Read time (s)
+=========================================  ==========  ==============  =============
+``scipy.io.mmwrite``                              512           127            116  
+``deepdish.io.save(..., compress=False)``         298             0.3            0.4
+``deepdish.io.save(..., compress=True)``           69             0.6            0.8
+=========================================  ==========  ==============  =============
+
+This particular matrix had only nonzero elements that were 1.0, which meant
+even more compression could be applied.
 
 Class instances
 ---------------
