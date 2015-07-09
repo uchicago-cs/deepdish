@@ -102,7 +102,7 @@ def _save_level(handler, group, level, name=None, compress=True):
         _save_ndarray(handler, new_group, 'data', level.data, compress=compress)
         _save_ndarray(handler, new_group, 'indices', level.indices, compress=compress)
         _save_ndarray(handler, new_group, 'indptr', level.indptr, compress=compress)
-        _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape))
+        _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape), compress=False)
         new_group._v_attrs.format = level.format
         new_group._v_attrs.maxprint = level.maxprint
 
