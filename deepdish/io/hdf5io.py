@@ -224,18 +224,16 @@ def save(path, data, compress=True):
     if not isinstance(path, str):
         path = path.name
 
-    h5file = tables.open_file(path, mode='w')
+    with tables.open_file(path, mode='w') as h5file:
+        # If the data is a dictionary, put it flatly in the root
+        if isinstance(data, dict):
+            group = h5file.root
+            for key, value in data.items():
+                _save_level(h5file, group, value, name=key, compress=compress)
 
-    # If the data is a dictionary, put it flatly in the root
-    if isinstance(data, dict):
-        group = h5file.root
-        for key, value in data.items():
-            _save_level(h5file, group, value, name=key, compress=compress)
-
-    else:
-        group = h5file.root
-        _save_level(h5file, group, data, name='_top', compress=compress)
-    h5file.close()
+        else:
+            group = h5file.root
+            _save_level(h5file, group, data, name='_top', compress=compress)
 
 
 def load(path, group=None, sel=None, unpack=True):
@@ -274,17 +272,16 @@ def load(path, group=None, sel=None, unpack=True):
         path = path.name
 
 
-    h5file = tables.open_file(path, mode='r')
-    if group is not None:
-        data = _load_specific_level(h5file, group, sel=sel)
-    else:
-        grp = h5file.root
-        data = _load_level(grp)
-        if isinstance(data, dict) and len(data) == 1:
-            if '_top' in data:
-                data = data['_top']
-            elif unpack:
-                data = next(iter(data.values()))
-
-    h5file.close()
+    with tables.open_file(path, mode='r') as h5file:
+        if group is not None:
+            data = _load_specific_level(h5file, group, sel=sel)
+        else:
+            grp = h5file.root
+            data = _load_level(grp)
+            if isinstance(data, dict) and len(data) == 1:
+                if '_top' in data:
+                    data = data['_top']
+                elif unpack:
+                    data = next(iter(data.values()))
+    
     return data
