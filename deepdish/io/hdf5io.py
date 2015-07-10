@@ -9,7 +9,7 @@ from scipy import sparse
 
 from deepdish import six
 
-IO_VERSION = 2
+IO_VERSION = 3
 DEEPDISH_IO_VERSION_STR = 'DEEPDISH_IO_VERSION'
 
 # Types that should be saved as pytables attribute
@@ -88,20 +88,38 @@ def _save_level(handler, group, level, name=None, compress=True):
     elif isinstance(level, np.ndarray):
         _save_ndarray(handler, group, name, level, compress=compress)
 
-    elif isinstance(level, (sparse.bsr_matrix,
-                            sparse.coo_matrix,
-                            sparse.dia_matrix,
-                            sparse.dok_matrix,
+    elif isinstance(level, (sparse.dok_matrix,
                             sparse.lil_matrix)):
-        raise NotImplementedError('deepdish.io.save does not support all types of sparse matrices; '
-                                  'please convert to csr or csc before saving.')
+        raise NotImplementedError(
+            'deepdish.io.save does not support DOK or LIL matrices; '
+            'please convert before saving to one of the following supported types: '
+            'BSR, COO, CSR, CSC, DIA')
 
-    elif isinstance(level, (sparse.csr_matrix, sparse.csc_matrix)):
+    elif isinstance(level, (sparse.csr_matrix, sparse.csc_matrix, sparse.bsr_matrix)):
         new_group = handler.create_group(group, name, "sparse:")
 
         _save_ndarray(handler, new_group, 'data', level.data, compress=compress)
         _save_ndarray(handler, new_group, 'indices', level.indices, compress=compress)
         _save_ndarray(handler, new_group, 'indptr', level.indptr, compress=compress)
+        _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape), compress=False)
+        new_group._v_attrs.format = level.format
+        new_group._v_attrs.maxprint = level.maxprint
+
+    elif isinstance(level, sparse.dia_matrix):
+        new_group = handler.create_group(group, name, "sparse:")
+
+        _save_ndarray(handler, new_group, 'data', level.data, compress=compress)
+        _save_ndarray(handler, new_group, 'offsets', level.offsets, compress=compress)
+        _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape), compress=False)
+        new_group._v_attrs.format = level.format
+        new_group._v_attrs.maxprint = level.maxprint
+
+    elif isinstance(level, sparse.coo_matrix):
+        new_group = handler.create_group(group, name, "sparse:")
+
+        _save_ndarray(handler, new_group, 'data', level.data, compress=compress)
+        _save_ndarray(handler, new_group, 'col', level.col, compress=compress)
+        _save_ndarray(handler, new_group, 'row', level.row, compress=compress)
         _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape), compress=False)
         new_group._v_attrs.format = level.format
         new_group._v_attrs.maxprint = level.maxprint
@@ -190,20 +208,30 @@ def _load_level(level):
             #    return None
         elif level._v_title.startswith('sparse:'):
             frm = level._v_attrs.format
-            if frm == 'csr':
+            if frm in ('csr', 'csc', 'bsr'):
                 shape = tuple(level.shape[:])
-                matrix = sparse.csr_matrix(shape)
+                cls = {'csr': sparse.csr_matrix,
+                       'csc': sparse.csc_matrix,
+                       'bsr': sparse.bsr_matrix}
+                matrix = cls[frm](shape)
                 matrix.data = level.data[:]
                 matrix.indices = level.indices[:]
                 matrix.indptr = level.indptr[:]
                 matrix.maxprint = level._v_attrs.maxprint
                 return matrix
-            elif level._v_attrs.format == 'csc':
+            elif frm == 'dia':
                 shape = tuple(level.shape[:])
-                matrix = sparse.csc_matrix(shape)
+                matrix = sparse.dia_matrix(shape)
                 matrix.data = level.data[:]
-                matrix.indices = level.indices[:]
-                matrix.indptr = level.indptr[:]
+                matrix.offsets = level.offsets[:]
+                matrix.maxprint = level._v_attrs.maxprint
+                return matrix
+            elif frm == 'coo':
+                shape = tuple(level.shape[:])
+                matrix = sparse.coo_matrix(shape)
+                matrix.data = level.data[:]
+                matrix.col = level.col[:]
+                matrix.row = level.row[:]
                 matrix.maxprint = level._v_attrs.maxprint
                 return matrix
             else:
