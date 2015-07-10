@@ -328,7 +328,11 @@ def load(path, group=None, sel=None, unpack=True):
         else:
             grp = h5file.root
             data = _load_level(grp)
-            v = grp._v_attrs[DEEPDISH_IO_VERSION_STR]
+            if hasattr(grp._v_attrs, DEEPDISH_IO_VERSION_STR):
+                v = grp._v_attrs[DEEPDISH_IO_VERSION_STR]
+            else:
+                v = 0
+
             if v > IO_VERSION:
                 warnings.warn('This file was saved with a newer version of deepdish. '
                               'Please upgrade to make sure it loads correctly.')
