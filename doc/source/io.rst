@@ -124,14 +124,18 @@ make it a numpy array first!
 
 Sparse matrices
 ---------------
-Scipy offers several types of sparse matrices. Currently only CSR and CSC are
-supported. This can offer a dramatic space and speed improvement over for
-instance ``mmwrite`` and ``mmread`` in `scipy.io
+Scipy offers several types of sparse matrices, of which deepdish can save the
+types BSR, COO, CSC, CSR and DIA. The types DOK and LIL are currently not
+supported (note that these two types are mainly for incrementally building
+sparse matrices anyway). 
+
+Using deepdish can offer a dramatic space and speed improvement over for instance
+``mmwrite`` and ``mmread`` in `scipy.io
 <http://docs.scipy.org/doc/scipy/reference/io.html>`__. This is not surprising
-since it saves the file in an ASCII format. Instead, Deepdish saves the
+since it saves the file in an ASCII format. Instead, deepdish saves the
 internal Numpy arrays directly, which means there is no conversion overhead
-whatsoever. Here is a comparison testing this on a large (500 billion elments)
-and sparse (0.01% sparsity) CSR matrix:
+whatsoever. Here is a comparison on a large (500 billion elments) and sparse
+(0.01% sparsity) CSR matrix:
 
 =========================================  ==========  ==============  =============
 Method                                     Space (MB)  Write time (s)  Read time (s)
@@ -141,7 +145,7 @@ Method                                     Space (MB)  Write time (s)  Read time
 ``deepdish.io.save(..., compress=True)``           69             0.6            0.8
 =========================================  ==========  ==============  =============
 
-This particular matrix had only nonzero elements that were 1.0, which meant
+This particular matrix had only nonzero elements that were set to 1, which meant
 even more compression could be applied.
 
 Class instances
