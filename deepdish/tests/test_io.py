@@ -14,6 +14,13 @@ def tmp_filename():
     os.unlink(f.name)
 
 
+@contextmanager
+def tmp_file():
+    f = NamedTemporaryFile(delete=False)
+    yield f
+    os.unlink(f.name)
+
+
 def reconstruct(fn, x):
     dd.io.save(fn, x)
     return dd.io.load(fn)
@@ -126,6 +133,44 @@ class TestIO(unittest.TestCase):
             x1 = reconstruct(fn, x.tobsr())
             assert x.shape == x1.shape
             np.testing.assert_array_equal(x.todense(), x1.todense())
+
+    def test_load_group(self):
+        with tmp_filename() as fn:
+            x = dict(one=np.ones(10), two='string')
+            dd.io.save(fn, x)
+
+            one = dd.io.load(fn, '/one')
+            np.testing.assert_array_equal(one, x['one'])
+            two = dd.io.load(fn, '/two')
+            assert two == x['two']
+
+    def test_load_slice(self):
+        with tmp_filename() as fn:
+            x = np.arange(3 * 4 * 5).reshape((3, 4, 5))
+            dd.io.save(fn, dict(x=x))
+
+            s = dd.aslice[:2]
+            xs = dd.io.load(fn, '/x', sel=s)
+            np.testing.assert_array_equal(xs, x[s])
+
+            s = dd.aslice[:, 1:3]
+            xs = dd.io.load(fn, '/x', sel=s)
+            np.testing.assert_array_equal(xs, x[s])
+
+    def test_open_file(self):
+        with tmp_file() as f:
+            dd.io.save(f, dict(x=100))
+            dd.io.load(f)
+
+    def test_unpack(self):
+        with tmp_filename() as fn:
+            x = np.ones(10)
+            dd.io.save(fn, dict(x=x))
+            d = dd.io.load(fn, unpack=False)
+            np.testing.assert_array_equal(x, d['x'])
+
+            x1 = dd.io.load(fn, unpack=True)
+            np.testing.assert_array_equal(x, x1)
 
 
 if __name__ == '__main__':
