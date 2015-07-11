@@ -1,8 +1,12 @@
 [run]
-omit = deepdish/tests/*
+omit = 
+    deepdish/tests/*
+    deepdish/six.py
 
 [report]
 omit =
     */python?.?/*
     */site-packages/nose/*
     *__init__*
+    deepdish/tests/*
+    deepdish/six.py

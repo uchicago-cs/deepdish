@@ -4,6 +4,9 @@
 .. image:: https://travis-ci.org/uchicago-cs/deepdish.svg?branch=master
     :target: https://travis-ci.org/uchicago-cs/deepdish/
 
+.. image:: https://coveralls.io/repos/uchicago-cs/deepdish/badge.svg?branch=master&service=github
+    :target: https://coveralls.io/github/uchicago-cs/deepdish?branch=master
+
 deepdish
 ========
 
