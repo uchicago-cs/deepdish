@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 import deepdish as dd
+import warnings
 
 # If skimage is available, the image returned will be wrapped
 # in the Image class. This is nice since it will be automatically
@@ -158,8 +159,8 @@ class ImageGrid:
 
     @classmethod
     def fromarray(cls, *args, **kwargs):
-        dd.info('Deprecation warning: Use ImageGrid(...) instead of '
-                'ImageGrid.fromarray(...)')
+        warnings.warn('Deprecation warning: Use ImageGrid(...) instead of '
+                      'ImageGrid.fromarray(...)')
         return cls(*args, **kwargs)
 
     @property
