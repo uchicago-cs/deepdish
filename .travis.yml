@@ -10,11 +10,12 @@ before_install:
     - conda update --yes conda
 install:
     - travis_retry conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy cython scipy matplotlib scikit-image pytables
+    - pip install coverage
+    - pip install nose
     - pip install python-coveralls
     - python setup.py build_ext --inplace
     - python setup.py install
 script:
-  - nosetests
-  - py.test --runslow --cov-config=.coveragerc
+    - nosetests --with-coverage
 after_success:
-  - coveralls
+    - coveralls

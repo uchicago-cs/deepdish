@@ -1,2 +1,8 @@
 [run]
 omit = deepdish/tests/*
+
+[report]
+omit =
+    */python?.?/*
+    */site-packages/nose/*
+    *__init__*
