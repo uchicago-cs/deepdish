@@ -1,3 +1,9 @@
+.. image:: http://img.shields.io/badge/docs-latest-brightgreen.svg
+    :target: http://deepdish.readthedocs.org/en/latest/
+
+.. image:: https://travis-ci.org/uchicago-cs/deepdish.svg?branch=master
+    :target: https://travis-ci.org/uchicago-cs/deepdish/
+
 deepdish
 ========
 
@@ -11,8 +17,8 @@ Make sure that you have Cython and Numpy installed. Then run::
 
     pip install deepdish
 
-Documentation |doc|
--------------------
+Documentation
+-------------
 
 * http://deepdish.readthedocs.org/ 
 
