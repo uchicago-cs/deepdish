@@ -11,8 +11,5 @@ before_install:
 install:
     - travis_retry conda install --yes python=$TRAVIS_PYTHON_VERSION pip
     - travis_retry pip install -r requirements.txt
-    - travis_retry pip install python-coveralls
     - python setup.py build_ext --inplace
     - python setup.py install
-after_success:
-    - coveralls
