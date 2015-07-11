@@ -1,11 +1,11 @@
 from __future__ import division, print_function, absolute_import
-import caffe
 import deepdish as dd
 import argparse
 import re
 import os
 
 if __name__ == '__main__':
+    import caffe
     parser = argparse.ArgumentParser()
     parser.add_argument('data', type=str)
     parser.add_argument('bare', type=str)
