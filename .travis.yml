@@ -9,7 +9,6 @@ before_install:
     - export PATH=/home/travis/miniconda/bin:$PATH
     - conda update --yes conda
 install:
-    - travis_retry conda install --yes python=$TRAVIS_PYTHON_VERSION pip
-    - travis_retry pip install -r requirements.txt
+    - travis_retry conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy cython scipy sklearn matplotlib scikit-image
     - python setup.py build_ext --inplace
     - python setup.py install
