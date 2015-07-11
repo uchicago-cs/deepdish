@@ -3,6 +3,7 @@ _gh_pages
 _site
 .ruby-version
 build
+.coverage
 
 # Numerous always-ignore extensions
 *.diff
