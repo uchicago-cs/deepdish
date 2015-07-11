@@ -162,7 +162,7 @@ def apply_once(func, arr, axes, keepdims=True):
 
     all_axes = np.arange(arr.ndim)
     if isinstance(axes, int):
-        axes = set(axes)
+        axes = {axes}
     else:
         axes = set(axis % arr.ndim for axis in axes)
 
