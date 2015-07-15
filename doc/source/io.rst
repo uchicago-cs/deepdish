@@ -134,7 +134,7 @@ Using deepdish can offer a dramatic space and speed improvement over for instanc
 <http://docs.scipy.org/doc/scipy/reference/io.html>`__. This is not surprising
 since it saves the file in an ASCII format. Instead, deepdish saves the
 internal Numpy arrays directly, which means there is no conversion overhead
-whatsoever. Here is a comparison on a large (500 billion elments) and sparse
+whatsoever. Here is a comparison on a large (500 billion elements) and sparse
 (0.01% sparsity) CSR matrix:
 
 =========================================  ==========  ==============  =============
