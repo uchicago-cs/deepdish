@@ -9,7 +9,7 @@ from scipy import sparse
 
 from deepdish import six
 
-IO_VERSION = 3
+IO_VERSION = 4
 DEEPDISH_IO_VERSION_STR = 'DEEPDISH_IO_VERSION'
 
 # Types that should be saved as pytables attribute
@@ -19,29 +19,66 @@ ATTR_TYPES = (int, float, bool, six.string_types,
               np.float16, np.float32, np.float64,
               np.bool_, np.complex64, np.complex128)
 
-try:
-    COMPRESSION = tables.Filters(complevel=9, complib='blosc', shuffle=True)
-except Exception:
-    warnings.warn("Missing BLOSC: no compression will be used.")
-    COMPRESSION = tables.Filters()
+
+def _get_compression_filters(compression=True):
+    if compression is True:
+        compression = 'blosc'
+
+    if compression is False or compression is None:
+        ff = None
+    else:
+        if isinstance(compression, (tuple, list)):
+            compression, level = compression
+        else:
+            level = 9
+
+        try:
+            ff = tables.Filters(complevel=level, complib=compression,
+                                shuffle=True)
+        except Exception:
+            warnings.warn(("(deepdish.io.save) Missing compression method {}: "
+                           "no compression will be used.").format(compression))
+            ff = None
+    return ff
 
 
-def _save_ndarray(handler, group, name, x, compress=True):
-    atom = tables.Atom.from_dtype(x.dtype)
-    assert np.min(x.shape) > 0, "deepdish.io.save does not support saving numpy arrays with a zero-length axis"
-    if compress:
+def _save_ndarray(handler, group, name, x, filters=None):
+    if np.issubdtype(x.dtype, np.unicode_):
+        # Convert unicode strings to pure byte arrays
+        strtype = b'unicode'
+        itemsize = x.itemsize // 4
+        atom = tables.UInt8Atom()
+        x = x.view(dtype=np.uint8)
+    elif np.issubdtype(x.dtype, np.string_):
+        strtype = b'ascii'
+        itemsize = x.itemsize
+        atom = tables.StringAtom(itemsize)
+    else:
+        atom = tables.Atom.from_dtype(x.dtype)
+        strtype = None
+        itemsize = None
+    assert np.min(x.shape) > 0, ("deepdish.io.save does not support saving "
+                                 "numpy arrays with a zero-length axis")
+    # For small arrays, compression actually leads to larger files, so we are
+    # settings a threshold here. The threshold has been set through
+    # experimentation.
+    if filters is not None and x.size > 300:
         node = handler.create_carray(group, name, atom=atom,
                                      shape=x.shape,
-                                     chunkshape=x.shape,
-                                     filters=COMPRESSION)
+                                     chunkshape=None,
+                                     filters=filters)
     else:
         node = handler.create_array(group, name, atom=atom,
                                     shape=x.shape)
+    if strtype is not None:
+        node._v_attrs.strtype = strtype
+        node._v_attrs.itemsize = itemsize
     node[:] = x
 
 
-def _save_level(handler, group, level, name=None, compress=True):
-    if isinstance(level, dict):
+def _save_level(handler, group, level, name=None, filters=None):
+    # Longer dictionaries will have to be pickled
+    if isinstance(level, dict) and len(level) < 1000:
         # First create a new group
         new_group = handler.create_group(group, name,
                                          "dict:{}".format(len(level)))
@@ -49,16 +86,17 @@ def _save_level(handler, group, level, name=None, compress=True):
             if isinstance(k, six.string_types):
                 _save_level(handler, new_group, v, name=k)
             else:
-                # Key is not string, so it gets a bit more complicated.
-                # If the key is not a string, we will store it as a tuple instead,
+                # Key is not string, so it gets a bit more complicated.  If the
+                # key is not a string, we will store it as a tuple instead,
                 # inside a new group
                 hsh = hash(k)
                 if hsh < 0:
                     hname = 'm{}'.format(-hsh)
                 else:
                     hname = '{}'.format(hsh)
-                new_group2 = handler.create_group(new_group, '__pair_{}'.format(hname),
-                                                 "keyvalue_pair")
+                new_group2 = handler.create_group(new_group,
+                                                  '__pair_{}'.format(hname),
+                                                  "keyvalue_pair")
                 new_name = '__pair_{}'.format(hname)
                 _save_level(handler, new_group2, k, name='key')
                 _save_level(handler, new_group2, v, name='value')
@@ -86,41 +124,41 @@ def _save_level(handler, group, level, name=None, compress=True):
             _save_level(handler, new_group, entry, name=level_name)
 
     elif isinstance(level, np.ndarray):
-        _save_ndarray(handler, group, name, level, compress=compress)
+        _save_ndarray(handler, group, name, level, filters=filters)
 
     elif isinstance(level, (sparse.dok_matrix,
                             sparse.lil_matrix)):
         raise NotImplementedError(
             'deepdish.io.save does not support DOK or LIL matrices; '
-            'please convert before saving to one of the following supported types: '
-            'BSR, COO, CSR, CSC, DIA')
+            'please convert before saving to one of the following supported '
+            'types: BSR, COO, CSR, CSC, DIA')
 
     elif isinstance(level, (sparse.csr_matrix, sparse.csc_matrix, sparse.bsr_matrix)):
         new_group = handler.create_group(group, name, "sparse:")
 
-        _save_ndarray(handler, new_group, 'data', level.data, compress=compress)
-        _save_ndarray(handler, new_group, 'indices', level.indices, compress=compress)
-        _save_ndarray(handler, new_group, 'indptr', level.indptr, compress=compress)
-        _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape), compress=False)
+        _save_ndarray(handler, new_group, 'data', level.data, filters=filters)
+        _save_ndarray(handler, new_group, 'indices', level.indices, filters=filters)
+        _save_ndarray(handler, new_group, 'indptr', level.indptr, filters=filters)
+        _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape))
         new_group._v_attrs.format = level.format
         new_group._v_attrs.maxprint = level.maxprint
 
     elif isinstance(level, sparse.dia_matrix):
         new_group = handler.create_group(group, name, "sparse:")
 
-        _save_ndarray(handler, new_group, 'data', level.data, compress=compress)
-        _save_ndarray(handler, new_group, 'offsets', level.offsets, compress=compress)
-        _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape), compress=False)
+        _save_ndarray(handler, new_group, 'data', level.data, filters=filters)
+        _save_ndarray(handler, new_group, 'offsets', level.offsets, filters=filters)
+        _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape))
         new_group._v_attrs.format = level.format
         new_group._v_attrs.maxprint = level.maxprint
 
     elif isinstance(level, sparse.coo_matrix):
         new_group = handler.create_group(group, name, "sparse:")
 
-        _save_ndarray(handler, new_group, 'data', level.data, compress=compress)
-        _save_ndarray(handler, new_group, 'col', level.col, compress=compress)
-        _save_ndarray(handler, new_group, 'row', level.row, compress=compress)
-        _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape), compress=False)
+        _save_ndarray(handler, new_group, 'data', level.data, filters=filters)
+        _save_ndarray(handler, new_group, 'col', level.col, filters=filters)
+        _save_ndarray(handler, new_group, 'row', level.row, filters=filters)
+        _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape))
         new_group._v_attrs.format = level.format
         new_group._v_attrs.maxprint = level.maxprint
 
@@ -132,9 +170,10 @@ def _save_level(handler, group, level, name=None, compress=True):
         new_group = handler.create_group(group, name, "nonetype:")
 
     else:
-        warnings.warn('(deepdish.io.save) Pickling', level, ': '
-                      'This may cause incompatiblities (for instance between '
-                      'Python 2 and 3) and should ideally be avoided')
+        warnings.warn(('(deepdish.io.save) Pickling {}: This may cause '
+                       'incompatibities (for instance between Python 2 and '
+                       '3) and should ideally be avoided').format(level),
+                       DeprecationWarning)
         node = handler.create_vlarray(group, name, tables.ObjectAtom())
         node.append(level)
 
@@ -246,6 +285,14 @@ def _load_level(level):
         else:
             return level[:]
     elif isinstance(level, tables.Array):
+        if hasattr(level._v_attrs, 'strtype'):
+            strtype = level._v_attrs.strtype
+            itemsize = level._v_attrs.itemsize
+            if strtype == b'unicode':
+                return level[:].view(dtype=(np.unicode_, itemsize))
+            elif strtype == b'ascii':
+                return level[:].view(dtype=(np.string_, itemsize))
+
         return level[:]
 
 
@@ -261,7 +308,7 @@ def _load_sliced_level(level, sel):
         raise ValueError("Can't slice path")
 
 
-def save(path, data, compress=True):
+def save(path, data, compression='blosc', compress=None):
     """
     Save any Python structure to an HDF5 file. It is particularly suited for
     Numpy arrays. This function works similar to ``numpy.save``, except if you
@@ -293,8 +340,14 @@ def save(path, data, compress=True):
         Data to be saved. This can be anything from a Numpy array, a string, an
         object, or a dictionary containing all of them including more
         dictionaries.
-    compress : bool
-        Turn off data compression.
+    compression : string or tuple
+        Set compression method, choosing from `blosc`, `zlib`, `lzo`, `bzip2`
+        and more (see PyTables documentation). It can also be specified as a
+        tuple (e.g. ``('blosc', 5)``), with the latter value specifying the
+        level of compression, choosing from 0 (no compression) to 9 (maximum
+        compression).  Set to `None` to turn off compression. The default is
+        `blosc` since it is fast; for greater compression rate, try for
+        instance `zlib`.
 
     See also
     --------
@@ -303,16 +356,26 @@ def save(path, data, compress=True):
     if not isinstance(path, str):
         path = path.name
 
+    if compress is not None:
+        warnings.warn('(deepdish.io.save) Please use the parameter '
+                      'compression instead of compress. The latter will be '
+                      'removed.',
+                      FutureWarning)
+        if compress is False:
+            compression = None
+
+    filters = _get_compression_filters(compression)
+
     with tables.open_file(path, mode='w') as h5file:
         # If the data is a dictionary, put it flatly in the root
         group = h5file.root
         group._v_attrs[DEEPDISH_IO_VERSION_STR] = IO_VERSION
         if isinstance(data, dict):
             for key, value in data.items():
-                _save_level(h5file, group, value, name=key, compress=compress)
+                _save_level(h5file, group, value, name=key, filters=filters)
 
         else:
-            _save_level(h5file, group, data, name='_top', compress=compress)
+            _save_level(h5file, group, data, name='_top', filters=filters)
 
 
 def load(path, group=None, sel=None, unpack=True):
@@ -362,8 +425,9 @@ def load(path, group=None, sel=None, unpack=True):
                 v = 0
 
             if v > IO_VERSION:
-                warnings.warn('This file was saved with a newer version of deepdish. '
-                              'Please upgrade to make sure it loads correctly.')
+                warnings.warn('This file was saved with a newer version of '
+                              'deepdish. Please upgrade to make sure it loads '
+                              'correctly.')
 
             if isinstance(data, dict) and len(data) == 1:
                 if '_top' in data:
