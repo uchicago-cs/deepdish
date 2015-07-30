@@ -78,7 +78,7 @@ def _save_ndarray(handler, group, name, x, filters=None):
 
 def _save_level(handler, group, level, name=None, filters=None):
     # Longer dictionaries will have to be pickled
-    if isinstance(level, dict) and len(level) < 1000:
+    if isinstance(level, dict) and len(level) < 256:
         # First create a new group
         new_group = handler.create_group(group, name,
                                          "dict:{}".format(len(level)))
@@ -101,7 +101,7 @@ def _save_level(handler, group, level, name=None, filters=None):
                 _save_level(handler, new_group2, k, name='key')
                 _save_level(handler, new_group2, v, name='value')
 
-    elif isinstance(level, list):
+    elif isinstance(level, list) and len(level) < 256:
         # Lists can contain other dictionaries and numpy arrays, so we don't
         # want to serialize them. Instead, we will store each entry as i0, i1,
         # etc.
@@ -112,7 +112,7 @@ def _save_level(handler, group, level, name=None, filters=None):
             level_name = 'i{}'.format(i)
             _save_level(handler, new_group, entry, name=level_name)
 
-    elif isinstance(level, tuple):
+    elif isinstance(level, tuple) and len(level) < 256:
         # Lists can contain other dictionaries and numpy arrays, so we don't
         # want to serialize them. Instead, we will store each entry as i0, i1,
         # etc.
