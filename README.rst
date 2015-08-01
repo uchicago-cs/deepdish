@@ -27,13 +27,13 @@ Make sure that you have Cython and Numpy installed. Then run::
 Main feature
 ------------
 The primary feature of deepdish is its ability to save and load all kinds of
-data as HDF5. It can save any Python data structure, offering the same easy of
+data as HDF5. It can save any Python data structure, offering the same ease of
 use as pickling or `numpy.save <http://docs.scipy.org/doc/numpy/reference/generated/numpy.save.html>`__. However, it improves by also offering:
 
 - Interoperability between languages (HDF5 is a popular standard)
 - Easy to inspect the content from the command line (using ``h5ls`` or our
-  specialized toold ``ddls``)
-- Highly compressed storage (thanks to PyTables backend)
+  specialized tool ``ddls``)
+- Highly compressed storage (thanks to a PyTables backend)
 - Ability to partially read files, even slices of arrays
 
 An example:
@@ -58,7 +58,7 @@ the command line using either a standard tool::
     foo                      Dataset {10, 20}
     sub                      Group
 
-Or better yet, our custom tool ``ddls`` (or ``python -m deepdish.io.ls``)::
+Or, better yet, our custom tool ``ddls`` (or ``python -m deepdish.io.ls``)::
 
     $ ddls test.h5
     test.h5
