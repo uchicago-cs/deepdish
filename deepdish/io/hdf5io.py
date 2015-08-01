@@ -368,12 +368,14 @@ def save(path, data, compression='blosc', compress=None):
         # If the data is a dictionary, put it flatly in the root
         group = h5file.root
         group._v_attrs[DEEPDISH_IO_VERSION_STR] = IO_VERSION
-        if isinstance(data, dict):
+        # Sparse matrices match isinstance(data, dict), so we'll have to be
+        # more restrictive about this
+        if type(data) == type({}):
             for key, value in data.items():
                 _save_level(h5file, group, value, name=key, filters=filters)
 
         else:
-            _save_level(h5file, group, data, name='_top', filters=filters)
+            _save_level(h5file, group, data, name='data', filters=filters)
 
 
 def load(path, group=None, sel=None, unpack=True):
