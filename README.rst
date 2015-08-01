@@ -36,17 +36,19 @@ use as pickling or `numpy.save`. However, it improves by also offering:
 - Highly compressed storage (thanks to PyTables backend)
 - Ability to partially read files, even slices of arrays
 
-An example::
+An example:
+
+.. code:: python
 
     import deepdish as dd
+
     d = {
         'foo': np.ones((10, 20)),
         'sub': {
             'bar': 'a string',
-            'baz': 1.23
-        }
+            'baz': 1.23,
+        },
     }
-
     dd.io.save('test.h5', d)
 
 This can be reconstructed using `dd.io.load('test.h5')`, or inspected through
