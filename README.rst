@@ -36,7 +36,7 @@ use as pickling or `numpy.save`. However, it improves by also offering:
 - Highly compressed storage (thanks to PyTables backend)
 - Ability to partially read files, even slices of arrays
 
-An example:
+An example::
 
     import deepdish as dd
     d = {
@@ -50,13 +50,13 @@ An example:
     dd.io.save('test.h5', d)
 
 This can be reconstructed using `dd.io.load('test.h5')`, or inspected through
-the command line using either a standard tool:
+the command line using either a standard tool::
 
     $ h5ls test.h5
     foo                      Dataset {10, 20}
     sub                      Group
 
-Or better yet, our custom tool `ddls` (or `python -m deepdish.io.ls`):
+Or better yet, our custom tool `ddls` (or `python -m deepdish.io.ls`)::
 
     $ ddls test.h5
     test.h5
