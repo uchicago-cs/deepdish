@@ -9,7 +9,7 @@ from scipy import sparse
 
 from deepdish import six
 
-IO_VERSION = 4
+IO_VERSION = 5
 DEEPDISH_IO_VERSION_STR = 'DEEPDISH_IO_VERSION'
 
 # Types that should be saved as pytables attribute
@@ -165,6 +165,9 @@ def _save_level(handler, group, level, name=None, filters=None):
     elif isinstance(level, ATTR_TYPES):
         setattr(group._v_attrs, name, level)
 
+    elif isinstance(level, six.binary_type):
+        setattr(group._v_attrs, name, level)
+
     elif level is None:
         # Store a None as an empty group
         new_group = handler.create_group(group, name, "nonetype:")
@@ -224,8 +227,6 @@ def _load_level(level):
             if name == DEEPDISH_IO_VERSION_STR:
                 continue
             v = level._v_attrs[name]
-            if isinstance(v, np.string_):
-                v = v.decode('utf-8')
             dct[name] = v
 
         if level._v_title.startswith('list:'):
@@ -242,9 +243,6 @@ def _load_level(level):
             return tuple(lst)
         elif level._v_title.startswith('nonetype:'):
             return None
-            #elif isinstance(level, sparse.csr_matrix):
-            #    print('Here we go!')
-            #    return None
         elif level._v_title.startswith('sparse:'):
             frm = level._v_attrs.format
             if frm in ('csr', 'csc', 'bsr'):
