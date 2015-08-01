@@ -20,11 +20,15 @@ except ImportError:
     compile_ext = False
 
 CLASSIFIERS = [
-    'Development Status :: 3 - Alpha',
+    'Development Status :: 4 - Beta',
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: BSD License',
     'Programming Language :: Python',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.4',
+    'Topic :: Scientific/Engineering',
 ]
 
 args = dict(
@@ -35,6 +39,7 @@ args = dict(
     maintainer='Gustav Larsson',
     maintainer_email='gustav.m.larsson@gmail.com',
     install_requires=required,
+    scripts=['scripts/ddls'],
     packages=[
         'deepdish',
         'deepdish.parallel',
