@@ -42,7 +42,7 @@ for i in range(N):
     datum.channels = X.shape[1]
     datum.height = X.shape[2]
     datum.width = X.shape[3]
-    datum.data = X[i].tobytes()
+    datum.data = X[i].tobytes()  # or .tostring() if numpy < 1.9
     datum.label = int(y[i])
     str_id = '{:08}'.format(i)
 
