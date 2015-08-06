@@ -123,8 +123,7 @@ class FileNotFoundNode(Node):
 
     def print(self, level=0, parent='/', colorize=True, max_level=None,
               file=sys.stdout):
-        file_str = paint(self.filename, 'yellow', colorize=colorize)
-        print(file_str + '\n' + paint('File not found', 'red', colorize=colorize),
+        print(paint('File not found', 'red', colorize=colorize),
               file=file)
 
     def info(self, colorize=True, final_level=False):
@@ -140,8 +139,7 @@ class InvalidFileNode(Node):
 
     def print(self, level=0, parent='/', colorize=True, max_level=None,
               file=sys.stdout):
-        file_str = paint(self.filename, 'yellow', colorize=colorize)
-        print(file_str + '\n' + paint('Invalid HDF5 file', 'red', colorize=colorize),
+        print(paint('Invalid HDF5 file', 'red', colorize=colorize),
               file=file)
 
     def info(self, colorize=True, final_level=False):
@@ -158,10 +156,6 @@ class DictNode(Node):
 
     def print(self, level=0, parent='/', colorize=True, max_level=None,
               file=sys.stdout):
-        if 'filename' in self.header:
-            print(paint(self.header['filename'], 'yellow', colorize=colorize),
-                  file=file)
-
         if level < max_level:
             for k in sorted(self.children):
                 v = self.children[k]
@@ -389,6 +383,9 @@ def main():
         if s is not None:
             if i > 0:
                 print()
+
+            if len(args.file) >= 2:
+                print(paint(f, 'yellow', colorize=colorize))
             s.print(colorize=colorize, max_level=args.depth)
             i += 1
 
