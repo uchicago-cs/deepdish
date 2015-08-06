@@ -172,6 +172,34 @@ class TestIO(unittest.TestCase):
             x1 = dd.io.load(fn, unpack=True)
             np.testing.assert_array_equal(x, x1)
 
+    def test_force_pickle(self):
+        with tmp_filename() as fn:
+            x = dict(one=dict(two=np.arange(10)),
+                     three='string')
+            xf = dict(one=dict(two=x['one']['two']),
+                      three=x['three'])
+
+            dd.io.save(fn, xf)
+            xs = dd.io.load(fn, unpack=False)
+
+            np.testing.assert_array_equal(x['one']['two'], xs['one']['two'])
+            assert x['three'] == xs['three']
+
+            # Try direct loading one
+            two = dd.io.load(fn, '/one/two')
+            np.testing.assert_array_equal(x['one']['two'], two)
+
+    def test_non_string_key_dict(self):
+        with tmp_filename() as fn:
+            # These will be pickled, but it should still work
+            x = {0: 'zero', 1: 'one', 2: 'two'}
+            x1 = reconstruct(fn, x)
+            assert x == x1
+
+            x = {1+1j: 'zero', b'test': 'one', (1, 2): 'two'}
+            x1 = reconstruct(fn, x)
+            assert x == x1
+
 
 if __name__ == '__main__':
     unittest.main()
