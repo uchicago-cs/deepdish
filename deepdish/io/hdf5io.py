@@ -9,7 +9,7 @@ from scipy import sparse
 
 from deepdish import six
 
-IO_VERSION = 5
+IO_VERSION = 6
 DEEPDISH_IO_VERSION_STR = 'DEEPDISH_IO_VERSION'
 
 # Types that should be saved as pytables attribute
@@ -18,6 +18,23 @@ ATTR_TYPES = (int, float, bool, six.string_types,
               np.uint8, np.uint16, np.uint32, np.uint64,
               np.float16, np.float32, np.float64,
               np.bool_, np.complex64, np.complex128)
+
+
+def _dict_native_ok(d):
+    """
+    This checks if a dictionary can be saved natively as HDF5 groups.
+
+    If it can't, it will be pickled.
+    """
+    if len(d) >= 256:
+        return False
+
+    # All keys must be strings
+    for k in d:
+        if not isinstance(k, six.string_types):
+            return False
+
+    return True
 
 
 def _get_compression_filters(compression=True):
@@ -78,7 +95,7 @@ def _save_ndarray(handler, group, name, x, filters=None):
 
 def _save_level(handler, group, level, name=None, filters=None):
     # Longer dictionaries will have to be pickled
-    if isinstance(level, dict) and len(level) < 256:
+    if isinstance(level, dict) and _dict_native_ok(level):
         # First create a new group
         new_group = handler.create_group(group, name,
                                          "dict:{}".format(len(level)))
@@ -369,8 +386,8 @@ def save(path, data, compression='blosc', compress=None):
         group = h5file.root
         group._v_attrs[DEEPDISH_IO_VERSION_STR] = IO_VERSION
         # Sparse matrices match isinstance(data, dict), so we'll have to be
-        # more restrictive about this
-        if type(data) == type({}):
+        # more strict with the type checking
+        if type(data) == type({}) and _dict_native_ok(data):
             for key, value in data.items():
                 _save_level(h5file, group, value, name=key, filters=filters)
 
