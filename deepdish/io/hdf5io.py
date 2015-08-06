@@ -20,6 +20,11 @@ ATTR_TYPES = (int, float, bool, six.string_types,
               np.bool_, np.complex64, np.complex128)
 
 
+class ForcePickle(object):
+    def __init__(self, obj):
+        self.obj = obj
+
+
 def _dict_native_ok(d):
     """
     This checks if a dictionary can be saved natively as HDF5 groups.
@@ -93,9 +98,20 @@ def _save_ndarray(handler, group, name, x, filters=None):
     node[:] = x
 
 
+def _save_pickled(handler, group, level, name=None):
+    warnings.warn(('(deepdish.io.save) Pickling {}: This may cause '
+                   'incompatibities (for instance between Python 2 and '
+                   '3) and should ideally be avoided').format(level),
+                   DeprecationWarning)
+    node = handler.create_vlarray(group, name, tables.ObjectAtom())
+    node.append(level)
+
+
 def _save_level(handler, group, level, name=None, filters=None):
-    # Longer dictionaries will have to be pickled
-    if isinstance(level, dict) and _dict_native_ok(level):
+    if isinstance(level, ForcePickle):
+        _save_pickled(handler, group, level, name=name)
+
+    elif isinstance(level, dict) and _dict_native_ok(level):
         # First create a new group
         new_group = handler.create_group(group, name,
                                          "dict:{}".format(len(level)))
@@ -190,12 +206,7 @@ def _save_level(handler, group, level, name=None, filters=None):
         new_group = handler.create_group(group, name, "nonetype:")
 
     else:
-        warnings.warn(('(deepdish.io.save) Pickling {}: This may cause '
-                       'incompatibities (for instance between Python 2 and '
-                       '3) and should ideally be avoided').format(level),
-                       DeprecationWarning)
-        node = handler.create_vlarray(group, name, tables.ObjectAtom())
-        node.append(level)
+        _save_pickled(handler, group, level, name=name)
 
 
 def _load_specific_level(grp, path, sel=None):
@@ -224,6 +235,13 @@ def _load_specific_level(grp, path, sel=None):
                 return _load_specific_level(getattr(grp, level), rest, sel=sel)
             else:
                 raise ValueError('Unknown path')
+
+
+def _load_pickled(level):
+    if isinstance(level[0], ForcePickle):
+        return level[0].obj
+    else:
+        return level[0]
 
 
 def _load_level(level):
@@ -296,9 +314,10 @@ def _load_level(level):
 
     elif isinstance(level, tables.VLArray):
         if level.shape == (1,):
-            return level[0]
+            return _load_pickled(level)
         else:
             return level[:]
+
     elif isinstance(level, tables.Array):
         if hasattr(level._v_attrs, 'strtype'):
             strtype = level._v_attrs.strtype
@@ -314,9 +333,10 @@ def _load_level(level):
 def _load_sliced_level(level, sel):
     if isinstance(level, tables.VLArray):
         if level.shape == (1,):
-            return level[0]
+            return _load_pickled(level)
         else:
             return level[sel]
+
     elif isinstance(level, tables.Array):
         return level[sel]
     else:
