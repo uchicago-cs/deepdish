@@ -240,6 +240,12 @@ deedpish's HDF5 saving. Each pickled object will raise a
 implicitly pickling something. You can of course also use ``ddls`` to inspect
 the file to make sure nothing is pickled.
 
+If deepdish fatally fails to save an object, you should first report this as an
+issue on GitHub. As a quick fix, you can force pickling by wrapping the object
+in :func:`deepdish.io.ForcePickle`::
+
+    dd.io.save('test.h5', {'foo': dd.io.ForcePickle('pickled string')})
+
 Class instances
 ---------------
 Storing classes can be done by converting them to and from dictionary
