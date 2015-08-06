@@ -21,6 +21,11 @@ ATTR_TYPES = (int, float, bool, six.string_types,
 
 
 class ForcePickle(object):
+    """
+    When saving an object with `deepdish.io.save`, you can wrap objects in this
+    class to force them to be pickled. They will automatically be unpacked at
+    load time.
+    """
     def __init__(self, obj):
         self.obj = obj
 
