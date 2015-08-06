@@ -62,10 +62,10 @@ Or, better yet, our custom tool ``ddls`` (or ``python -m deepdish.io.ls``)::
 
     $ ddls test.h5
     test.h5
-     /foo                       array (10, 20) [float64]
-     /sub                       dict
-     /sub/bar                   'a string' (8) [unicode]
-     /sub/baz                   1.23 [float64]
+    /foo                       array (10, 20) [float64]
+    /sub                       dict
+    /sub/bar                   'a string' (8) [unicode]
+    /sub/baz                   1.23 [float64]
 
 Read more at `Saving and loading data <http://deepdish.readthedocs.org/en/latest/io.html>`__.
 

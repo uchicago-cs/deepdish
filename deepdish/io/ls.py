@@ -97,9 +97,9 @@ def print_row(key, value, level=0, parent='/', colorize=True, file=sys.stdout):
     s = '{}{}'.format(paint(parent, 'darkgray', colorize=colorize),
                       paint(key, 'white', colorize=colorize))
     s_raw = '{}{}'.format(parent, key)
-    print(' {}{} {}'.format(abbreviate(s, LEFT_COL),
-                            ' '*max(0, (LEFT_COL + 1 - len(s_raw))),
-                            value))
+    print('{}{} {}'.format(abbreviate(s, LEFT_COL),
+                           ' '*max(0, (LEFT_COL + 1 - len(s_raw))),
+                           value))
 
 
 class Node(object):
@@ -124,7 +124,7 @@ class FileNotFoundNode(Node):
     def print(self, level=0, parent='/', colorize=True, max_level=None,
               file=sys.stdout):
         file_str = paint(self.filename, 'yellow', colorize=colorize)
-        print(file_str + '\n ' + paint('File not found', 'red', colorize=colorize),
+        print(file_str + '\n' + paint('File not found', 'red', colorize=colorize),
               file=file)
 
     def info(self, colorize=True, final_level=False):
@@ -141,7 +141,7 @@ class InvalidFileNode(Node):
     def print(self, level=0, parent='/', colorize=True, max_level=None,
               file=sys.stdout):
         file_str = paint(self.filename, 'yellow', colorize=colorize)
-        print(file_str + '\n ' + paint('Invalid HDF5 file', 'red', colorize=colorize),
+        print(file_str + '\n' + paint('Invalid HDF5 file', 'red', colorize=colorize),
               file=file)
 
     def info(self, colorize=True, final_level=False):

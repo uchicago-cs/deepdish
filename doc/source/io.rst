@@ -29,8 +29,8 @@ deepdish saved HDF5 files::
 
     $ ddls test.h5
     test.h5
-     /bar                       array (5, 4, 3) [float64]
-     /foo                       array (10,) [int64]
+    /bar                       array (5, 4, 3) [float64]
+    /foo                       array (10,) [int64]
 
 We can now reconstruct the dictionary from file using :func:`deepdish.io.load`:
 
@@ -57,10 +57,10 @@ Again, we can use the deepdish tool for better inspection::
 
     $ ddls test.h5
     test.h5
-     /foo                       dict
-     /foo/bar                   array (10,) [int64]
-     /foo/baz                   array (3,) [float64]
-     /qux                       array (12,) [float64] 
+    /foo                       dict
+    /foo/bar                   array (10,) [int64]
+    /foo/baz                   array (3,) [float64]
+    /qux                       array (12,) [float64] 
 
 Numpy arrays
 ------------
@@ -99,9 +99,9 @@ This is where ``ddls`` excels::
 
     $ ddls test.h5
     test4.h5
-     /a                         10 [int64]
-     /b                         'test' (4) [unicode]
-     /c                         None [python]
+    /a                         10 [int64]
+    /b                         'test' (4) [unicode]
+    /c                         None [python]
 
 Since `c` is specific to Python, it is stored as an empty group with meta
 information. The values `a` and `b` however are stored natively as HDF5
@@ -140,12 +140,12 @@ show it::
 
     $ ddls test.h5
     test.h5
-     /data                      list
-     /data/i0                   dict
-     /data/i0/foo               10 [int64]
-     /data/i1                   dict
-     /data/i1/bar               20 [int64]
-     /data/i2                   30 [int64]
+    /data                      list
+    /data/i0                   dict
+    /data/i0/foo               10 [int64]
+    /data/i1                   dict
+    /data/i1/bar               20 [int64]
+    /data/i2                   30 [int64]
 
 Note that this is awkward and if the list is long you easily hit HDF5's
 limitation on the number of groups. Therefore, if your list is numeric, always
@@ -229,7 +229,7 @@ Inspecting this file will yield::
 
     $ ddls test.h5
     test.h5
-     /foo                       pickled [object]
+    /foo                       pickled [object]
 
 Note that the class `Foo` has to be defined in the file that calls
 ``dd.io.load``.
