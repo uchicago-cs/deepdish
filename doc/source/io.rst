@@ -28,7 +28,6 @@ Note that we also offer our own version of ``h5ls`` that works really well with
 deepdish saved HDF5 files::
 
     $ ddls test.h5
-    test.h5
     /bar                       array (5, 4, 3) [float64]
     /foo                       array (10,) [int64]
 
@@ -56,7 +55,6 @@ Resulting in::
 Again, we can use the deepdish tool for better inspection::
 
     $ ddls test.h5
-    test.h5
     /foo                       dict
     /foo/bar                   array (10,) [int64]
     /foo/baz                   array (3,) [float64]
@@ -98,7 +96,6 @@ We might not seem them through ``h5ls``::
 This is where ``ddls`` excels::
 
     $ ddls test.h5
-    test4.h5
     /a                         10 [int64]
     /b                         'test' (4) [unicode]
     /c                         None [python]
@@ -139,7 +136,6 @@ as an attribute and thus not directly visible by ``h5ls``. However, ``ddls`` wil
 show it::
 
     $ ddls test.h5
-    test.h5
     /data                      list
     /data/i0                   dict
     /data/i0/foo               10 [int64]
@@ -228,7 +224,6 @@ deepdish also offers pickling as a last resort::
 Inspecting this file will yield::
 
     $ ddls test.h5
-    test.h5
     /foo                       pickled [object]
 
 Note that the class `Foo` has to be defined in the file that calls
