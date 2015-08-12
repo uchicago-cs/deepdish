@@ -8,6 +8,7 @@ import numpy as np
 import sys
 import six
 import os
+from deepdish import io
 
 LEFT_COL = 25
 
@@ -367,27 +368,78 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(
             description=("Look inside HDF5 files. Works particularly well "
-                         "for HDF5 files saved with deepdish.io.save()."))
-    parser.add_argument('file', nargs='+', type=str,
+                         "for HDF5 files saved with deepdish.io.save()."),
+            prog='ddls',
+            epilog='example: ddls test.h5 -i /foo/bar --ipython')
+    parser.add_argument('file', nargs='+',
                         help='Filename of HDF5 file')
     parser.add_argument('-d', '--depth', type=int, default=4,
                         help='Max depth, defaults to 4')
     parser.add_argument('-nc', '--no-color', action='store_true',
                         help='Turn off bash colors')
+    parser.add_argument('-i', '--inspect', metavar='GRP',
+                        help='Prints a specific variable (e.g. /data)')
+    parser.add_argument('--ipython', action='store_true',
+                        help=('Loads file into an IPython session.'
+                              'Works with -i'))
     args = parser.parse_args()
 
     colorize = sys.stdout.isatty() and not args.no_color
-    i = 0
-    for f in args.file:
-        s = get_tree(f)
-        if s is not None:
-            if i > 0:
-                print()
 
-            if len(args.file) >= 2:
-                print(paint(f, 'yellow', colorize=colorize))
-            s.print(colorize=colorize, max_level=args.depth)
-            i += 1
+    def single_file(files):
+        if len(files) >= 2:
+            s = 'Error: Select a single file when using --inspect'
+            print(paint(s, 'red', colorize=colorize))
+            sys.exit(1)
+        return files[0]
+
+    def run_ipython(fn, group=None, data=None):
+        file_desc = paint(fn, 'yellow', colorize=colorize)
+        if group is None:
+            path_desc = file_desc
+        else:
+            path_desc = '{}:{}'.format(
+                file_desc,
+                paint(group, 'white', colorize=colorize))
+
+        welcome = "Loaded {} into '{}':".format(
+            path_desc,
+            paint('data', 'blue', colorize=colorize))
+
+        # Import deepdish for the session
+        import deepdish as dd
+        import IPython
+        IPython.embed(header=welcome)
+
+    i = 0
+    if args.inspect is not None:
+        fn = single_file(args.file)
+
+        try:
+            data = io.load(fn, args.inspect)
+        except ValueError:
+            s = 'Error: Could not find group: {}'.format(args.inspect)
+            print(paint(s, 'red', colorize=colorize))
+            sys.exit(1)
+        if args.ipython:
+            run_ipython(fn, group=args.inspect, data=data)
+        else:
+            print(data)
+    elif args.ipython:
+        fn = single_file(args.file)
+        data = io.load(fn)
+        run_ipython(fn, data=data)
+    else:
+        for f in args.file:
+            s = get_tree(f)
+            if s is not None:
+                if i > 0:
+                    print()
+
+                if len(args.file) >= 2:
+                    print(paint(f, 'yellow', colorize=colorize))
+                s.print(colorize=colorize, max_level=args.depth)
+                i += 1
 
 
 if __name__ == '__main__':
