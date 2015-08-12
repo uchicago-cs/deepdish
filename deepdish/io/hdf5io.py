@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import tables
 import warnings
+import pandas as pd
 from scipy import sparse
 
 from deepdish import six
@@ -16,6 +17,21 @@ ATTR_TYPES = (int, float, bool, six.string_types,
               np.uint8, np.uint16, np.uint32, np.uint64,
               np.float16, np.float32, np.float64,
               np.bool_, np.complex64, np.complex128)
+
+
+class _HDFStoreWithHandle(pd.io.pytables.HDFStore):
+    def __init__(self, handle):
+        self._path = None
+        self._complevel = None
+        self._complib = None
+        self._fletcher32 = False
+        self._filters = None
+
+        self._handle = handle
+
+
+def is_pandas_dataframe(level):
+    return 'pandas_version' in level._v_attrs and 'pandas_type' in level._v_attrs
 
 
 class ForcePickle(object):
@@ -161,6 +177,10 @@ def _save_level(handler, group, level, name=None, filters=None):
     elif isinstance(level, np.ndarray):
         _save_ndarray(handler, group, name, level, filters=filters)
 
+    elif isinstance(level, (pd.DataFrame, pd.Series, pd.Panel)):
+        store = _HDFStoreWithHandle(handler)
+        store.put(group._v_pathname + '/' + name, level)
+
     elif isinstance(level, (sparse.dok_matrix,
                             sparse.lil_matrix)):
         raise NotImplementedError(
@@ -211,16 +231,16 @@ def _save_level(handler, group, level, name=None, filters=None):
         _save_pickled(handler, group, level, name=name)
 
 
-def _load_specific_level(grp, path, sel=None):
+def _load_specific_level(handler, grp, path, sel=None):
     if path == '':
-        return _load_level(grp)
+        return _load_level(handler, grp)
     vv = path.split('/', 1)
     if len(vv) == 1:
         if hasattr(grp, vv[0]):
             if sel is not None:
                 return _load_sliced_level(getattr(grp, vv[0]), sel)
             else:
-                return _load_level(getattr(grp, vv[0]))
+                return _load_level(handler, getattr(grp, vv[0]))
         elif hasattr(grp, '_v_attrs') and vv[0] in grp._v_attrs:
             v = grp._v_attrs[vv[0]]
             if isinstance(v, np.string_):
@@ -231,10 +251,10 @@ def _load_specific_level(grp, path, sel=None):
     else:
         level, rest = vv
         if level == '':
-            return _load_specific_level(grp.root, rest, sel=sel)
+            return _load_specific_level(handler, grp.root, rest, sel=sel)
         else:
             if hasattr(grp, level):
-                return _load_specific_level(getattr(grp, level), rest, sel=sel)
+                return _load_specific_level(handler, getattr(grp, level), rest, sel=sel)
             else:
                 raise ValueError('Unknown path')
 
@@ -246,12 +266,12 @@ def _load_pickled(level):
         return level[0]
 
 
-def _load_level(level):
+def _load_level(handler, level):
     if isinstance(level, tables.Group):
         dct = {}
         # Load sub-groups
         for grp in level:
-            lev = _load_level(grp)
+            lev = _load_level(handler, grp)
             n = grp._v_name
             # Check if it's a complicated pair or a string-value pair
             if n.startswith('__pair'):
@@ -280,6 +300,9 @@ def _load_level(level):
             return tuple(lst)
         elif level._v_title.startswith('nonetype:'):
             return None
+        elif is_pandas_dataframe(level):
+            store = _HDFStoreWithHandle(handler)
+            return store.get(level._v_pathname)
         elif level._v_title.startswith('sparse:'):
             frm = level._v_attrs.format
             if frm in ('csr', 'csc', 'bsr'):
@@ -457,7 +480,7 @@ def load(path, group=None, sel=None, unpack=True):
             data = _load_specific_level(h5file, group, sel=sel)
         else:
             grp = h5file.root
-            data = _load_level(grp)
+            data = _load_level(h5file, grp)
             if hasattr(grp._v_attrs, DEEPDISH_IO_VERSION_STR):
                 v = grp._v_attrs[DEEPDISH_IO_VERSION_STR]
             else:

@@ -2,7 +2,7 @@
 Look inside HDF5 files from the terminal, especially those created by deepdish.
 """
 from __future__ import division, print_function, absolute_import
-from .hdf5io import DEEPDISH_IO_VERSION_STR
+from .hdf5io import DEEPDISH_IO_VERSION_STR, is_pandas_dataframe
 import tables
 import numpy as np
 import sys
@@ -25,6 +25,23 @@ COLORS = dict(
     white='1;37',
     reset='0'
 )
+
+
+def _pandas_shape(level):
+    if 'ndim' in level._v_attrs:
+        ndim = level._v_attrs['ndim']
+        shape = []
+        for i in range(ndim):
+            axis_name = 'axis{}'.format(i)
+            if axis_name in level._v_children:
+                axis = len(level._v_children[axis_name])
+                shape.append(axis)
+            elif axis_name + '_label0' in level._v_children:
+                axis = len(level._v_children[axis_name + '_label0'])
+                shape.append(axis)
+            else:
+                return None
+        return tuple(shape)
 
 
 def paint(s, color, colorize=True):
@@ -178,6 +195,59 @@ class DictNode(Node):
         return 'DictNode({})'.format(', '.join(s))
 
 
+class PandasDataFrameNode(Node):
+    def __init__(self, shape):
+        self.shape = shape
+
+    def info(self, colorize=True, final_level=False):
+        d = {}
+        if self.shape is not None:
+            d['extra'] = repr(self.shape)
+
+        return type_string('DataFrame',
+                           type_color='red',
+                           colorize=colorize, **d)
+
+    def __repr__(self):
+        return 'PandasDataFrameNode({})'.format(self.shape)
+
+
+class PandasPanelNode(Node):
+    def __init__(self, shape):
+        self.shape = shape
+
+    def info(self, colorize=True, final_level=False):
+        d = {}
+        if self.shape is not None:
+            d['extra'] = repr(self.shape)
+
+        return type_string('Panel',
+                           type_color='red',
+                           colorize=colorize, **d)
+
+    def __repr__(self):
+        return 'PandasPanelNode({})'.format(self.shape)
+
+
+class PandasSeriesNode(Node):
+    def __init__(self, size, dtype):
+        self.size = size
+        self.dtype = dtype
+
+    def info(self, colorize=True, final_level=False):
+        d = {}
+        if self.size is not None:
+            d['extra'] = repr((self.size,))
+        if self.dtype is not None:
+            d['dtype'] = str(self.dtype)
+
+        return type_string('Series',
+                           type_color='red',
+                           colorize=colorize, **d)
+
+    def __repr__(self):
+        return 'SeriesNode()'
+
 class ListNode(Node):
     def __init__(self, typename='list'):
         self.children = []
@@ -320,6 +390,30 @@ def _tree_level(level):
             return lst
         elif level._v_title.startswith('nonetype:'):
             return ValueNode(None)
+        elif is_pandas_dataframe(level):# and False:
+            pandas_type = level._v_attrs['pandas_type']
+            if 0:
+                pass  # TODO: Add option to inspect as dict
+            elif pandas_type == 'frame':
+                shape = _pandas_shape(level)
+                new_node = PandasDataFrameNode(shape)
+                return new_node
+            elif pandas_type == 'series':
+                try:
+                    values = level._v_children['values']
+                    size = len(values)
+                    dtype = values.dtype
+                except:
+                    size = None
+                    dtype = None
+                new_node = PandasSeriesNode(size, dtype)
+                return new_node
+            elif pandas_type == 'wide':
+                shape = _pandas_shape(level)
+                new_node = PandasPanelNode(shape)
+                return new_node
+            # else: it will simply be treated as a dict
+
         elif level._v_title.startswith('sparse:'):
             frm = level._v_attrs.format
             dtype = level.data.dtype
