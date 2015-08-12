@@ -18,6 +18,18 @@ from deepdish import util
 from deepdish import image
 from deepdish import parallel
 
+class MovedPackage(object):
+    def __init__(self, old_loc, new_loc):
+        self.old_loc = old_loc
+        self.new_loc = new_loc
+
+    def __getattr__(self, name):
+        raise ImportError('The package {} has been moved to {}'.format(
+            self.old_loc, self.new_loc))
+
+# This is temporary: remove after a few minor releases
+plot = MovedPackage('deepdish.plot', 'vzlog.image')
+
 __all__ = ['deepdish',
            'set_verbose',
            'info',
@@ -32,6 +44,7 @@ __all__ = ['deepdish',
            'io',
            'util',
            'image',
+           'plot',
            'parallel',
            'timed',
            'aslice',
