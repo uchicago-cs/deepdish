@@ -180,6 +180,18 @@ meant even more compression could be applied. The default compression in
 deepdish is blosc, since zlib takes much longer to encode and offers only a
 modest space improvement.
 
+Quick inspection
+----------------
+Using ``ddls`` gives you a quick overview of your data. You can also use it to
+print specific entries from the command line::
+
+    $ ddls test.h5 -i /foo
+    [0 1 2 3 4 5 6 7 8 9]
+
+Adding ``--ipython`` will start an IPython session that comes pre-loaded
+with the selected variable loaded into the variable ``data``. This can be used
+even without ``-i``, in which case the whole file is loaded into ``data``.
+
 Structure
 ---------
 If the entry object is not a dictionary, it will by default create a group called
