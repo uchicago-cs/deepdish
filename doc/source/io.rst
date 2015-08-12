@@ -229,8 +229,8 @@ Inspecting this file will yield::
 Note that the class `Foo` has to be defined in the file that calls
 ``dd.io.load``.
 
-Avoid relying on pickling, since it hurts to interoperability provided by
-deedpish's HDF5 saving. Each pickled object will raise a
+Avoid relying on pickling, since it hurts the interoperability provided by
+deepdish's HDF5 saving. Each pickled object will raise a
 ``DeprecationWarning``, so call Python with ``-Wall`` to make sure you aren't
 implicitly pickling something. You can of course also use ``ddls`` to inspect
 the file to make sure nothing is pickled.
