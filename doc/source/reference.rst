@@ -11,4 +11,3 @@ API Reference
   api_util
   api_image
   api_parallel
-  api_plot

@@ -3,20 +3,8 @@ from __future__ import division, print_function, absolute_import
 
 from setuptools import setup
 
-try:
-    # This makes it installable without cython/numpy
-    # (useful for building the documentation)
-    import numpy as np
-    from Cython.Build import cythonize
-    with open('requirements.txt') as f:
-        required = f.read().splitlines()
-
-    compile_ext = True
-except ImportError:
-    with open('requirements_docs.txt') as f:
-        required = f.read().splitlines()
-
-    compile_ext = False
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
 
 CLASSIFIERS = [
     'Development Status :: 4 - Beta',
@@ -32,7 +20,7 @@ CLASSIFIERS = [
 
 args = dict(
     name='deepdish',
-    version='0.2.0',
+    version='0.2.1',
     url="https://github.com/uchicago-cs/deepdish",
     description="Deep Learning experiments from University of Chicago.",
     maintainer='Gustav Larsson',
@@ -42,18 +30,11 @@ args = dict(
     packages=[
         'deepdish',
         'deepdish.parallel',
-        'deepdish.plot',
         'deepdish.io',
         'deepdish.util',
-        'deepdish.tools',
     ],
     license='BSD',
     classifiers=CLASSIFIERS,
 )
-
-if compile_ext:
-    setup_requires=['numpy', 'cython'],
-    args['ext_modules'] = cythonize("deepdish/plot/resample.pyx")
-    args['include_dirs'] = [np.get_include()]
 
 setup(**args)

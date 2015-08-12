@@ -15,7 +15,6 @@ from deepdish.core import (
 
 from deepdish import io
 from deepdish import util
-from deepdish import plot
 from deepdish import image
 from deepdish import parallel
 
@@ -32,7 +31,6 @@ __all__ = ['deepdish',
            'multi_range',
            'io',
            'util',
-           'plot',
            'image',
            'parallel',
            'timed',
@@ -40,7 +38,7 @@ __all__ = ['deepdish',
            ]
 
 VERSION = (0, 2, 1)
-ISRELEASED = False
+ISRELEASED = True
 __version__ = '{0}.{1}.{2}'.format(*VERSION)
 if not ISRELEASED:
     __version__ += '.git'
