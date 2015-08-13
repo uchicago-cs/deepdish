@@ -6,9 +6,8 @@ from .hdf5io import DEEPDISH_IO_VERSION_STR, is_pandas_dataframe
 import tables
 import numpy as np
 import sys
-import six
 import os
-from deepdish import io
+from deepdish import io, six
 
 LEFT_COL = 25
 
