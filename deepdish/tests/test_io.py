@@ -49,7 +49,11 @@ class TestIO(unittest.TestCase):
             #x1 = reconstruct(fn, x)
             #assert x == x1
 
-            x = 'this is a string'
+            x = u'this is a string'
+            x1 = reconstruct(fn, x)
+            assert x == x1
+
+            x = b'this is a bytearray'
             x1 = reconstruct(fn, x)
             assert x == x1
 
@@ -71,6 +75,15 @@ class TestIO(unittest.TestCase):
             x0 = x0.astype(np.complex128)
             x0[0] = 1 + 2j
             assert_array(fn, x0)
+
+    def test_numpy_string_array(self):
+        with tmp_filename() as fn:
+            x0 = np.array([[b'this', b'string'], [b'foo', b'bar']])
+            assert_array(fn, x0)
+
+            x0 = np.array([[u'this', u'string'], [u'foo', u'bar']])
+            assert_array(fn, x0)
+
 
     def test_dictionary(self):
         with tmp_filename() as fn:
@@ -144,6 +157,10 @@ class TestIO(unittest.TestCase):
             np.testing.assert_array_equal(one, x['one'])
             two = dd.io.load(fn, '/two')
             assert two == x['two']
+
+            full = dd.io.load(fn, '/')
+            np.testing.assert_array_equal(x['one'], full['one'])
+            assert x['two'] == full['two']
 
     def test_load_slice(self):
         with tmp_filename() as fn:
@@ -234,6 +251,20 @@ class TestIO(unittest.TestCase):
             # Not sure how to test equality, so we'll just do this
             assert (wp.values == wp1.values).all()
 
+    def test_compression_true(self):
+        rs = np.random.RandomState(1234)
+        with tmp_filename() as fn:
+            x = rs.normal(size=(1000, 5))
+            for comp in [None, True, 'blosc', 'zlib', ('zlib', 5)]:
+                dd.io.save(fn, x, compression=comp)
+                x1 = dd.io.load(fn)
+                assert (x == x1).all()
+
+            # Legacy
+            for comp in [True, False]:
+                dd.io.save(fn, x, compress=comp)
+                x1 = dd.io.load(fn)
+                assert (x == x1).all()
 
 if __name__ == '__main__':
     unittest.main()
