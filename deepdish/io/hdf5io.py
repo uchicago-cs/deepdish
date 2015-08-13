@@ -142,20 +142,6 @@ def _save_level(handler, group, level, name=None, filters=None):
         for k, v in level.items():
             if isinstance(k, six.string_types):
                 _save_level(handler, new_group, v, name=k)
-            else:
-                # Key is not string, so it gets a bit more complicated.  If the
-                # key is not a string, we will store it as a tuple instead,
-                # inside a new group
-                hsh = hash(k)
-                if hsh < 0:
-                    hname = 'm{}'.format(-hsh)
-                else:
-                    hname = '{}'.format(hsh)
-                new_group2 = handler.create_group(new_group,
-                                                  '__pair_{}'.format(hname),
-                                                  "keyvalue_pair")
-                _save_level(handler, new_group2, k, name='key')
-                _save_level(handler, new_group2, v, name='value')
 
     elif isinstance(level, list) and len(level) < 256:
         # Lists can contain other dictionaries and numpy arrays, so we don't
@@ -350,7 +336,7 @@ def _load_level(handler, level):
             return level[:]
 
     elif isinstance(level, tables.Array):
-        if hasattr(level._v_attrs, 'strtype'):
+        if 'strtype' in level._v_attrs:
             strtype = level._v_attrs.strtype
             itemsize = level._v_attrs.itemsize
             if strtype == b'unicode':
@@ -487,7 +473,7 @@ def load(path, group=None, sel=None, unpack=True):
         else:
             grp = h5file.root
             data = _load_level(h5file, grp)
-            if hasattr(grp._v_attrs, DEEPDISH_IO_VERSION_STR):
+            if DEEPDISH_IO_VERSION_STR in grp._v_attrs:
                 v = grp._v_attrs[DEEPDISH_IO_VERSION_STR]
             else:
                 v = 0
