@@ -365,12 +365,12 @@ class ObjectNode(Node):
                            colorize=colorize)
 
 
-def _tree_level(level):
+def _tree_level(level, raw=False):
     if isinstance(level, tables.Group):
         node = DictNode()
 
         for grp in level:
-            node.add(grp._v_name, _tree_level(grp))
+            node.add(grp._v_name, _tree_level(grp, raw=raw))
 
         for name in level._v_attrs._f_list():
             v = level._v_attrs[name]
@@ -390,10 +390,11 @@ def _tree_level(level):
             return lst
         elif level._v_title.startswith('nonetype:'):
             return ValueNode(None)
-        elif is_pandas_dataframe(level):# and False:
+        elif is_pandas_dataframe(level):
             pandas_type = level._v_attrs['pandas_type']
-            if 0:
-                pass  # TODO: Add option to inspect as dict
+            if raw:
+                # Treat as regular dictionary
+                pass
             elif pandas_type == 'frame':
                 shape = _pandas_shape(level)
                 new_node = PandasDataFrameNode(shape)
@@ -414,7 +415,7 @@ def _tree_level(level):
                 return new_node
             # else: it will simply be treated as a dict
 
-        elif level._v_title.startswith('sparse:'):
+        elif level._v_title.startswith('sparse:') and not raw:
             frm = level._v_attrs.format
             dtype = level.data.dtype
             shape = tuple(level.shape[:])
@@ -444,12 +445,12 @@ def _tree_level(level):
         return Node()
 
 
-def get_tree(path):
+def get_tree(path, raw=False):
     fn = os.path.basename(path)
     try:
         with tables.open_file(path, mode='r') as h5file:
             grp = h5file.root
-            s = _tree_level(grp)
+            s = _tree_level(grp, raw=raw)
             s.header['filename'] = fn
             return s
     except OSError:
@@ -476,6 +477,11 @@ def main():
     parser.add_argument('--ipython', action='store_true',
                         help=('Loads file into an IPython session.'
                               'Works with -i'))
+    parser.add_argument('--raw', action='store_true',
+                        help=('Prints the raw HDF5 structure for complex '
+                              'data types, such as sparse matrices and pandas '
+                              'data frames'))
+
     args = parser.parse_args()
 
     colorize = sys.stdout.isatty() and not args.no_color
@@ -525,7 +531,7 @@ def main():
         run_ipython(fn, data=data)
     else:
         for f in args.file:
-            s = get_tree(f)
+            s = get_tree(f, raw=args.raw)
             if s is not None:
                 if i > 0:
                     print()
