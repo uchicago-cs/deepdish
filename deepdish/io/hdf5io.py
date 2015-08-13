@@ -12,7 +12,7 @@ except ImportError:
 
 from deepdish import six
 
-IO_VERSION = 6
+IO_VERSION = 7
 DEEPDISH_IO_VERSION_STR = 'DEEPDISH_IO_VERSION'
 
 # Types that should be saved as pytables attribute
