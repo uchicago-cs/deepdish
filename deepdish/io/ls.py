@@ -2,12 +2,12 @@
 Look inside HDF5 files from the terminal, especially those created by deepdish.
 """
 from __future__ import division, print_function, absolute_import
-from .hdf5io import DEEPDISH_IO_VERSION_STR, is_pandas_dataframe
+from .hdf5io import DEEPDISH_IO_VERSION_STR, IO_VERSION, is_pandas_dataframe
 import tables
 import numpy as np
 import sys
 import os
-from deepdish import io, six
+from deepdish import io, six, __version__
 
 LEFT_COL = 25
 
@@ -466,22 +466,28 @@ def main():
             prog='ddls',
             epilog='example: ddls test.h5 -i /foo/bar --ipython')
     parser.add_argument('file', nargs='+',
-                        help='Filename of HDF5 file')
+                        help='filename of HDF5 file')
     parser.add_argument('-d', '--depth', type=int, default=4,
-                        help='Max depth, defaults to 4')
+                        help='max depth, defaults to 4')
     parser.add_argument('-nc', '--no-color', action='store_true',
-                        help='Turn off bash colors')
+                        help='turn off bash colors')
     parser.add_argument('-i', '--inspect', metavar='GRP',
-                        help='Prints a specific variable (e.g. /data)')
+                        help='prints a specific variable (e.g. /data)')
     parser.add_argument('--ipython', action='store_true',
-                        help=('Loads file into an IPython session.'
+                        help=('loads file into an IPython session.'
                               'Works with -i'))
     parser.add_argument('--raw', action='store_true',
-                        help=('Prints the raw HDF5 structure for complex '
+                        help=('prints the raw HDF5 structure for complex '
                               'data types, such as sparse matrices and pandas '
                               'data frames'))
+    parser.add_argument('-v', '--version', action='version',
+                        version='deepdish {} (io protocol {})'.format(__version__, IO_VERSION))
 
     args = parser.parse_args()
+
+    if args.version:
+        print('deepdish {} (deepdish io protocol: {})'.format(__version__, IO_VERSION))
+        return
 
     colorize = sys.stdout.isatty() and not args.no_color
 
