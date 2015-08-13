@@ -3,8 +3,6 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import tables
 import warnings
-import sys
-import warnings
 from scipy import sparse
 
 from deepdish import six
@@ -135,7 +133,6 @@ def _save_level(handler, group, level, name=None, filters=None):
                 new_group2 = handler.create_group(new_group,
                                                   '__pair_{}'.format(hname),
                                                   "keyvalue_pair")
-                new_name = '__pair_{}'.format(hname)
                 _save_level(handler, new_group2, k, name='key')
                 _save_level(handler, new_group2, v, name='value')
 
