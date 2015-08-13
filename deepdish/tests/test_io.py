@@ -201,6 +201,15 @@ class TestIO(unittest.TestCase):
             x1 = reconstruct(fn, x)
             assert x == x1
 
+    def test_force_pickle(self):
+        with tmp_filename() as fn:
+            x = {0: 'zero', 1: 'one', 2: 'two'}
+            fx = dd.io.ForcePickle(x)
+            d = dict(foo=x, bar=100)
+            fd = dict(foo=fx, bar=100)
+            d1 = reconstruct(fn, fd)
+            assert d == d1
+
     def test_pandas_dataframe(self):
         with tmp_filename() as fn:
             # These will be pickled, but it should still work
