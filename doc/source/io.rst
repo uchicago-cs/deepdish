@@ -147,6 +147,42 @@ Note that this is awkward and if the list is long you easily hit HDF5's
 limitation on the number of groups. Therefore, if your list is numeric, always
 make it a numpy array first!
 
+Pandas data structures
+----------------------
+The pandas_ data structures ``DataFrame``, ``Series`` and ``Panel`` are
+natively supported. This is thanks to pandas_ already providing support for this with the same PyTables backend as deepdish::
+
+    import pandas as pd
+    df = pd.DataFrame({'int': np.arange(3), 'name': ['zero', 'one', 'two']})
+
+    dd.io.save('test.h5', df)
+
+We can inspect this as usual::
+
+    $ ddls test.h5
+    /data                      DataFrame (2, 3)
+
+If you are curious of how pandas stores this, we can tell ``ddls`` to forget it
+knows how to read data frames by invoking the ``--raw`` command::
+
+    $ ddls test.h5 --raw
+    /data                      dict
+    /data/axis0                array (2,) [|S7]
+    /data/axis0_variety        'regular' (7) [unicode]
+    /data/axis1                array (3,) [int64]
+    /data/axis1_variety        'regular' (7) [unicode]
+    /data/block0_items         array (1,) [|S7]
+    /data/block0_items_vari... 'regular' (7) [unicode]
+    /data/block0_values        array (3, 1) [int64]
+    /data/block1_items         array (1,) [|S4]
+    /data/block1_items_vari... 'regular' (7) [unicode]
+    /data/block1_values        pickled [object]
+    /data/encoding             'UTF-8' (5) [unicode]
+    /data/nblocks              2 [int64]
+    /data/ndim                 2 [int64]
+    /data/pandas_type          'frame' (5) [unicode]
+    /data/pandas_version       '0.15.2' (6) [unicode]
+
 Sparse matrices
 ---------------
 Scipy offers several types of sparse matrices, of which deepdish can save the
@@ -179,6 +215,9 @@ This particular matrix had only nonzero elements that were set to 1, which
 meant even more compression could be applied. The default compression in
 deepdish is blosc, since zlib takes much longer to encode and offers only a
 modest space improvement.
+
+Just like with pandas data types, you can inspect the storage format using
+``ddls --raw``.
 
 Quick inspection
 ----------------
@@ -294,3 +333,4 @@ registered named can be accessed through:
 To give the base class a name, we can add
 ``dd.util.SaveableRegistry.register('foo')`` before the class definition.
 
+.. _pandas: http://pandas.pydata.org/

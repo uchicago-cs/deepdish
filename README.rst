@@ -34,6 +34,8 @@ use as pickling or `numpy.save <http://docs.scipy.org/doc/numpy/reference/genera
 - Easy to inspect the content from the command line (using ``h5ls`` or our
   specialized tool ``ddls``)
 - Highly compressed storage (thanks to a PyTables backend)
+- Native support for scipy sparse matrices and pandas ``DataFrame``, ``Series``
+  and ``Panel``
 - Ability to partially read files, even slices of arrays
 
 An example:
