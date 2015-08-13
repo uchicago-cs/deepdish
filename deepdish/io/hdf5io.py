@@ -3,8 +3,12 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import tables
 import warnings
-import pandas as pd
 from scipy import sparse
+try:
+    import pandas as pd
+    _pandas = True
+except ImportError:
+    _pandas = False
 
 from deepdish import six
 
@@ -19,15 +23,16 @@ ATTR_TYPES = (int, float, bool, six.string_types,
               np.bool_, np.complex64, np.complex128)
 
 
-class _HDFStoreWithHandle(pd.io.pytables.HDFStore):
-    def __init__(self, handle):
-        self._path = None
-        self._complevel = None
-        self._complib = None
-        self._fletcher32 = False
-        self._filters = None
+if _pandas:
+    class _HDFStoreWithHandle(pd.io.pytables.HDFStore):
+        def __init__(self, handle):
+            self._path = None
+            self._complevel = None
+            self._complib = None
+            self._fletcher32 = False
+            self._filters = None
 
-        self._handle = handle
+            self._handle = handle
 
 
 def is_pandas_dataframe(level):
@@ -177,7 +182,7 @@ def _save_level(handler, group, level, name=None, filters=None):
     elif isinstance(level, np.ndarray):
         _save_ndarray(handler, group, name, level, filters=filters)
 
-    elif isinstance(level, (pd.DataFrame, pd.Series, pd.Panel)):
+    elif _pandas and isinstance(level, (pd.DataFrame, pd.Series, pd.Panel)):
         store = _HDFStoreWithHandle(handler)
         store.put(group._v_pathname + '/' + name, level)
 
@@ -301,6 +306,7 @@ def _load_level(handler, level):
         elif level._v_title.startswith('nonetype:'):
             return None
         elif is_pandas_dataframe(level):
+            assert _pandas, "pandas is required to read this file"
             store = _HDFStoreWithHandle(handler)
             return store.get(level._v_pathname)
         elif level._v_title.startswith('sparse:'):
