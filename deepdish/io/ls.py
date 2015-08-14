@@ -485,10 +485,6 @@ def main():
 
     args = parser.parse_args()
 
-    if args.version:
-        print('deepdish {} (deepdish io protocol: {})'.format(__version__, IO_VERSION))
-        return
-
     colorize = sys.stdout.isatty() and not args.no_color
 
     def single_file(files):
