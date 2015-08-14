@@ -45,20 +45,7 @@ def pad(data, padwidth, value=0.0):
     padded_shape = tuple(map(lambda ix: ix[1]+padwidth[ix[0]]*2,
                              enumerate(shape)))
     new_data = np.empty(padded_shape, dtype=data.dtype)
-    new_data[:] = value
-    new_data[[slice(w, -w) if w > 0 else slice(None) for w in padwidth]] = data
-    return new_data
-
-
-def multipad(data, padwidth, values):
-    data = np.asarray(data)
-    shape = data.shape
-    if isinstance(padwidth, int):
-        padwidth = (padwidth,)*len(shape)
-
-    padded_shape = map(lambda ix: ix[1]+padwidth[ix[0]]*2, enumerate(shape))
-    new_data = np.zeros(padded_shape, dtype=data.dtype)
-    new_data[..., :] = values
+    new_data[..., :] = value
     new_data[[slice(w, -w) if w > 0 else slice(None) for w in padwidth]] = data
     return new_data
 
