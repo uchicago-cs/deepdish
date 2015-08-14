@@ -7,7 +7,6 @@ def zca_whitening_matrix(X, w_epsilon, batch=1000):
     N = shape[0]
     Xflat = X.reshape((N, -1))
 
-    print('calc sigma')
     sigma = None
     num_batches = int(np.ceil(N / batch))
     for b in range(num_batches):
@@ -18,10 +17,8 @@ def zca_whitening_matrix(X, w_epsilon, batch=1000):
         else:
             sigma += C
     sigma /= N
-    print('sigma', sigma.shape)
 
     U, S, _ = np.linalg.svd(sigma)
-    print('calced svd')
     shrinker = np.diag(1 / np.sqrt(S + w_epsilon))
     W = np.dot(U, np.dot(shrinker, U.T))
     return W
