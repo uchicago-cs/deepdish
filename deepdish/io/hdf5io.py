@@ -12,8 +12,10 @@ except ImportError:
 
 from deepdish import six
 
-IO_VERSION = 7
-DEEPDISH_IO_VERSION_STR = 'DEEPDISH_IO_VERSION'
+IO_VERSION = 8
+DEEPDISH_IO_PREFIX = 'DEEPDISH_IO'
+DEEPDISH_IO_VERSION_STR = DEEPDISH_IO_PREFIX + '_VERSION'
+DEEPDISH_IO_UNPACK = DEEPDISH_IO_PREFIX + '_DEEPDISH_IO_UNPACK'
 
 # Types that should be saved as pytables attribute
 ATTR_TYPES = (int, float, bool, six.string_types,
@@ -272,7 +274,7 @@ def _load_level(handler, level):
 
         # Load attributes
         for name in level._v_attrs._f_list():
-            if name == DEEPDISH_IO_VERSION_STR:
+            if name.startswith(DEEPDISH_IO_PREFIX):
                 continue
             v = level._v_attrs[name]
             dct[name] = v
@@ -430,9 +432,11 @@ def save(path, data, compression='blosc', compress=None):
 
         else:
             _save_level(h5file, group, data, name='data', filters=filters)
+            # Mark this to automatically unpack when loaded
+            group._v_attrs[DEEPDISH_IO_UNPACK] = True
 
 
-def load(path, group=None, sel=None, unpack=True):
+def load(path, group=None, sel=None):
     """
     Loads an HDF5 saved with `save`.
 
@@ -449,10 +453,6 @@ def load(path, group=None, sel=None, unpack=True):
         If you specify `group` and the target is a numpy array, then you can
         use this to slice it. This is useful for opening subsets of large HDF5
         files. To compose the selection, you can use `deepdish.aslice`.
-    unpack : bool
-        If True, a single-entry dictionaries will be unpacked and the value
-        will be returned directly. That is, if you save ``dict(a=100)``, only
-        ``100`` will be loaded.
 
     Returns
     --------
@@ -483,10 +483,8 @@ def load(path, group=None, sel=None, unpack=True):
                               'deepdish. Please upgrade to make sure it loads '
                               'correctly.')
 
-            if isinstance(data, dict) and len(data) == 1:
-                if '_top' in data:
-                    data = data['_top']
-                elif unpack:
-                    data = next(iter(data.values()))
+            unpack = DEEPDISH_IO_UNPACK in grp._v_attrs and grp._v_attrs[DEEPDISH_IO_UNPACK]
+            if unpack and isinstance(data, dict) and len(data) == 1:
+                data = next(iter(data.values()))
 
     return data

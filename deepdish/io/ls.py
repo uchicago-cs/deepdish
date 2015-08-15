@@ -2,7 +2,8 @@
 Look inside HDF5 files from the terminal, especially those created by deepdish.
 """
 from __future__ import division, print_function, absolute_import
-from .hdf5io import DEEPDISH_IO_VERSION_STR, IO_VERSION, is_pandas_dataframe
+from .hdf5io import (DEEPDISH_IO_VERSION_STR, DEEPDISH_IO_PREFIX,
+        DEEPDISH_IO_UNPACK, IO_VERSION, is_pandas_dataframe)
 import tables
 import numpy as np
 import sys
@@ -85,8 +86,8 @@ def container_info(name, size=None, colorize=True, type_color=None,
 
 
 def abbreviate(s, maxlength=25):
-    assert maxlength >= 4
     """Color-aware abbreviator"""
+    assert maxlength >= 4
     skip = False
     abbrv = None
     i = 0
@@ -110,10 +111,15 @@ def abbreviate(s, maxlength=25):
         return abbrv
 
 
-def print_row(key, value, level=0, parent='/', colorize=True, file=sys.stdout):
+def print_row(key, value, level=0, parent='/', colorize=True,
+              file=sys.stdout, unpack=False):
     s = '{}{}'.format(paint(parent, 'darkgray', colorize=colorize),
                       paint(key, 'white', colorize=colorize))
     s_raw = '{}{}'.format(parent, key)
+    if unpack:
+        extra_str = '*'
+        s_raw += extra_str
+        s += paint(extra_str, 'purple', colorize=colorize)
     print('{}{} {}'.format(abbreviate(s, LEFT_COL),
                            ' '*max(0, (LEFT_COL + 1 - len(s_raw))),
                            value))
@@ -177,9 +183,11 @@ class DictNode(Node):
             for k in sorted(self.children):
                 v = self.children[k]
                 final = level+1 == max_level
+
                 print_row(k, v.info(colorize=colorize,
                                     final_level=final), level=level,
-                          parent=parent, colorize=colorize, file=file)
+                          parent=parent, unpack=self.header.get('dd_io_unpack'),
+                          colorize=colorize, file=file)
                 v.print(level=level+1, parent='{}{}/'.format(parent, k),
                         colorize=colorize, max_level=max_level, file=file)
 
@@ -375,7 +383,13 @@ def _tree_level(level, raw=False):
             v = level._v_attrs[name]
             if name == DEEPDISH_IO_VERSION_STR:
                 node.header['dd_io_version'] = v
+
+            if name == DEEPDISH_IO_UNPACK:
+                node.header['dd_io_unpack'] = v
+
+            if name.startswith(DEEPDISH_IO_PREFIX):
                 continue
+
             node.add(name, ValueNode(v))
 
         if (level._v_title.startswith('list:') or

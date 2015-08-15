@@ -180,16 +180,6 @@ class TestIO(unittest.TestCase):
             dd.io.save(f, dict(x=100))
             dd.io.load(f)
 
-    def test_unpack(self):
-        with tmp_filename() as fn:
-            x = np.ones(10)
-            dd.io.save(fn, dict(x=x))
-            d = dd.io.load(fn, unpack=False)
-            np.testing.assert_array_equal(x, d['x'])
-
-            x1 = dd.io.load(fn, unpack=True)
-            np.testing.assert_array_equal(x, x1)
-
     def test_force_pickle(self):
         with tmp_filename() as fn:
             x = dict(one=dict(two=np.arange(10)),
