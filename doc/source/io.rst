@@ -231,15 +231,21 @@ Adding ``--ipython`` will start an IPython session that comes pre-loaded
 with the selected variable loaded into the variable ``data``. This can be used
 even without ``-i``, in which case the whole file is loaded into ``data``.
 
-Structure
----------
-If the entry object is not a dictionary, it will by default create a group called
-``data``. If the top group has only one entry, it will by default be unpacked::
+Fake top-level group
+--------------------
+Even if the entry object is not a dictionary, HDF5 forces us to create a
+top-level group to put it in. This group will be called ``data`` and marked
+using hidden attributes as fake so that a dictionary is not added when loaded::
 
-    dd.io.save('test.h5', dict(foo=100))
-    print(dd.io.load('test.h5'))
+    dd.io.save('test.h5', [np.arange(5), 100])
 
-This will print `100`. To avoid this behavior, specify ``unpack=False``.
+Note that ``ddls`` will let you know this group is fake by adding a star after
+``/data``::
+
+    $ ddls test.h5
+    /data*                     list
+    /data/i0                   array (5,) [int64]
+    /data/i1                   100 [int64]
 
 Partial loading
 ---------------
