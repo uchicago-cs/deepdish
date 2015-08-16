@@ -9,7 +9,7 @@ before_install:
     - export PATH=/home/travis/miniconda/bin:$PATH
     - conda update --yes conda
 install:
-    - travis_retry conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy cython scipy matplotlib scikit-image pytables
+    - travis_retry conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy cython scipy matplotlib scikit-image pytables pandas
     - pip install coverage
     - pip install nose
     - pip install python-coveralls
