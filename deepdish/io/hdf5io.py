@@ -436,7 +436,7 @@ def save(path, data, compression='blosc', compress=None):
             group._v_attrs[DEEPDISH_IO_UNPACK] = True
 
 
-def load(path, group=None, sel=None):
+def load(path, group=None, sel=None, unpack=False):
     """
     Loads an HDF5 saved with `save`.
 
@@ -453,6 +453,10 @@ def load(path, group=None, sel=None):
         If you specify `group` and the target is a numpy array, then you can
         use this to slice it. This is useful for opening subsets of large HDF5
         files. To compose the selection, you can use `deepdish.aslice`.
+    unpack : bool
+        If True, a single-entry dictionaries will be unpacked and the value
+        will be returned directly. That is, if you save ``dict(a=100)``, only
+        ``100`` will be loaded.
 
     Returns
     --------
@@ -483,8 +487,11 @@ def load(path, group=None, sel=None):
                               'deepdish. Please upgrade to make sure it loads '
                               'correctly.')
 
-            unpack = DEEPDISH_IO_UNPACK in grp._v_attrs and grp._v_attrs[DEEPDISH_IO_UNPACK]
-            if unpack and isinstance(data, dict) and len(data) == 1:
+
+            auto_unpack = (DEEPDISH_IO_UNPACK in grp._v_attrs and
+                           grp._v_attrs[DEEPDISH_IO_UNPACK])
+            u = unpack or auto_unpack
+            if u and isinstance(data, dict) and len(data) == 1:
                 data = next(iter(data.values()))
 
     return data
