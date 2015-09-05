@@ -3,7 +3,7 @@ Look inside HDF5 files from the terminal, especially those created by deepdish.
 """
 from __future__ import division, print_function, absolute_import
 from .hdf5io import (DEEPDISH_IO_VERSION_STR, DEEPDISH_IO_PREFIX,
-        DEEPDISH_IO_UNPACK, IO_VERSION, is_pandas_dataframe)
+                     DEEPDISH_IO_UNPACK, IO_VERSION, is_pandas_dataframe)
 import tables
 import numpy as np
 import sys
@@ -254,6 +254,7 @@ class PandasSeriesNode(Node):
 
     def __repr__(self):
         return 'SeriesNode()'
+
 
 class ListNode(Node):
     def __init__(self, typename='list'):
