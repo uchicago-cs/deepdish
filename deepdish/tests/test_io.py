@@ -175,6 +175,13 @@ class TestIO(unittest.TestCase):
             xs = dd.io.load(fn, '/x', sel=s)
             np.testing.assert_array_equal(xs, x[s])
 
+            xs = dd.io.load(fn, sel=s, unpack=True)
+            np.testing.assert_array_equal(xs, x[s])
+
+            dd.io.save(fn, x)
+            xs = dd.io.load(fn, sel=s)
+            np.testing.assert_array_equal(xs, x[s])
+
     def test_open_file(self):
         with tmp_file() as f:
             dd.io.save(f, dict(x=100))
@@ -188,7 +195,7 @@ class TestIO(unittest.TestCase):
                       three=x['three'])
 
             dd.io.save(fn, xf)
-            xs = dd.io.load(fn, unpack=False)
+            xs = dd.io.load(fn)
 
             np.testing.assert_array_equal(x['one']['two'], xs['one']['two'])
             assert x['three'] == xs['three']

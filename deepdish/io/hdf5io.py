@@ -38,7 +38,8 @@ if _pandas:
 
 
 def is_pandas_dataframe(level):
-    return 'pandas_version' in level._v_attrs and 'pandas_type' in level._v_attrs
+    return ('pandas_version' in level._v_attrs and
+            'pandas_type' in level._v_attrs)
 
 
 class ForcePickle(object):
@@ -128,7 +129,7 @@ def _save_pickled(handler, group, level, name=None):
     warnings.warn(('(deepdish.io.save) Pickling {}: This may cause '
                    'incompatibities (for instance between Python 2 and '
                    '3) and should ideally be avoided').format(level),
-                   DeprecationWarning)
+                  DeprecationWarning)
     node = handler.create_vlarray(group, name, tables.ObjectAtom())
     node.append(level)
 
@@ -181,7 +182,9 @@ def _save_level(handler, group, level, name=None, filters=None):
             'please convert before saving to one of the following supported '
             'types: BSR, COO, CSR, CSC, DIA')
 
-    elif isinstance(level, (sparse.csr_matrix, sparse.csc_matrix, sparse.bsr_matrix)):
+    elif isinstance(level, (sparse.csr_matrix,
+                            sparse.csc_matrix,
+                            sparse.bsr_matrix)):
         new_group = handler.create_group(group, name, "sparse:")
 
         _save_ndarray(handler, new_group, 'data', level.data, filters=filters)
@@ -226,30 +229,36 @@ def _save_level(handler, group, level, name=None, filters=None):
 
 def _load_specific_level(handler, grp, path, sel=None):
     if path == '':
-        return _load_level(handler, grp)
+        if sel is not None:
+            return _load_sliced_level(handler, grp, sel)
+        else:
+            return _load_level(handler, grp)
     vv = path.split('/', 1)
     if len(vv) == 1:
         if hasattr(grp, vv[0]):
             if sel is not None:
-                return _load_sliced_level(getattr(grp, vv[0]), sel)
+                return _load_sliced_level(handler, getattr(grp, vv[0]), sel)
             else:
                 return _load_level(handler, getattr(grp, vv[0]))
         elif hasattr(grp, '_v_attrs') and vv[0] in grp._v_attrs:
+            if sel is not None:
+                raise ValueError("Cannot slice this type")
             v = grp._v_attrs[vv[0]]
             if isinstance(v, np.string_):
                 v = v.decode('utf-8')
             return v
         else:
-            raise ValueError('Unknown type')
+            raise ValueError('Undefined entry "{}"'.format(vv[0]))
     else:
         level, rest = vv
         if level == '':
             return _load_specific_level(handler, grp.root, rest, sel=sel)
         else:
             if hasattr(grp, level):
-                return _load_specific_level(handler, getattr(grp, level), rest, sel=sel)
+                return _load_specific_level(handler, getattr(grp, level),
+                                            rest, sel=sel)
             else:
-                raise ValueError('Unknown path')
+                raise ValueError('Undefined group "{}"'.format(level))
 
 
 def _load_pickled(level):
@@ -349,7 +358,7 @@ def _load_level(handler, level):
         return level[:]
 
 
-def _load_sliced_level(level, sel):
+def _load_sliced_level(handler, level, sel):
     if isinstance(level, tables.VLArray):
         if level.shape == (1,):
             return _load_pickled(level)
@@ -358,8 +367,9 @@ def _load_sliced_level(level, sel):
 
     elif isinstance(level, tables.Array):
         return level[sel]
+
     else:
-        raise ValueError("Can't slice path")
+        raise ValueError('Cannot partially load this data type using `sel`')
 
 
 def save(path, data, compression='blosc', compress=None):
@@ -476,7 +486,19 @@ def load(path, group=None, sel=None, unpack=False):
             data = _load_specific_level(h5file, h5file, group, sel=sel)
         else:
             grp = h5file.root
-            data = _load_level(h5file, grp)
+            auto_unpack = (DEEPDISH_IO_UNPACK in grp._v_attrs and
+                           grp._v_attrs[DEEPDISH_IO_UNPACK])
+            do_unpack = unpack or auto_unpack
+            if do_unpack and len(grp._v_children) == 1:
+                name = next(iter(grp._v_children))
+                data = _load_specific_level(h5file, grp, name, sel=sel)
+                do_unpack = False
+            elif sel is not None:
+                raise ValueError("Must specify group with `sel` unless it "
+                                 "automatically unpacks")
+            else:
+                data = _load_level(h5file, grp)
+
             if DEEPDISH_IO_VERSION_STR in grp._v_attrs:
                 v = grp._v_attrs[DEEPDISH_IO_VERSION_STR]
             else:
@@ -487,11 +509,10 @@ def load(path, group=None, sel=None, unpack=False):
                               'deepdish. Please upgrade to make sure it loads '
                               'correctly.')
 
-
-            auto_unpack = (DEEPDISH_IO_UNPACK in grp._v_attrs and
-                           grp._v_attrs[DEEPDISH_IO_UNPACK])
-            u = unpack or auto_unpack
-            if u and isinstance(data, dict) and len(data) == 1:
+            # Attributes can't be unpacked with the method above, so fall back
+            # to this
+            if do_unpack and isinstance(data, dict) and len(data) == 1:
                 data = next(iter(data.values()))
+
 
     return data
