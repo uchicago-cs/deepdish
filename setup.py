@@ -2,9 +2,14 @@
 from __future__ import division, print_function, absolute_import 
 
 from setuptools import setup
+import os
 
-with open('requirements.txt') as f:
-    required = f.read().splitlines()
+if os.getenv('READTHEDOCS'):
+    with open('requirements_docs.txt') as f:
+        required = f.read().splitlines()
+else:
+    with open('requirements.txt') as f:
+        required = f.read().splitlines()
 
 CLASSIFIERS = [
     'Development Status :: 4 - Beta',
@@ -20,7 +25,7 @@ CLASSIFIERS = [
 
 args = dict(
     name='deepdish',
-    version='0.2.1',
+    version='0.3.0',
     url="https://github.com/uchicago-cs/deepdish",
     description="Deep Learning experiments from University of Chicago.",
     maintainer='Gustav Larsson',
