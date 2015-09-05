@@ -257,11 +257,5 @@ class TestIO(unittest.TestCase):
                 x1 = dd.io.load(fn)
                 assert (x == x1).all()
 
-            # Legacy
-            for comp in [True, False]:
-                dd.io.save(fn, x, compress=comp)
-                x1 = dd.io.load(fn)
-                assert (x == x1).all()
-
 if __name__ == '__main__':
     unittest.main()

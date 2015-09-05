@@ -372,7 +372,7 @@ def _load_sliced_level(handler, level, sel):
         raise ValueError('Cannot partially load this data type using `sel`')
 
 
-def save(path, data, compression='blosc', compress=None):
+def save(path, data, compression='blosc'):
     """
     Save any Python structure to an HDF5 file. It is particularly suited for
     Numpy arrays. This function works similar to ``numpy.save``, except if you
@@ -419,14 +419,6 @@ def save(path, data, compression='blosc', compress=None):
     """
     if not isinstance(path, str):
         path = path.name
-
-    if compress is not None:
-        warnings.warn('(deepdish.io.save) Please use the parameter '
-                      'compression instead of compress. The latter will be '
-                      'removed.',
-                      FutureWarning)
-        if compress is False:
-            compression = None
 
     filters = _get_compression_filters(compression)
 
