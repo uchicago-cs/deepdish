@@ -14,8 +14,6 @@
 # serve to show the default.
 
 import sys
-import os
-import shlex
 
 try:
     from unittest.mock import MagicMock
@@ -50,7 +48,7 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinxcontrib.napoleon'
+    'sphinx.ext.napoleon',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
