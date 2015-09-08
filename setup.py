@@ -31,6 +31,9 @@ args = dict(
     maintainer='Gustav Larsson',
     maintainer_email='gustav.m.larsson@gmail.com',
     install_requires=required,
+    extras_require={
+        'image': ["skimage"],
+    },
     scripts=['scripts/ddls'],
     packages=[
         'deepdish',

@@ -5,6 +5,14 @@ from __future__ import division, print_function, absolute_import
 import itertools as itr
 import numpy as np
 
+def _import_skimage():
+    """Import scikit-image, with slightly modified `ImportError` message"""
+    try:
+        import skimage
+    except ImportError:
+        raise ImportError("scikit-image is required to use this function.")
+    return skimage
+
 
 def resize_by_factor(im, factor):
     """
@@ -23,6 +31,7 @@ def resize_by_factor(im, factor):
     factor : float
         Resize factor, e.g. a factor of 0.5 will halve both sides.
     """
+    _import_skimage()
     from skimage.transform.pyramids import pyramid_reduce, pyramid_expand
     if factor < 1:
         return pyramid_reduce(im, downscale=1/factor)
@@ -114,6 +123,7 @@ def load(path, dtype=np.float64):
         values will be between 0 and 255 and no conversion cost will be
         incurred.
     """
+    _import_skimage()
     import skimage.io
     im = skimage.io.imread(path)
     if dtype == np.uint8:
