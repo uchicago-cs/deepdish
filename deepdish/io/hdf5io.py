@@ -461,7 +461,7 @@ def load(path, group=None, sel=None, unpack=False):
         ``100`` will be loaded.
 
     Returns
-    --------
+    -------
     data : anything
         Hopefully an identical reconstruction of the data that was saved.
 
