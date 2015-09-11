@@ -29,10 +29,11 @@ N = 1000
 X = np.zeros((N, 3, 32, 32), dtype=np.uint8)
 y = np.zeros(N, dtype=np.int64)
 
-# We need to prepare the database for the size. We'll set it 10 times greater
-# than what we theoretically need. There is little drawback to setting this too
-# big. If you still run into problem after raising this, you might want to try
-# saving fewer entries in a single transaction.
+# We need to prepare the database for the size. We'll set it 10 times
+# greater than what we theoretically need. There is little drawback to
+# setting this too big. If you still run into problem after raising
+# this, you might want to try saving fewer entries in a single
+# transaction.
 map_size = X.nbytes * 10
 
 env = lmdb.open('mylmdb', map_size=map_size)
