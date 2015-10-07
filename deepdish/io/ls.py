@@ -9,6 +9,7 @@ import tables
 import numpy as np
 import sys
 import os
+import re
 from deepdish import io, six, __version__
 
 LEFT_COL = 25
@@ -113,10 +114,16 @@ def abbreviate(s, maxlength=25):
 
 
 def print_row(key, value, level=0, parent='/', colorize=True,
-              file=sys.stdout, unpack=False):
+              file=sys.stdout, unpack=False, settings={}):
+
     s = '{}{}'.format(paint(parent, 'darkgray', colorize=colorize),
                       paint(key, 'white', colorize=colorize))
     s_raw = '{}{}'.format(parent, key)
+    if 'filter' in settings:
+        if not re.search(settings['filter'], s_raw):
+            settings['filtered_count'] += 1
+            return
+
     if unpack:
         extra_str = '*'
         s_raw += extra_str
@@ -131,7 +138,7 @@ class Node(object):
         return 'Node'
 
     def print(self, level=0, parent='/', colorize=True, max_level=None,
-              file=sys.stdout):
+              file=sys.stdout, settings={}):
         pass
 
     def info(self, colorize=True, final_level=False):
@@ -146,7 +153,7 @@ class FileNotFoundNode(Node):
         return 'FileNotFoundNode'
 
     def print(self, level=0, parent='/', colorize=True, max_level=None,
-              file=sys.stdout):
+              file=sys.stdout, settings={}):
         print(paint('File not found', 'red', colorize=colorize),
               file=file)
 
@@ -162,7 +169,7 @@ class InvalidFileNode(Node):
         return 'InvalidFileNode'
 
     def print(self, level=0, parent='/', colorize=True, max_level=None,
-              file=sys.stdout):
+              file=sys.stdout, settings={}):
         print(paint('Invalid HDF5 file', 'red', colorize=colorize),
               file=file)
 
@@ -179,18 +186,21 @@ class DictNode(Node):
         self.children[k] = v
 
     def print(self, level=0, parent='/', colorize=True, max_level=None,
-              file=sys.stdout):
+              file=sys.stdout, settings={}):
         if level < max_level:
             for k in sorted(self.children):
                 v = self.children[k]
                 final = level+1 == max_level
 
-                print_row(k, v.info(colorize=colorize,
-                                    final_level=final), level=level,
-                          parent=parent, unpack=self.header.get('dd_io_unpack'),
-                          colorize=colorize, file=file)
+                if not settings.get('leaves-only') or not isinstance(v, DictNode):
+                    print_row(k, v.info(colorize=colorize,
+                                        final_level=final), level=level,
+                              parent=parent, unpack=self.header.get('dd_io_unpack'),
+                              colorize=colorize, file=file,
+                              settings=settings)
                 v.print(level=level+1, parent='{}{}/'.format(parent, k),
-                        colorize=colorize, max_level=max_level, file=file)
+                        colorize=colorize, max_level=max_level, file=file,
+                        settings=settings)
 
     def info(self, colorize=True, final_level=False):
         return container_info('dict', size=len(self.children),
@@ -291,7 +301,12 @@ class ListNode(Node):
         return 'ListNode({})'.format(', '.join(s))
 
     def print(self, level=0, parent='/', colorize=True,
-              max_level=None, file=sys.stdout):
+              max_level=None, file=sys.stdout, settings={}):
+
+        #if 'filter' in settings:
+            #if not re.match(settings['filter'], parent):
+                #return
+
         if level < max_level:
             for i, v in enumerate(self.children):
                 k = str(i)
@@ -299,9 +314,11 @@ class ListNode(Node):
                 print_row(k, v.info(colorize=colorize,
                                     final_level=final),
                           level=level, parent=parent + 'i',
-                          colorize=colorize, file=file)
+                          colorize=colorize, file=file,
+                          settings=settings)
                 v.print(level=level+1, parent='{}{}/'.format(parent + 'i', k),
-                        colorize=colorize, max_level=max_level, file=file)
+                        colorize=colorize, max_level=max_level, file=file,
+                        settings=settings)
 
     def info(self, colorize=True, final_level=False):
         return container_info(self.typename, size=len(self.children),
@@ -539,12 +556,23 @@ def main():
                         help=('prints the raw HDF5 structure for complex '
                               'data types, such as sparse matrices and pandas '
                               'data frames'))
+    parser.add_argument('-f', '--filter', type=str,
+                        help=('Print only entries that match this regular expression'))
+    parser.add_argument('-l', '--leaves-only', action='store_true',
+                        help=('Only print leaves'))
     parser.add_argument('-v', '--version', action='version',
                         version='deepdish {} (io protocol {})'.format(__version__, IO_VERSION))
 
     args = parser.parse_args()
 
     colorize = sys.stdout.isatty() and not args.no_color
+
+    settings = {}
+    if args.filter:
+        settings['filter'] = args.filter
+
+    if args.leaves_only:
+        settings['leaves-only'] = True
 
     def single_file(files):
         if len(files) >= 2:
@@ -591,6 +619,9 @@ def main():
         run_ipython(fn, data=data)
     else:
         for f in args.file:
+            # State that will be incremented
+            settings['filtered_count'] = 0
+
             s = get_tree(f, raw=args.raw)
             if s is not None:
                 if i > 0:
@@ -598,9 +629,13 @@ def main():
 
                 if len(args.file) >= 2:
                     print(paint(f, 'yellow', colorize=colorize))
-                s.print(colorize=colorize, max_level=args.depth)
+                s.print(colorize=colorize, max_level=args.depth, settings=settings)
                 i += 1
 
+            if settings.get('filter'):
+                print('Filtered on: {} ({} rows omitted)'.format(
+                    paint(args.filter, 'purple', colorize=colorize),
+                    paint(str(settings['filtered_count']), 'white', colorize=colorize)))
 
 if __name__ == '__main__':
     main()
