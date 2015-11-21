@@ -1,0 +1,25 @@
+
+digraph g {
+    graph [rankdir="LR"]
+
+    x1 [label=<<B>x</B><I>&#185;</I>> shape="square" fillcolor=PowderBlue style=filled]
+    x2 [label=<<B>x</B><I>&#178;</I>> shape="square" fillcolor=PowderBlue style=filled]
+    xdot [label="..." shape="square" color=none fillcolor=none style=filled]
+    xN [label=<<B>x</B><I>&#8319;</I>> shape="square" fillcolor=PowderBlue style=filled]
+    #z [label=<<B>z</B>> shape="square" fillcolor=PowderBlue style=filled]
+    f [label=<<I>f</I>> fillcolor=whitesmoke style=filled]
+
+
+    x1 -> f
+    x2 -> f
+    xdot -> f
+    xN -> f
+
+    abc [label="..." shape=circle fillcolor=mintcream color=white style=filled]
+
+    f -> abc [label=<<B>z</B>>]
+    L [label=<<I>L</I>> fillcolor=whitesmoke style=filled]
+
+    abc -> L
+}
+

@@ -1,0 +1,17 @@
+
+digraph g {
+    graph [rankdir="LR"]
+
+
+    idata [label="input data" fillcolor=lightgray shape=rectangle style=filled]
+    idiff [label="input diff" fillcolor=plum shape=rectangle style=filled]
+    odata [label="output data" fillcolor=lightgray shape=rectangle style=filled]
+    odiff [label="output diff" fillcolor=lightgray shape=rectangle style=filled]
+    f [label="backward" fillcolor=whitesmoke shape=rectangle style=filled]
+
+    idata -> f
+    idiff -> f [dir=back]
+    f -> odata [dir=back]
+    f -> odiff [dir=back]
+}
+

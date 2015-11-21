@@ -1,0 +1,14 @@
+
+
+digraph g {
+    graph [rankdir="LR"]
+
+
+    idata [label="input data" fillcolor=lightgray shape=rectangle style=filled]
+    odata [label="output data" fillcolor=plum shape=rectangle style=filled]
+    f [label="forward" fillcolor=whitesmoke shape=rectangle style=filled]
+
+    idata -> f
+    f -> odata
+}
+

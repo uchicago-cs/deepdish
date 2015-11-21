@@ -1,0 +1,36 @@
+
+digraph g {
+    graph [rankdir="LR"]
+
+    x [label=<<B>x</B>> shape="square" fillcolor=PowderBlue style=filled]
+    y [label=<<B>y</B>> shape="square" fillcolor=PowderBlue style=filled]
+w1 [label=<<B>W</B><I>&#8321;</I>> shape="square" fillcolor=coral style=filled]
+    b1 [label=<<B>b</B><I>&#8321;</I>> shape="square" fillcolor=coral style=filled]
+
+    w2 [label=<<B>W</B><I>&#8322;</I>> shape="square" fillcolor=coral style=filled]
+    b2 [label=<<B>b</B><I>&#8322;</I>> shape="square" fillcolor=coral style=filled]
+
+    #dense1 [label=<<I>&#966;&#8321;</I>>]
+    dense1 [label="Dense" fillcolor=whitesmoke style=filled]
+    dense2 [label="Dense" fillcolor=whitesmoke style=filled]
+    x -> dense1 #[label=1] #[label=<<I>a</I><B><SUB><I>i</I></SUB></B>>]
+    w1 -> dense1 #[label=2] #[label="weights"]
+    b1 -> dense1 #[label=3] #[label="bias"]
+
+    relu1 [label="ReLU" fillcolor=whitesmoke style=filled]
+    relu2 [label="ReLU" fillcolor=whitesmoke style=filled]
+
+    dense1 -> relu1
+
+    relu1 -> dense2 #[label=1]
+    w2 -> dense2 #[label=2]
+    b2 -> dense2# [label=3]
+
+    dense2 -> relu2
+
+    L [label=<<I>L</I>> fillcolor=whitesmoke style=filled]
+
+    relu2 -> L
+
+    y -> L
+}
