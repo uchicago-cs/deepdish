@@ -129,7 +129,7 @@ Note that we have to return a list, since we could have multiple inputs.
 
 ## Dense
 
-Moving on to the dense layer where
+Moving on to the dense (fully connected) layer where
 
 \\begin{equation}
 \\mathbf{z} = \\mathbf{W} ^ \\intercal \\mathbf{x} + \\mathbf{b} \\quad\\quad (\\mathbb{R}^{B \times 1} = \\mathbb{R}^{B \times A} \\mathbb{R}^{A \times 1} + \mathbb{R}^{B \times 1})
