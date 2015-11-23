@@ -51,14 +51,14 @@ We broke the derivative up using the multivariable chain rule (also known as the
 This assumes that the input size is \\( A \\) and the output size is \\( B \\). The derivative \\(  \\frac{ \\partial L }{ \\partial \\mathbf{z} } \\in \\mathbb{R} ^ {B} \\) is something that needs to be given to the building block from the outside (this is the gradient being back-propagated). The Jacobian \\( \\frac{ \\mathrm{d} \\mathbf{z} }{ \\mathrm{d} \\mathbf{x} } \\in \\mathbb{R} ^ {B \times A} \\) on the other hand needs to be defined by the node. However, we do not necessarily need to explicitly compute it or store it. All we need is to define the function
 
 \\begin{equation}
-\\frac{ \\partial L }{ \\partial \\mathbf{x}  } = \\mathrm{backward}(\\mathbf{x}, \\mathbf{z}, \\frac{ \\partial L }{ \\partial \\mathbf{z} })
+\\frac{ \\partial L }{ \\partial \\mathbf{x}  } = \\mathrm{backward}\\left(\\mathbf{x}, \\mathbf{z}, \\frac{ \\partial L }{ \\partial \\mathbf{z} }\\right)
 \\end{equation}
 
 This would need to be done for each input separately. Since they sometimes share computations, frameworks like Caffe use a single function for the entire node's backward computation. In our code examples, we will adopt this as well, meaning we will be defining:
 
 
 \\begin{equation}
-\\left(\\frac{ \\partial L }{ \\partial \\mathbf{x}^1  }, \\dots, \\frac{ \\partial L }{ \\partial \\mathbf{x}^n  }\\right) = \\mathrm{backward}((\\mathbf{x}^1, \\dots, \\mathbf{x}^n), \\mathbf{z}, \\frac{ \\partial L }{ \\partial \\mathbf{z} })
+\\left(\\frac{ \\partial L }{ \\partial \\mathbf{x}^1  }, \\dots, \\frac{ \\partial L }{ \\partial \\mathbf{x}^n  }\\right) = \\mathrm{backward}\\left((\\mathbf{x}^1, \\dots, \\mathbf{x}^n), \\mathbf{z}, \\frac{ \\partial L }{ \\partial \\mathbf{z} }\\right)
 \\end{equation}
 
 It is also common to support multiple outputs, however for simplicity (and without loss of generality) we will assume there is only one.
@@ -117,10 +117,10 @@ For the backward pass, the Jacobian will be a diagonal matrix, with entries
 where \\( 1 _ {\\{P\\}} \\) is 1 if the predicate \\( P\\) is true, and zero otherwise (see [Iverson bracket](https://en.wikipedia.org/wiki/Iverson_bracket)). We can now write the gradient of the loss as
 
 \\begin{equation}
-\\frac{ \\partial L }{ \\partial \\mathbf{x} } = \\left(\\frac{ \\mathrm{d} \\mathbf{z} }{ \\mathrm{d} \\mathbf{x} }\\right) ^ \\intercal  \\frac{ \\partial L }{ \\partial \\mathbf{z} } = \\mathbf{1} _ {\\{ \\mathbf{x} > \\mathbf{0} \\} } \\otimes  \\frac{ \\partial L }{ \\partial \\mathbf{z} },
+\\frac{ \\partial L }{ \\partial \\mathbf{x} } = \\left(\\frac{ \\mathrm{d} \\mathbf{z} }{ \\mathrm{d} \\mathbf{x} }\\right) ^ \\intercal  \\frac{ \\partial L }{ \\partial \\mathbf{z} } = \\mathbf{1} _ {\\{ \\mathbf{x} > \\mathbf{0} \\} } \\odot  \\frac{ \\partial L }{ \\partial \\mathbf{z} },
 \\end{equation}
 
-where \\( \otimes \\) denotes an [elementwise product](https://en.wikipedia.org/wiki/Hadamard_product_%28matrices%29).
+where \\( \odot \\) denotes an [elementwise product](https://en.wikipedia.org/wiki/Hadamard_product_%28matrices%29).
 
     def backward(inputs, output, output_diff):
         return [(inputs[0] > 0) * output_diff]
@@ -150,14 +150,14 @@ Which might translate to:
 For the backward pass, we need to compute all three Jacobians and multiply them by the gradient coming in from above. Let's start with \\( \\mathbf{x} \\):
 
 \\begin{equation}
-\\frac{\\mathrm{d} \\mathbf{z} }{\\mathrm{d} \\mathbf{x}} = \\mathbf{W} \\in \\mathbb{R} ^ {A \\times B}
+\\frac{\\mathrm{d} \\mathbf{z} }{\\mathrm{d} \\mathbf{x}} = \\mathbf{W} ^ \\intercal \\in \\mathbb{R} ^ {B \\times A}
 \\end{equation}
 
 which gives us
 
 \\begin{equation}
 \\text{Gradient #1 }\\rightarrow \\quad\\quad\\
-\\frac{\\partial L}{\\partial \\mathbf{x}} = \\mathbf{W} ^ \\intercal \\frac{ \\partial L }{ \\partial \\mathbf{z} }
+\\frac{\\partial L}{\\partial \\mathbf{x}} = \\left(\\frac{ \\mathrm{d} \\mathbf{z} }{ \\mathrm{d} \\mathbf{x} }\\right) ^ \\intercal  \\frac{ \\partial L }{ \\partial \\mathbf{z} }= \\mathbf{W} \\frac{ \\partial L }{ \\partial \\mathbf{z} }
 \\quad\\quad \\leftarrow\\text{ Gradient #1}
 \\end{equation}
 
@@ -196,7 +196,7 @@ so the Loss derivative with respect to the bias is just the gradients coming in 
 
 \\begin{equation}
 \\text{Gradient #3}\\rightarrow \\quad\\quad\\
-\\frac{\\partial L}{\\partial \\mathbf{b}} = \\frac{ \\partial L }{ \\partial \\mathbf{z} }
+\\frac{\\partial L}{\\partial \\mathbf{b}} = \\left(\\frac{ \\mathrm{d} \\mathbf{z} }{ \\mathrm{d} \\mathbf{b} }\\right) ^ \\intercal  \\frac{ \\partial L }{ \\partial \\mathbf{z} }= \\frac{ \\partial L }{ \\partial \\mathbf{z} }
 \\quad\\quad \\leftarrow\\text{ Gradient #3}
 \\end{equation}
 
