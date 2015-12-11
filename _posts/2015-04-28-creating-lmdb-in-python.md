@@ -53,7 +53,7 @@ with env.begin(write=True) as txn:
         txn.put(str_id.encode('ascii'), datum.SerializeToString())
 ```
 
-You can also open up and inspect an extisting LMDB database from Python:
+You can also open up and inspect an existing LMDB database from Python:
 
 ```python
 import numpy as np
