@@ -65,7 +65,7 @@ SimpleNamespaces
 
 SimpleNamespaces work almost identically to dictionaries and are available in
 Python 3.3 and later. Note that for versions of Python that do not support
-SimpleNamespaces, deepdish will seemlessly load them in as dictionaries.
+SimpleNamespaces, deepdish will seamlessly load them in as dictionaries.
 
 Like dictionaries, SimpleNamespaces are saved as HDF5 groups:
 
