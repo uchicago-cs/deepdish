@@ -7,6 +7,12 @@ import deepdish as dd
 import pandas as pd
 from contextlib import contextmanager
 
+try:
+    from types import SimpleNamespace as sns
+    _sns = True
+except ImportError:
+    _sns = False
+
 
 @contextmanager
 def tmp_filename():
@@ -84,16 +90,36 @@ class TestIO(unittest.TestCase):
             x0 = np.array([[u'this', u'string'], [u'foo', u'bar']])
             assert_array(fn, x0)
 
-
     def test_dictionary(self):
         with tmp_filename() as fn:
-            d = dict(a=100, b='this is a string', c=np.ones(5))
+            d = dict(a=100, b='this is a string', c=np.ones(5),
+                     sub=dict(a=200, b='another string',
+                              c=np.random.randn(3, 4)))
 
             d1 = reconstruct(fn, d)
 
             assert d['a'] == d1['a']
             assert d['b'] == d1['b']
             np.testing.assert_array_equal(d['c'], d1['c'])
+            assert d['sub']['a'] == d1['sub']['a']
+            assert d['sub']['b'] == d1['sub']['b']
+            np.testing.assert_array_equal(d['sub']['c'], d1['sub']['c'])
+
+    def test_simplenamespace(self):
+        if _sns:
+            with tmp_filename() as fn:
+                d = sns(a=100, b='this is a string', c=np.ones(5),
+                        sub=sns(a=200, b='another string',
+                                c=np.random.randn(3, 4)))
+
+                d1 = reconstruct(fn, d)
+
+                assert d.a == d1.a
+                assert d.b == d1.b
+                np.testing.assert_array_equal(d.c, d1.c)
+                assert d.sub.a == d1.sub.a
+                assert d.sub.b == d1.sub.b
+                np.testing.assert_array_equal(d.sub.c, d1.sub.c)
 
     def test_list(self):
         with tmp_filename() as fn:

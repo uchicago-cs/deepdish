@@ -10,12 +10,19 @@ try:
 except ImportError:
     _pandas = False
 
+try:
+    from types import SimpleNamespace as sns
+    _sns = True
+except ImportError:
+    _sns = False
+
 from deepdish import six
 
 IO_VERSION = 8
 DEEPDISH_IO_PREFIX = 'DEEPDISH_IO'
 DEEPDISH_IO_VERSION_STR = DEEPDISH_IO_PREFIX + '_VERSION'
 DEEPDISH_IO_UNPACK = DEEPDISH_IO_PREFIX + '_DEEPDISH_IO_UNPACK'
+DEEPDISH_IO_ROOT_IS_SNS = DEEPDISH_IO_PREFIX + '_ROOT_IS_SNS'
 
 # Types that should be saved as pytables attribute
 ATTR_TYPES = (int, float, bool, six.string_types,
@@ -143,6 +150,14 @@ def _save_level(handler, group, level, name=None, filters=None):
         new_group = handler.create_group(group, name,
                                          "dict:{}".format(len(level)))
         for k, v in level.items():
+            if isinstance(k, six.string_types):
+                _save_level(handler, new_group, v, name=k)
+
+    elif _sns and isinstance(level, sns) and _dict_native_ok(level.__dict__):
+        # Create a new group in same manner as for dict
+        new_group = handler.create_group(group, name,
+                                         "sns:{}".format(len(level.__dict__)))
+        for k, v in level.__dict__.items():
             if isinstance(k, six.string_types):
                 _save_level(handler, new_group, v, name=k)
 
@@ -336,7 +351,8 @@ def _load_level(handler, level):
                 return matrix
             else:
                 raise ValueError('Unknown sparse matrix type: {}'.format(frm))
-
+        elif _sns and level._v_title.startswith('sns:'):
+            return sns(**dct)
         else:
             return dct
 
@@ -432,6 +448,11 @@ def save(path, data, compression='blosc'):
             for key, value in data.items():
                 _save_level(h5file, group, value, name=key, filters=filters)
 
+        elif _sns and isinstance(data, sns) and _dict_native_ok(data.__dict__):
+            group._v_attrs[DEEPDISH_IO_ROOT_IS_SNS] = True
+            for key, value in data.__dict__.items():
+                _save_level(h5file, group, value, name=key, filters=filters)
+
         else:
             _save_level(h5file, group, data, name='data', filters=filters)
             # Mark this to automatically unpack when loaded
@@ -490,6 +511,8 @@ def load(path, group=None, sel=None, unpack=False):
                                  "automatically unpacks")
             else:
                 data = _load_level(h5file, grp)
+                if _sns and DEEPDISH_IO_ROOT_IS_SNS in grp._v_attrs:
+                    data = sns(**data)
 
             if DEEPDISH_IO_VERSION_STR in grp._v_attrs:
                 v = grp._v_attrs[DEEPDISH_IO_VERSION_STR]
@@ -505,6 +528,5 @@ def load(path, group=None, sel=None, unpack=False):
             # to this
             if do_unpack and isinstance(data, dict) and len(data) == 1:
                 data = next(iter(data.values()))
-
 
     return data
