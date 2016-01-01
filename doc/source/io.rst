@@ -9,10 +9,10 @@ compatible between Python 2 and 3, and the files cannot be easily inspected or
 shared with other programming languages.
 
 Deepdish has a function that converts your Python data type into a native HDF5
-hierarchy. It stores dictionaries, values, strings and numpy arrays very
-naturally. It can also store lists and tuples, but it's not as natural, so
-prefer numpy arrays whenever possible. Here's an example saving and HDF5 using
-:func:`deepdish.io.save`:
+hierarchy. It stores dictionaries, SimpleNamespaces (for versions of Python that
+support them), values, strings and numpy arrays very naturally. It can also
+store lists and tuples, but it's not as natural, so prefer numpy arrays whenever
+possible. Here's an example saving and HDF5 using :func:`deepdish.io.save`:
 
 >>> import deepdish as dd
 >>> d = {'foo': np.arange(10), 'bar': np.ones((5, 4, 3))}
@@ -59,6 +59,46 @@ Again, we can use the deepdish tool for better inspection::
     /foo/bar                   array (10,) [int64]
     /foo/baz                   array (3,) [float64]
     /qux                       array (12,) [float64] 
+
+SimpleNamespaces
+----------------
+
+SimpleNamespaces work almost identically to dictionaries and are available in
+Python 3.3 and later. Note that for versions of Python that do not support
+SimpleNamespaces, deepdish will seemlessly load them in as dictionaries.
+
+Like dictionaries, SimpleNamespaces are saved as HDF5 groups:
+
+>>> from types import SimpleNamespace as sns
+>>> d = sns(foo=sns(bar=np.arange(10), baz=np.zeros(3)), qux=np.ones(12))
+>>> dd.io.save('test.h5', d)
+
+For h5ls, the results are identical to the Dictionary example::
+
+    $ h5ls -r test.h5
+    /                        Group
+    /foo                     Group
+    /foo/bar                 Dataset {10}
+    /foo/baz                 Dataset {3}
+    /qux                     Dataset {12}
+
+Again, we can use the deepdish tool for better inspection. For a version of
+Python that supports SimpleNamespaces::
+
+    $ ddls test.h5
+    /foo                       SimpleNamespace
+    /foo/bar                   array (10,) [int64]
+    /foo/baz                   array (3,) [float64]
+    /qux                       array (12,) [float64]
+
+For a version of Python that doesn't support SimpleNamespaces, dictionaries are
+used::
+
+    $ ddls test.h5
+    /foo                       dict
+    /foo/bar                   array (10,) [int64]
+    /foo/baz                   array (3,) [float64]
+    /qux                       array (12,) [float64]
 
 Numpy arrays
 ------------

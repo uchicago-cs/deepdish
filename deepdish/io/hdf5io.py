@@ -396,18 +396,22 @@ def save(path, data, compression='blosc'):
     ``data.flat[1]`` to retrieve it from inside a Numpy array of type
     ``object``.
 
-    Four types of objects get saved natively in HDF5, the rest get serialized
-    automatically.  For most needs, you should be able to stick to the four,
+    Five types of objects get saved natively in HDF5, the rest get serialized
+    automatically.  For most needs, you should be able to stick to the five,
     which are:
 
     * Dictionaries
     * Lists and tuples
     * Basic data types (including strings and None)
     * Numpy arrays
+    * SimpleNamespaces (for Python >= 3.3, but see note below)
 
-    A recommendation is to always convert your data to using only these four
+    A recommendation is to always convert your data to using only these five
     ingredients. That way your data will always be retrievable by any HDF5
     reader. A class that helps you with this is `deepdish.util.Saveable`.
+
+    Note that the SimpleNamespace type will be read in as dictionaries for
+    earlier versions of Python.
 
     This function requires the `PyTables <http://www.pytables.org/>`_ module to
     be installed.
