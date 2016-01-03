@@ -12,28 +12,47 @@ Deepdish has a function that converts your Python data type into a native HDF5
 hierarchy. It stores dictionaries, SimpleNamespaces (for versions of Python that
 support them), values, strings and numpy arrays very naturally. It can also
 store lists and tuples, but it's not as natural, so prefer numpy arrays whenever
-possible. Here's an example saving and HDF5 using :func:`deepdish.io.save`:
+possible.
+
+In Python, many names can be bound to the same object. Deepdish accounts for
+this for many objects (dictionaries, lists, numpy arrays, pandas dataframes,
+SimpleNamespaces, etc) by using HDF5 soft links. This means the object itself is
+only written once and that these relationships are preserved upon
+loading. Recursion inside objects is also handled via soft links.
+
+Here's an example saving and HDF5 using :func:`deepdish.io.save`:
 
 >>> import deepdish as dd
->>> d = {'foo': np.arange(10), 'bar': np.ones((5, 4, 3))}
+>>> ones = np.ones((5, 4, 3))
+>>> d = {'foo': np.arange(10), 'bar': ones, 'baz': ones}
 >>> dd.io.save('test.h5', d)
 
 It will try its best to save it in a way native to HDF5::
 
     $ h5ls test.h5
     bar                      Dataset {5, 4, 3}
+    baz                      Soft Link {/bar}
     foo                      Dataset {10}
 
-Note that we also offer our own version of ``h5ls`` that works really well with
-deepdish saved HDF5 files::
+Notice that the `ones` 3D array was only written once.
+
+We also offer our own version of ``h5ls`` that works really well with deepdish
+saved HDF5 files::
 
     $ ddls test.h5
     /bar                       array (5, 4, 3) [float64]
+    /baz                       link -> /bar [SoftLink]
     /foo                       array (10,) [int64]
 
-We can now reconstruct the dictionary from file using :func:`deepdish.io.load`:
+We can now reconstruct the dictionary from the file using
+:func:`deepdish.io.load`:
 
 >>> d = dd.io.load('test.h5')
+
+Verify that ``d['bar']`` and ``d['baz']`` refer to the same object:
+
+>>> d['bar'] is d['baz']
+True
 
 Dictionaries
 ------------
@@ -58,7 +77,7 @@ Again, we can use the deepdish tool for better inspection::
     /foo                       dict
     /foo/bar                   array (10,) [int64]
     /foo/baz                   array (3,) [float64]
-    /qux                       array (12,) [float64] 
+    /qux                       array (12,) [float64]
 
 SimpleNamespaces
 ----------------
@@ -128,7 +147,7 @@ Basic Python data types are stored as attributes or empty groups:
 >>> d = {'a': 10, 'b': 'test', 'c': None}
 >>> dd.io.save('test.h5', d)
 
-We might not seem them through ``h5ls``::
+We might not see them through ``h5ls``::
 
     $ h5ls test.h5
     c                        Group
@@ -190,7 +209,8 @@ make it a numpy array first!
 Pandas data structures
 ----------------------
 The pandas_ data structures ``DataFrame``, ``Series`` and ``Panel`` are
-natively supported. This is thanks to pandas_ already providing support for this with the same PyTables backend as deepdish::
+natively supported. This is thanks to pandas_ already providing support for this
+with the same PyTables backend as deepdish::
 
     import pandas as pd
     df = pd.DataFrame({'int': np.arange(3), 'name': ['zero', 'one', 'two']})
@@ -228,7 +248,7 @@ Sparse matrices
 Scipy offers several types of sparse matrices, of which deepdish can save the
 types BSR, COO, CSC, CSR and DIA. The types DOK and LIL are currently not
 supported (note that these two types are mainly for incrementally building
-sparse matrices anyway). 
+sparse matrices anyway).
 
 Using deepdish can offer a dramatic space and speed improvement over for instance
 ``mmwrite`` and ``mmread`` in `scipy.io
@@ -241,7 +261,7 @@ whatsoever. Here is a comparison on a large (100 billion elements) and sparse
 ============================  ===========  ==========  ==============  =============
 Method                        Compression  Space (MB)  Write time (s)  Read time (s)
 ============================  ===========  ==========  ==============  =============
-scipy's mmwrite                         N         145           79             40   
+scipy's mmwrite                         N         145           79             40
 numpy's save                            N         134            1.36           0.75
 pickle                                  N         115            0.63           0.17
 deepdish (no compression)               N         115            0.52           0.17
