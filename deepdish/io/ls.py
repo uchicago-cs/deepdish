@@ -3,8 +3,8 @@ Look inside HDF5 files from the terminal, especially those created by deepdish.
 """
 from __future__ import division, print_function, absolute_import
 from .hdf5io import (DEEPDISH_IO_VERSION_STR, DEEPDISH_IO_PREFIX,
-                     DEEPDISH_IO_UNPACK, IO_VERSION, _sns,
-                     is_pandas_dataframe)
+                     DEEPDISH_IO_UNPACK, DEEPDISH_IO_ROOT_IS_SNS,
+                     IO_VERSION, _sns, is_pandas_dataframe)
 import tables
 import numpy as np
 import sys
@@ -180,6 +180,11 @@ class DictNode(Node):
 
     def print(self, level=0, parent='/', colorize=True, max_level=None,
               file=sys.stdout):
+        if level == 0 and not self.header.get('dd_io_unpack'):
+            print_row('', self.info(colorize=colorize,
+                                    final_level=(1 == max_level)),
+                      level=level, parent=parent, unpack=False,
+                      colorize=colorize, file=file)
         if level < max_level:
             for k in sorted(self.children):
                 v = self.children[k]
@@ -203,28 +208,7 @@ class DictNode(Node):
         return 'DictNode({})'.format(', '.join(s))
 
 
-class SnsNode(Node):
-    def __init__(self):
-        self.children = {}
-        self.header = {}
-
-    def add(self, k, v):
-        self.children[k] = v
-
-    def print(self, level=0, parent='/', colorize=True, max_level=None,
-              file=sys.stdout):
-        if level < max_level:
-            for k in sorted(self.children):
-                v = self.children[k]
-                final = level+1 == max_level
-
-                print_row(k, v.info(colorize=colorize,
-                                    final_level=final), level=level,
-                          parent=parent, unpack=self.header.get('dd_io_unpack'),
-                          colorize=colorize, file=file)
-                v.print(level=level+1, parent='{}{}/'.format(parent, k),
-                        colorize=colorize, max_level=max_level, file=file)
-
+class SimpleNamespaceNode(DictNode):
     def info(self, colorize=True, final_level=False):
         return container_info('SimpleNamespace', size=len(self.children),
                               colorize=colorize,
@@ -233,7 +217,7 @@ class SnsNode(Node):
 
     def __repr__(self):
         s = ['{}={}'.format(k, repr(v)) for k, v in self.children.items()]
-        return 'SnsNode({})'.format(', '.join(s))
+        return 'SimpleNamespaceNode({})'.format(', '.join(s))
 
 
 class PandasDataFrameNode(Node):
@@ -424,8 +408,9 @@ class SoftLinkNode(Node):
 
 def _tree_level(level, raw=False):
     if isinstance(level, tables.Group):
-        if _sns and level._v_title.startswith('sns:'):
-            node = SnsNode()
+        if _sns and (level._v_title.startswith('sns:') or
+                     DEEPDISH_IO_ROOT_IS_SNS in level._v_attrs):
+            node = SimpleNamespaceNode()
         else:
             node = DictNode()
 
