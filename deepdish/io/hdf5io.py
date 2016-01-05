@@ -139,31 +139,7 @@ def _save_pickled(handler, group, level, name=None):
     node.append(level)
 
 
-def _is_linkable(level):
-    # if level is None or isinstance(level, ATTR_TYPES):
-    # - turns out, soft links take up less space than groups, so
-    #   let None be a link
-    if isinstance(level, ATTR_TYPES):
-        return False
-    return True
-
-
-def _save_level(handler, group, level, name=None, filters=None, idtable=None):
-    _id = id(level)
-    try:
-        oldpath = idtable[_id]
-    except KeyError:
-        if _is_linkable(level):
-            # store path to object:
-            if group._v_pathname.endswith('/'):
-                idtable[_id] = '{}{}'.format(group._v_pathname, name)
-            else:
-                idtable[_id] = '{}/{}'.format(group._v_pathname, name)
-    else:
-        # object already saved, so create soft link to it:
-        handler.create_soft_link(group, name, target=oldpath)
-        return
-
+def _save_level(handler, group, level, name=None, filters=None):
     if isinstance(level, ForcePickle):
         _save_pickled(handler, group, level, name=name)
 
@@ -173,7 +149,7 @@ def _save_level(handler, group, level, name=None, filters=None, idtable=None):
                                          "dict:{}".format(len(level)))
         for k, v in level.items():
             if isinstance(k, six.string_types):
-                _save_level(handler, new_group, v, name=k, idtable=idtable)
+                _save_level(handler, new_group, v, name=k)
 
     elif _sns and isinstance(level, sns) and _dict_native_ok(level.__dict__):
         # Create a new group in same manner as for dict
@@ -181,7 +157,7 @@ def _save_level(handler, group, level, name=None, filters=None, idtable=None):
                                          "sns:{}".format(len(level.__dict__)))
         for k, v in level.__dict__.items():
             if isinstance(k, six.string_types):
-                _save_level(handler, new_group, v, name=k, idtable=idtable)
+                _save_level(handler, new_group, v, name=k)
 
     elif isinstance(level, list) and len(level) < 256:
         # Lists can contain other dictionaries and numpy arrays, so we don't
@@ -192,8 +168,7 @@ def _save_level(handler, group, level, name=None, filters=None, idtable=None):
 
         for i, entry in enumerate(level):
             level_name = 'i{}'.format(i)
-            _save_level(handler, new_group, entry,
-                        name=level_name, idtable=idtable)
+            _save_level(handler, new_group, entry, name=level_name)
 
     elif isinstance(level, tuple) and len(level) < 256:
         # Lists can contain other dictionaries and numpy arrays, so we don't
@@ -204,8 +179,7 @@ def _save_level(handler, group, level, name=None, filters=None, idtable=None):
 
         for i, entry in enumerate(level):
             level_name = 'i{}'.format(i)
-            _save_level(handler, new_group, entry, name=level_name,
-                        idtable=idtable)
+            _save_level(handler, new_group, entry, name=level_name)
 
     elif isinstance(level, np.ndarray):
         _save_ndarray(handler, group, name, level, filters=filters)
@@ -263,19 +237,19 @@ def _save_level(handler, group, level, name=None, filters=None, idtable=None):
         _save_pickled(handler, group, level, name=name)
 
 
-def _load_specific_level(handler, grp, path, sel=None, pathtable=None):
+def _load_specific_level(handler, grp, path, sel=None):
     if path == '':
         if sel is not None:
             return _load_sliced_level(handler, grp, sel)
         else:
-            return _load_level(handler, grp, pathtable)
+            return _load_level(handler, grp)
     vv = path.split('/', 1)
     if len(vv) == 1:
         if hasattr(grp, vv[0]):
             if sel is not None:
                 return _load_sliced_level(handler, getattr(grp, vv[0]), sel)
             else:
-                return _load_level(handler, getattr(grp, vv[0]), pathtable)
+                return _load_level(handler, getattr(grp, vv[0]))
         elif hasattr(grp, '_v_attrs') and vv[0] in grp._v_attrs:
             if sel is not None:
                 raise ValueError("Cannot slice this type")
@@ -288,12 +262,11 @@ def _load_specific_level(handler, grp, path, sel=None, pathtable=None):
     else:
         level, rest = vv
         if level == '':
-            return _load_specific_level(handler, grp.root, rest, sel=sel,
-                                        pathtable=pathtable)
+            return _load_specific_level(handler, grp.root, rest, sel=sel)
         else:
             if hasattr(grp, level):
                 return _load_specific_level(handler, getattr(grp, level),
-                                            rest, sel=sel, pathtable=pathtable)
+                                            rest, sel=sel)
             else:
                 raise ValueError('Undefined group "{}"'.format(level))
 
@@ -305,7 +278,7 @@ def _load_pickled(level):
         return level[0]
 
 
-def _load_level1(handler, level, pathtable, pathname):
+def _load_level(handler, level):
     if isinstance(level, tables.Group):
         if _sns and (level._v_title.startswith('sns:') or
                      DEEPDISH_IO_ROOT_IS_SNS in level._v_attrs):
@@ -317,13 +290,10 @@ def _load_level1(handler, level, pathtable, pathname):
         else:
             dct = {}
             val = dct
-        # in case of recursion, object needs to be put in pathtable
-        # before trying to fully load it
-        pathtable[pathname] = val
 
         # Load sub-groups
         for grp in level:
-            lev = _load_level(handler, grp, pathtable)
+            lev = _load_level(handler, grp)
             n = grp._v_name
             # Check if it's a complicated pair or a string-value pair
             if n.startswith('__pair'):
@@ -406,24 +376,6 @@ def _load_level1(handler, level, pathtable, pathname):
         return level[:]
 
 
-def _load_level(handler, level, pathtable):
-    if isinstance(level, tables.link.SoftLink):
-        # this is a link, so if object was already loaded, return it
-        pathname = level.target
-        node = level()
-    else:
-        # not a link, but it might be a target that's already been
-        # loaded ... if so, return it
-        pathname = level._v_pathname
-        node = level
-    try:
-        return pathtable[pathname]
-    except KeyError:
-        pathtable[pathname] = _load_level1(handler, node, pathtable,
-                                           pathname)
-        return pathtable[pathname]
-
-
 def _load_sliced_level(handler, level, sel):
     if isinstance(level, tables.VLArray):
         if level.shape == (1,):
@@ -496,25 +448,19 @@ def save(path, data, compression='blosc'):
         # If the data is a dictionary, put it flatly in the root
         group = h5file.root
         group._v_attrs[DEEPDISH_IO_VERSION_STR] = IO_VERSION
-        idtable = {}  # dict to keep track of objects already saved
         # Sparse matrices match isinstance(data, dict), so we'll have to be
         # more strict with the type checking
         if type(data) == type({}) and _dict_native_ok(data):
-            idtable[id(data)] = '/'
             for key, value in data.items():
-                _save_level(h5file, group, value, name=key,
-                            filters=filters, idtable=idtable)
+                _save_level(h5file, group, value, name=key, filters=filters)
 
         elif _sns and isinstance(data, sns) and _dict_native_ok(data.__dict__):
-            idtable[id(data)] = '/'
             group._v_attrs[DEEPDISH_IO_ROOT_IS_SNS] = True
             for key, value in data.__dict__.items():
-                _save_level(h5file, group, value, name=key,
-                            filters=filters, idtable=idtable)
+                _save_level(h5file, group, value, name=key, filters=filters)
 
         else:
-            _save_level(h5file, group, data, name='data',
-                        filters=filters, idtable=idtable)
+            _save_level(h5file, group, data, name='data', filters=filters)
             # Mark this to automatically unpack when loaded
             group._v_attrs[DEEPDISH_IO_UNPACK] = True
 
@@ -555,10 +501,8 @@ def load(path, group=None, sel=None, unpack=False):
         path = path.name
 
     with tables.open_file(path, mode='r') as h5file:
-        pathtable = {}  # dict to keep track of objects already loaded
         if group is not None:
-            data = _load_specific_level(h5file, h5file, group, sel=sel,
-                                        pathtable=pathtable)
+            data = _load_specific_level(h5file, h5file, group, sel=sel)
         else:
             grp = h5file.root
             auto_unpack = (DEEPDISH_IO_UNPACK in grp._v_attrs and
@@ -566,14 +510,13 @@ def load(path, group=None, sel=None, unpack=False):
             do_unpack = unpack or auto_unpack
             if do_unpack and len(grp._v_children) == 1:
                 name = next(iter(grp._v_children))
-                data = _load_specific_level(h5file, grp, name, sel=sel,
-                                            pathtable=pathtable)
+                data = _load_specific_level(h5file, grp, name, sel=sel)
                 do_unpack = False
             elif sel is not None:
                 raise ValueError("Must specify group with `sel` unless it "
                                  "automatically unpacks")
             else:
-                data = _load_level(h5file, grp, pathtable)
+                data = _load_level(h5file, grp)
 
             if DEEPDISH_IO_VERSION_STR in grp._v_attrs:
                 v = grp._v_attrs[DEEPDISH_IO_VERSION_STR]

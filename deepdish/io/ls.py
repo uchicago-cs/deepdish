@@ -391,21 +391,6 @@ class ObjectNode(Node):
                            colorize=colorize)
 
 
-class SoftLinkNode(Node):
-    def __init__(self, target):
-        self.target = target
-
-    def info(self, colorize=True, final_level=False):
-        return type_string('link -> {}'.format(self.target),
-                           dtype='SoftLink',
-                           type_color='cyan',
-                           colorize=colorize)
-
-    def __repr__(self):
-        return ('SoftLinkNode(target={})'
-                .format(self.target))
-
-
 def _tree_level(level, raw=False):
     if isinstance(level, tables.Group):
         if _sns and (level._v_title.startswith('sns:') or
@@ -491,9 +476,6 @@ def _tree_level(level, raw=False):
 
             node = NumpyArrayNode(shape, strtype.decode('ascii'))
 
-        return node
-    elif isinstance(level, tables.link.SoftLink):
-        node = SoftLinkNode(level.target)
         return node
     else:
         return Node()

@@ -12,29 +12,17 @@ Deepdish has a function that converts your Python data type into a native HDF5
 hierarchy. It stores dictionaries, SimpleNamespaces (for versions of Python that
 support them), values, strings and numpy arrays very naturally. It can also
 store lists and tuples, but it's not as natural, so prefer numpy arrays whenever
-possible.
-
-In Python, many names can be bound to the same object. Deepdish accounts for
-this for many objects (dictionaries, lists, numpy arrays, pandas dataframes,
-SimpleNamespaces, etc) by using HDF5 soft links. This means the object itself is
-only written once and that these relationships are preserved upon
-loading. Recursion inside objects is also handled via soft links.
-
-Here's an example saving and HDF5 using :func:`deepdish.io.save`:
+possible. Here's an example saving and HDF5 using :func:`deepdish.io.save`:
 
 >>> import deepdish as dd
->>> ones = np.ones((5, 4, 3))
->>> d = {'foo': np.arange(10), 'bar': ones, 'baz': ones}
+>>> d = {'foo': np.arange(10), 'bar': np.ones((5, 4, 3))}
 >>> dd.io.save('test.h5', d)
 
 It will try its best to save it in a way native to HDF5::
 
     $ h5ls test.h5
     bar                      Dataset {5, 4, 3}
-    baz                      Soft Link {/bar}
     foo                      Dataset {10}
-
-Notice that the `ones` 3D array was only written once.
 
 We also offer our own version of ``h5ls`` that works really well with deepdish
 saved HDF5 files::
@@ -42,18 +30,12 @@ saved HDF5 files::
     $ ddls test.h5
     /                          dict
     /bar                       array (5, 4, 3) [float64]
-    /baz                       link -> /bar [SoftLink]
     /foo                       array (10,) [int64]
 
 We can now reconstruct the dictionary from the file using
 :func:`deepdish.io.load`:
 
 >>> d = dd.io.load('test.h5')
-
-Verify that ``d['bar']`` and ``d['baz']`` refer to the same object:
-
->>> d['bar'] is d['baz']
-True
 
 Dictionaries
 ------------
@@ -183,7 +165,7 @@ attributes::
        [CLASS := 'GROUP',
         TITLE := 'nonetype:',
         VERSION := '1.0']
-        
+
 Note that these are still somewhat awkwardly stored, so always prefer using
 numpy arrays to store numeric values.
 
