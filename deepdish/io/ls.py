@@ -182,7 +182,7 @@ class DictNode(Node):
               file=sys.stdout):
         if level == 0 and not self.header.get('dd_io_unpack'):
             print_row('', self.info(colorize=colorize,
-                                    final_level=(1 == max_level)),
+                                    final_level=(0 == max_level)),
                       level=level, parent=parent, unpack=False,
                       colorize=colorize, file=file)
         if level < max_level:

@@ -40,6 +40,7 @@ We also offer our own version of ``h5ls`` that works really well with deepdish
 saved HDF5 files::
 
     $ ddls test.h5
+    /                          dict
     /bar                       array (5, 4, 3) [float64]
     /baz                       link -> /bar [SoftLink]
     /foo                       array (10,) [int64]
@@ -74,6 +75,7 @@ Resulting in::
 Again, we can use the deepdish tool for better inspection::
 
     $ ddls test.h5
+    /                          dict
     /foo                       dict
     /foo/bar                   array (10,) [int64]
     /foo/baz                   array (3,) [float64]
@@ -105,6 +107,7 @@ Again, we can use the deepdish tool for better inspection. For a version of
 Python that supports SimpleNamespaces::
 
     $ ddls test.h5
+    /                          SimpleNamespace
     /foo                       SimpleNamespace
     /foo/bar                   array (10,) [int64]
     /foo/baz                   array (3,) [float64]
@@ -114,6 +117,7 @@ For a version of Python that doesn't support SimpleNamespaces, dictionaries are
 used::
 
     $ ddls test.h5
+    /                          dict
     /foo                       dict
     /foo/bar                   array (10,) [int64]
     /foo/baz                   array (3,) [float64]
@@ -155,6 +159,7 @@ We might not see them through ``h5ls``::
 This is where ``ddls`` excels::
 
     $ ddls test.h5
+    /                          dict
     /a                         10 [int64]
     /b                         'test' (4) [unicode]
     /c                         None [python]
@@ -165,8 +170,9 @@ attributes::
 
     $ ptdump -a test.h5
     / (RootGroup) ''
-      /._v_attrs (AttributeSet), 6 attributes:
+      /._v_attrs (AttributeSet), 7 attributes:
        [CLASS := 'GROUP',
+        DEEPDISH_IO_VERSION := 8,
         PYTABLES_FORMAT_VERSION := '2.1',
         TITLE := '',
         VERSION := '1.0',
@@ -177,7 +183,7 @@ attributes::
        [CLASS := 'GROUP',
         TITLE := 'nonetype:',
         VERSION := '1.0']
-
+        
 Note that these are still somewhat awkwardly stored, so always prefer using
 numpy arrays to store numeric values.
 
@@ -195,7 +201,7 @@ as an attribute and thus not directly visible by ``h5ls``. However, ``ddls`` wil
 show it::
 
     $ ddls test.h5
-    /data                      list
+    /data*                     list
     /data/i0                   dict
     /data/i0/foo               10 [int64]
     /data/i1                   dict
@@ -204,7 +210,10 @@ show it::
 
 Note that this is awkward and if the list is long you easily hit HDF5's
 limitation on the number of groups. Therefore, if your list is numeric, always
-make it a numpy array first!
+make it a numpy array first! The asterisk on the "/data" group indicates that
+the top level variable that was saved was not a dict or a SimpleNamespace;
+during load, deepdish will unpack "/data" so that the saved variable is
+returned. See `Fake top-level group`_.
 
 Pandas data structures
 ----------------------
@@ -220,18 +229,18 @@ with the same PyTables backend as deepdish::
 We can inspect this as usual::
 
     $ ddls test.h5
-    /data                      DataFrame (2, 3)
+    /data*                     DataFrame (2, 3)
 
 If you are curious of how pandas stores this, we can tell ``ddls`` to forget it
 knows how to read data frames by invoking the ``--raw`` command::
 
     $ ddls test.h5 --raw
-    /data                      dict
-    /data/axis0                array (2,) [|S7]
+    /data*                     dict
+    /data/axis0                array (2,) [|S4]
     /data/axis0_variety        'regular' (7) [unicode]
     /data/axis1                array (3,) [int64]
     /data/axis1_variety        'regular' (7) [unicode]
-    /data/block0_items         array (1,) [|S7]
+    /data/block0_items         array (1,) [|S3]
     /data/block0_items_vari... 'regular' (7) [unicode]
     /data/block0_values        array (3, 1) [int64]
     /data/block1_items         array (1,) [|S4]
@@ -293,9 +302,10 @@ even without ``-i``, in which case the whole file is loaded into ``data``.
 
 Fake top-level group
 --------------------
-Even if the entry object is not a dictionary, HDF5 forces us to create a
-top-level group to put it in. This group will be called ``data`` and marked
-using hidden attributes as fake so that a dictionary is not added when loaded::
+Even if the entry object is not a dictionary or SimpleNamespace, HDF5
+forces us to create a top-level group to put it in. This group will be
+called ``data`` and marked using hidden attributes as fake so that a
+dictionary or SimpleNamespace is not added when loaded::
 
     dd.io.save('test.h5', [np.arange(5), 100])
 
@@ -341,6 +351,7 @@ deepdish also offers pickling as a last resort::
 Inspecting this file will yield::
 
     $ ddls test.h5
+    /                          dict
     /foo                       pickled [object]
 
 Note that the class `Foo` has to be defined in the file that calls
