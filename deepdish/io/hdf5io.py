@@ -18,7 +18,7 @@ except ImportError:
 
 from deepdish import six
 
-IO_VERSION = 8
+IO_VERSION = 9
 DEEPDISH_IO_PREFIX = 'DEEPDISH_IO'
 DEEPDISH_IO_VERSION_STR = DEEPDISH_IO_PREFIX + '_VERSION'
 DEEPDISH_IO_UNPACK = DEEPDISH_IO_PREFIX + '_DEEPDISH_IO_UNPACK'
@@ -284,9 +284,6 @@ def _load_level(handler, level):
                      DEEPDISH_IO_ROOT_IS_SNS in level._v_attrs):
             val = sns()
             dct = val.__dict__
-        elif level._v_title.startswith('list:'):
-            dct = {}
-            val = []
         else:
             dct = {}
             val = dct
@@ -310,9 +307,10 @@ def _load_level(handler, level):
 
         if level._v_title.startswith('list:'):
             N = int(level._v_title[len('list:'):])
+            lst = []
             for i in range(N):
-                val.append(dct['i{}'.format(i)])
-            return val
+                lst.append(dct['i{}'.format(i)])
+            return lst
         elif level._v_title.startswith('tuple:'):
             N = int(level._v_title[len('tuple:'):])
             lst = []
