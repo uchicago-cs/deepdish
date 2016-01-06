@@ -393,7 +393,7 @@ class ObjectNode(Node):
 
 def _tree_level(level, raw=False):
     if isinstance(level, tables.Group):
-        if _sns and (level._v_title.startswith('sns:') or
+        if _sns and (level._v_title.startswith('SimpleNamespace:') or
                      DEEPDISH_IO_ROOT_IS_SNS in level._v_attrs):
             node = SimpleNamespaceNode()
         else:

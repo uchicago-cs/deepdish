@@ -11,7 +11,7 @@ except ImportError:
     _pandas = False
 
 try:
-    from types import SimpleNamespace as sns
+    from types import SimpleNamespace
     _sns = True
 except ImportError:
     _sns = False
@@ -151,10 +151,11 @@ def _save_level(handler, group, level, name=None, filters=None):
             if isinstance(k, six.string_types):
                 _save_level(handler, new_group, v, name=k)
 
-    elif _sns and isinstance(level, sns) and _dict_native_ok(level.__dict__):
+    elif (_sns and isinstance(level, SimpleNamespace) and
+          _dict_native_ok(level.__dict__)):
         # Create a new group in same manner as for dict
-        new_group = handler.create_group(group, name,
-                                         "sns:{}".format(len(level.__dict__)))
+        new_group = handler.create_group(
+            group, name, "SimpleNamespace:{}".format(len(level.__dict__)))
         for k, v in level.__dict__.items():
             if isinstance(k, six.string_types):
                 _save_level(handler, new_group, v, name=k)
@@ -280,9 +281,9 @@ def _load_pickled(level):
 
 def _load_level(handler, level):
     if isinstance(level, tables.Group):
-        if _sns and (level._v_title.startswith('sns:') or
+        if _sns and (level._v_title.startswith('SimpleNamespace:') or
                      DEEPDISH_IO_ROOT_IS_SNS in level._v_attrs):
-            val = sns()
+            val = SimpleNamespace()
             dct = val.__dict__
         else:
             dct = {}
@@ -452,7 +453,8 @@ def save(path, data, compression='blosc'):
             for key, value in data.items():
                 _save_level(h5file, group, value, name=key, filters=filters)
 
-        elif _sns and isinstance(data, sns) and _dict_native_ok(data.__dict__):
+        elif (_sns and isinstance(data, SimpleNamespace) and
+              _dict_native_ok(data.__dict__)):
             group._v_attrs[DEEPDISH_IO_ROOT_IS_SNS] = True
             for key, value in data.__dict__.items():
                 _save_level(h5file, group, value, name=key, filters=filters)

@@ -72,8 +72,8 @@ SimpleNamespaces, deepdish will seamlessly load them in as dictionaries.
 
 Like dictionaries, SimpleNamespaces are saved as HDF5 groups:
 
->>> from types import SimpleNamespace as sns
->>> d = sns(foo=sns(bar=np.arange(10), baz=np.zeros(3)), qux=np.ones(12))
+>>> from types import SimpleNamespace as NS
+>>> d = NS(foo=NS(bar=np.arange(10), baz=np.zeros(3)), qux=np.ones(12))
 >>> dd.io.save('test.h5', d)
 
 For h5ls, the results are identical to the Dictionary example::
