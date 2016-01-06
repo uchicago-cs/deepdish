@@ -9,10 +9,10 @@ compatible between Python 2 and 3, and the files cannot be easily inspected or
 shared with other programming languages.
 
 Deepdish has a function that converts your Python data type into a native HDF5
-hierarchy. It stores dictionaries, values, strings and numpy arrays very
-naturally. It can also store lists and tuples, but it's not as natural, so
-prefer numpy arrays whenever possible. Here's an example saving and HDF5 using
-:func:`deepdish.io.save`:
+hierarchy. It stores dictionaries, SimpleNamespaces (for versions of Python that
+support them), values, strings and numpy arrays very naturally. It can also
+store lists and tuples, but it's not as natural, so prefer numpy arrays whenever
+possible. Here's an example saving and HDF5 using :func:`deepdish.io.save`:
 
 >>> import deepdish as dd
 >>> d = {'foo': np.arange(10), 'bar': np.ones((5, 4, 3))}
@@ -24,14 +24,16 @@ It will try its best to save it in a way native to HDF5::
     bar                      Dataset {5, 4, 3}
     foo                      Dataset {10}
 
-Note that we also offer our own version of ``h5ls`` that works really well with
-deepdish saved HDF5 files::
+We also offer our own version of ``h5ls`` that works really well with deepdish
+saved HDF5 files::
 
     $ ddls test.h5
+    /                          dict
     /bar                       array (5, 4, 3) [float64]
     /foo                       array (10,) [int64]
 
-We can now reconstruct the dictionary from file using :func:`deepdish.io.load`:
+We can now reconstruct the dictionary from the file using
+:func:`deepdish.io.load`:
 
 >>> d = dd.io.load('test.h5')
 
@@ -55,10 +57,53 @@ Resulting in::
 Again, we can use the deepdish tool for better inspection::
 
     $ ddls test.h5
+    /                          dict
     /foo                       dict
     /foo/bar                   array (10,) [int64]
     /foo/baz                   array (3,) [float64]
-    /qux                       array (12,) [float64] 
+    /qux                       array (12,) [float64]
+
+SimpleNamespaces
+----------------
+
+SimpleNamespaces work almost identically to dictionaries and are available in
+Python 3.3 and later. Note that for versions of Python that do not support
+SimpleNamespaces, deepdish will seamlessly load them in as dictionaries.
+
+Like dictionaries, SimpleNamespaces are saved as HDF5 groups:
+
+>>> from types import SimpleNamespace as NS
+>>> d = NS(foo=NS(bar=np.arange(10), baz=np.zeros(3)), qux=np.ones(12))
+>>> dd.io.save('test.h5', d)
+
+For h5ls, the results are identical to the Dictionary example::
+
+    $ h5ls -r test.h5
+    /                        Group
+    /foo                     Group
+    /foo/bar                 Dataset {10}
+    /foo/baz                 Dataset {3}
+    /qux                     Dataset {12}
+
+Again, we can use the deepdish tool for better inspection. For a version of
+Python that supports SimpleNamespaces::
+
+    $ ddls test.h5
+    /                          SimpleNamespace
+    /foo                       SimpleNamespace
+    /foo/bar                   array (10,) [int64]
+    /foo/baz                   array (3,) [float64]
+    /qux                       array (12,) [float64]
+
+For a version of Python that doesn't support SimpleNamespaces, dictionaries are
+used::
+
+    $ ddls test.h5
+    /                          dict
+    /foo                       dict
+    /foo/bar                   array (10,) [int64]
+    /foo/baz                   array (3,) [float64]
+    /qux                       array (12,) [float64]
 
 Numpy arrays
 ------------
@@ -88,7 +133,7 @@ Basic Python data types are stored as attributes or empty groups:
 >>> d = {'a': 10, 'b': 'test', 'c': None}
 >>> dd.io.save('test.h5', d)
 
-We might not seem them through ``h5ls``::
+We might not see them through ``h5ls``::
 
     $ h5ls test.h5
     c                        Group
@@ -96,6 +141,7 @@ We might not seem them through ``h5ls``::
 This is where ``ddls`` excels::
 
     $ ddls test.h5
+    /                          dict
     /a                         10 [int64]
     /b                         'test' (4) [unicode]
     /c                         None [python]
@@ -106,8 +152,9 @@ attributes::
 
     $ ptdump -a test.h5
     / (RootGroup) ''
-      /._v_attrs (AttributeSet), 6 attributes:
+      /._v_attrs (AttributeSet), 7 attributes:
        [CLASS := 'GROUP',
+        DEEPDISH_IO_VERSION := 8,
         PYTABLES_FORMAT_VERSION := '2.1',
         TITLE := '',
         VERSION := '1.0',
@@ -136,7 +183,7 @@ as an attribute and thus not directly visible by ``h5ls``. However, ``ddls`` wil
 show it::
 
     $ ddls test.h5
-    /data                      list
+    /data*                     list
     /data/i0                   dict
     /data/i0/foo               10 [int64]
     /data/i1                   dict
@@ -145,12 +192,16 @@ show it::
 
 Note that this is awkward and if the list is long you easily hit HDF5's
 limitation on the number of groups. Therefore, if your list is numeric, always
-make it a numpy array first!
+make it a numpy array first! The asterisk on the "/data" group indicates that
+the top level variable that was saved was not a dict or a SimpleNamespace;
+during load, deepdish will unpack "/data" so that the saved variable is
+returned. See `Fake top-level group`_.
 
 Pandas data structures
 ----------------------
 The pandas_ data structures ``DataFrame``, ``Series`` and ``Panel`` are
-natively supported. This is thanks to pandas_ already providing support for this with the same PyTables backend as deepdish::
+natively supported. This is thanks to pandas_ already providing support for this
+with the same PyTables backend as deepdish::
 
     import pandas as pd
     df = pd.DataFrame({'int': np.arange(3), 'name': ['zero', 'one', 'two']})
@@ -160,18 +211,18 @@ natively supported. This is thanks to pandas_ already providing support for this
 We can inspect this as usual::
 
     $ ddls test.h5
-    /data                      DataFrame (2, 3)
+    /data*                     DataFrame (2, 3)
 
 If you are curious of how pandas stores this, we can tell ``ddls`` to forget it
 knows how to read data frames by invoking the ``--raw`` command::
 
     $ ddls test.h5 --raw
-    /data                      dict
-    /data/axis0                array (2,) [|S7]
+    /data*                     dict
+    /data/axis0                array (2,) [|S4]
     /data/axis0_variety        'regular' (7) [unicode]
     /data/axis1                array (3,) [int64]
     /data/axis1_variety        'regular' (7) [unicode]
-    /data/block0_items         array (1,) [|S7]
+    /data/block0_items         array (1,) [|S3]
     /data/block0_items_vari... 'regular' (7) [unicode]
     /data/block0_values        array (3, 1) [int64]
     /data/block1_items         array (1,) [|S4]
@@ -188,7 +239,7 @@ Sparse matrices
 Scipy offers several types of sparse matrices, of which deepdish can save the
 types BSR, COO, CSC, CSR and DIA. The types DOK and LIL are currently not
 supported (note that these two types are mainly for incrementally building
-sparse matrices anyway). 
+sparse matrices anyway).
 
 Using deepdish can offer a dramatic space and speed improvement over for instance
 ``mmwrite`` and ``mmread`` in `scipy.io
@@ -201,7 +252,7 @@ whatsoever. Here is a comparison on a large (100 billion elements) and sparse
 ============================  ===========  ==========  ==============  =============
 Method                        Compression  Space (MB)  Write time (s)  Read time (s)
 ============================  ===========  ==========  ==============  =============
-scipy's mmwrite                         N         145           79             40   
+scipy's mmwrite                         N         145           79             40
 numpy's save                            N         134            1.36           0.75
 pickle                                  N         115            0.63           0.17
 deepdish (no compression)               N         115            0.52           0.17
@@ -233,9 +284,10 @@ even without ``-i``, in which case the whole file is loaded into ``data``.
 
 Fake top-level group
 --------------------
-Even if the entry object is not a dictionary, HDF5 forces us to create a
-top-level group to put it in. This group will be called ``data`` and marked
-using hidden attributes as fake so that a dictionary is not added when loaded::
+Even if the entry object is not a dictionary or SimpleNamespace, HDF5
+forces us to create a top-level group to put it in. This group will be
+called ``data`` and marked using hidden attributes as fake so that a
+dictionary or SimpleNamespace is not added when loaded::
 
     dd.io.save('test.h5', [np.arange(5), 100])
 
@@ -281,6 +333,7 @@ deepdish also offers pickling as a last resort::
 Inspecting this file will yield::
 
     $ ddls test.h5
+    /                          dict
     /foo                       pickled [object]
 
 Note that the class `Foo` has to be defined in the file that calls

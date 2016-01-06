@@ -10,20 +10,25 @@ try:
 except ImportError:
     _pandas = False
 
+try:
+    from types import SimpleNamespace
+    _sns = True
+except ImportError:
+    _sns = False
+
 from deepdish import six
 
-IO_VERSION = 8
+IO_VERSION = 9
 DEEPDISH_IO_PREFIX = 'DEEPDISH_IO'
 DEEPDISH_IO_VERSION_STR = DEEPDISH_IO_PREFIX + '_VERSION'
 DEEPDISH_IO_UNPACK = DEEPDISH_IO_PREFIX + '_DEEPDISH_IO_UNPACK'
+DEEPDISH_IO_ROOT_IS_SNS = DEEPDISH_IO_PREFIX + '_ROOT_IS_SNS'
 
 # Types that should be saved as pytables attribute
-ATTR_TYPES = (int, float, bool, six.string_types,
-              np.int8, np.int16, np.int32, np.int64,
-              np.uint8, np.uint16, np.uint32, np.uint64,
-              np.float16, np.float32, np.float64,
-              np.bool_, np.complex64, np.complex128)
-
+ATTR_TYPES = (int, float, bool, six.string_types, six.binary_type,
+              np.int8, np.int16, np.int32, np.int64, np.uint8,
+              np.uint16, np.uint32, np.uint64, np.float16, np.float32,
+              np.float64, np.bool_, np.complex64, np.complex128)
 
 if _pandas:
     class _HDFStoreWithHandle(pd.io.pytables.HDFStore):
@@ -146,6 +151,15 @@ def _save_level(handler, group, level, name=None, filters=None):
             if isinstance(k, six.string_types):
                 _save_level(handler, new_group, v, name=k)
 
+    elif (_sns and isinstance(level, SimpleNamespace) and
+          _dict_native_ok(level.__dict__)):
+        # Create a new group in same manner as for dict
+        new_group = handler.create_group(
+            group, name, "SimpleNamespace:{}".format(len(level.__dict__)))
+        for k, v in level.__dict__.items():
+            if isinstance(k, six.string_types):
+                _save_level(handler, new_group, v, name=k)
+
     elif isinstance(level, list) and len(level) < 256:
         # Lists can contain other dictionaries and numpy arrays, so we don't
         # want to serialize them. Instead, we will store each entry as i0, i1,
@@ -216,9 +230,6 @@ def _save_level(handler, group, level, name=None, filters=None):
     elif isinstance(level, ATTR_TYPES):
         setattr(group._v_attrs, name, level)
 
-    elif isinstance(level, six.binary_type):
-        setattr(group._v_attrs, name, level)
-
     elif level is None:
         # Store a None as an empty group
         new_group = handler.create_group(group, name, "nonetype:")
@@ -270,7 +281,14 @@ def _load_pickled(level):
 
 def _load_level(handler, level):
     if isinstance(level, tables.Group):
-        dct = {}
+        if _sns and (level._v_title.startswith('SimpleNamespace:') or
+                     DEEPDISH_IO_ROOT_IS_SNS in level._v_attrs):
+            val = SimpleNamespace()
+            dct = val.__dict__
+        else:
+            dct = {}
+            val = dct
+
         # Load sub-groups
         for grp in level:
             lev = _load_level(handler, grp)
@@ -336,9 +354,8 @@ def _load_level(handler, level):
                 return matrix
             else:
                 raise ValueError('Unknown sparse matrix type: {}'.format(frm))
-
         else:
-            return dct
+            return val
 
     elif isinstance(level, tables.VLArray):
         if level.shape == (1,):
@@ -380,18 +397,22 @@ def save(path, data, compression='blosc'):
     ``data.flat[1]`` to retrieve it from inside a Numpy array of type
     ``object``.
 
-    Four types of objects get saved natively in HDF5, the rest get serialized
-    automatically.  For most needs, you should be able to stick to the four,
+    Five types of objects get saved natively in HDF5, the rest get serialized
+    automatically.  For most needs, you should be able to stick to the five,
     which are:
 
     * Dictionaries
     * Lists and tuples
     * Basic data types (including strings and None)
     * Numpy arrays
+    * SimpleNamespaces (for Python >= 3.3, but see note below)
 
-    A recommendation is to always convert your data to using only these four
+    A recommendation is to always convert your data to using only these five
     ingredients. That way your data will always be retrievable by any HDF5
     reader. A class that helps you with this is `deepdish.util.Saveable`.
+
+    Note that the SimpleNamespace type will be read in as dictionaries for
+    earlier versions of Python.
 
     This function requires the `PyTables <http://www.pytables.org/>`_ module to
     be installed.
@@ -430,6 +451,12 @@ def save(path, data, compression='blosc'):
         # more strict with the type checking
         if type(data) == type({}) and _dict_native_ok(data):
             for key, value in data.items():
+                _save_level(h5file, group, value, name=key, filters=filters)
+
+        elif (_sns and isinstance(data, SimpleNamespace) and
+              _dict_native_ok(data.__dict__)):
+            group._v_attrs[DEEPDISH_IO_ROOT_IS_SNS] = True
+            for key, value in data.__dict__.items():
                 _save_level(h5file, group, value, name=key, filters=filters)
 
         else:
@@ -505,6 +532,5 @@ def load(path, group=None, sel=None, unpack=False):
             # to this
             if do_unpack and isinstance(data, dict) and len(data) == 1:
                 data = next(iter(data.values()))
-
 
     return data

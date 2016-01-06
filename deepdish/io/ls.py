@@ -3,7 +3,8 @@ Look inside HDF5 files from the terminal, especially those created by deepdish.
 """
 from __future__ import division, print_function, absolute_import
 from .hdf5io import (DEEPDISH_IO_VERSION_STR, DEEPDISH_IO_PREFIX,
-                     DEEPDISH_IO_UNPACK, IO_VERSION, is_pandas_dataframe)
+                     DEEPDISH_IO_UNPACK, DEEPDISH_IO_ROOT_IS_SNS,
+                     IO_VERSION, _sns, is_pandas_dataframe)
 import tables
 import numpy as np
 import sys
@@ -80,7 +81,7 @@ def container_info(name, size=None, colorize=True, type_color=None,
         return s
 
     else:
-        # If not abbreviated, then displaly the type in dark gray, since
+        # If not abbreviated, then display the type in dark gray, since
         # the information is already conveyed through the children
         return type_string(name, colorize=colorize, type_color='darkgray')
 
@@ -179,6 +180,11 @@ class DictNode(Node):
 
     def print(self, level=0, parent='/', colorize=True, max_level=None,
               file=sys.stdout):
+        if level == 0 and not self.header.get('dd_io_unpack'):
+            print_row('', self.info(colorize=colorize,
+                                    final_level=(0 == max_level)),
+                      level=level, parent=parent, unpack=False,
+                      colorize=colorize, file=file)
         if level < max_level:
             for k in sorted(self.children):
                 v = self.children[k]
@@ -200,6 +206,18 @@ class DictNode(Node):
     def __repr__(self):
         s = ['{}={}'.format(k, repr(v)) for k, v in self.children.items()]
         return 'DictNode({})'.format(', '.join(s))
+
+
+class SimpleNamespaceNode(DictNode):
+    def info(self, colorize=True, final_level=False):
+        return container_info('SimpleNamespace', size=len(self.children),
+                              colorize=colorize,
+                              type_color='purple',
+                              final_level=final_level)
+
+    def __repr__(self):
+        s = ['{}={}'.format(k, repr(v)) for k, v in self.children.items()]
+        return 'SimpleNamespaceNode({})'.format(', '.join(s))
 
 
 class PandasDataFrameNode(Node):
@@ -375,7 +393,11 @@ class ObjectNode(Node):
 
 def _tree_level(level, raw=False):
     if isinstance(level, tables.Group):
-        node = DictNode()
+        if _sns and (level._v_title.startswith('SimpleNamespace:') or
+                     DEEPDISH_IO_ROOT_IS_SNS in level._v_attrs):
+            node = SimpleNamespaceNode()
+        else:
+            node = DictNode()
 
         for grp in level:
             node.add(grp._v_name, _tree_level(grp, raw=raw))
