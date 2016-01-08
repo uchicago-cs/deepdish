@@ -63,7 +63,6 @@ the command line using either a standard tool::
 Or, better yet, our custom tool ``ddls`` (or ``python -m deepdish.io.ls``)::
 
     $ ddls test.h5
-    /                          dict
     /foo                       array (10, 20) [float64]
     /sub                       dict
     /sub/bar                   'a string' (8) [unicode]

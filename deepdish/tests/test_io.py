@@ -8,7 +8,7 @@ import pandas as pd
 from contextlib import contextmanager
 
 try:
-    from types import SimpleNamespace as sns
+    from types import SimpleNamespace
     _sns = True
 except ImportError:
     _sns = False
@@ -18,6 +18,7 @@ except ImportError:
 def tmp_filename():
     f = NamedTemporaryFile(delete=False)
     yield f.name
+    f.close()
     os.unlink(f.name)
 
 
@@ -25,6 +26,7 @@ def tmp_filename():
 def tmp_file():
     f = NamedTemporaryFile(delete=False)
     yield f
+    f.close()
     os.unlink(f.name)
 
 
@@ -108,9 +110,10 @@ class TestIO(unittest.TestCase):
     def test_simplenamespace(self):
         if _sns:
             with tmp_filename() as fn:
-                d = sns(a=100, b='this is a string', c=np.ones(5),
-                        sub=sns(a=200, b='another string',
-                                c=np.random.randn(3, 4)))
+                d = SimpleNamespace(
+                    a=100, b='this is a string', c=np.ones(5),
+                    sub=SimpleNamespace(a=200, b='another string',
+                                        c=np.random.randn(3, 4)))
 
                 d1 = reconstruct(fn, d)
 
@@ -120,6 +123,71 @@ class TestIO(unittest.TestCase):
                 assert d.sub.a == d1.sub.a
                 assert d.sub.b == d1.sub.b
                 np.testing.assert_array_equal(d.sub.c, d1.sub.c)
+
+    def test_softlinks_recursion(self):
+        with tmp_filename() as fn:
+            A = np.random.randn(3, 3)
+            df = pd.DataFrame({'int': np.arange(3),
+                               'name': ['zero', 'one', 'two']})
+            AA = 4
+            s = dict(A=A, B=A, c=A, d=A, f=A, g=[A, A, A], AA=AA, h=AA,
+                     df=df, df2=df)
+            s['g'].append(s)
+            n = reconstruct(fn, s)
+            assert n['g'][0] is n['A']
+            assert (n['A'] is n['B'] is n['c'] is n['d'] is n['f'] is
+                    n['g'][0] is n['g'][1] is n['g'][2])
+            assert n['g'][3] is n
+            assert n['AA'] == AA == n['h']
+            assert n['df'] is n['df2']
+            assert (n['df'] == df).all().all()
+
+            # test 'sel' option on link ... need to read two vars
+            # to ensure at least one is a link:
+            col1 = dd.io.load(fn, '/A', dd.aslice[:, 1])
+            assert np.all(A[:, 1] == col1)
+            col1 = dd.io.load(fn, '/B', dd.aslice[:, 1])
+            assert np.all(A[:, 1] == col1)
+
+    def test_softlinks_recursion_sns(self):
+        if _sns:
+            with tmp_filename() as fn:
+                A = np.random.randn(3, 3)
+                AA = 4
+                s = SimpleNamespace(A=A, B=A, c=A, d=A, f=A,
+                                    g=[A, A, A], AA=AA, h=AA)
+                s.g.append(s)
+                n = reconstruct(fn, s)
+                assert n.g[0] is n.A
+                assert (n.A is n.B is n.c is n.d is n.f is
+                        n.g[0] is n.g[1] is n.g[2])
+                assert n.g[3] is n
+                assert n.AA == AA == n.h
+
+    def test_pickle_recursion(self):
+        with tmp_filename() as fn:
+            f = {4: 78}
+            f['rec'] = f
+            g = [23.4, f]
+            h = dict(f=f, g=g)
+            h2 = reconstruct(fn, h)
+            assert h2['g'][0] == 23.4
+            assert h2['g'][1] is h2['f']['rec'] is h2['f']
+            assert h2['f'][4] == 78
+
+    def test_list_recursion(self):
+        with tmp_filename() as fn:
+            lst = [1, 3]
+            inlst = ['inside', 'list', lst]
+            inlst.append(inlst)
+            lst.append(lst)
+            lst.append(inlst)
+            lst2 = reconstruct(fn, lst)
+            assert lst2[2] is lst2
+            assert lst2[3][2] is lst2
+            assert lst[3][2] is lst
+            assert lst2[3][3] is lst2[3]
+            assert lst[3][3] is lst[3]
 
     def test_list(self):
         with tmp_filename() as fn:
