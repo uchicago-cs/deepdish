@@ -208,11 +208,6 @@ class TestIO(unittest.TestCase):
             xs = dd.io.load(fn, sel=s)
             np.testing.assert_array_equal(xs, x[s])
 
-    def test_open_file(self):
-        with tmp_file() as f:
-            dd.io.save(f, dict(x=100))
-            dd.io.load(f)
-
     def test_force_pickle(self):
         with tmp_filename() as fn:
             x = dict(one=dict(two=np.arange(10)),
