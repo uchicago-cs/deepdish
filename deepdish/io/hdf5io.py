@@ -419,8 +419,8 @@ def save(path, data, compression='blosc'):
 
     Parameters
     ----------
-    path : file-like object or string
-        File or filename to which the data is saved.
+    path : string
+        Filename to which the data is saved.
     data : anything
         Data to be saved. This can be anything from a Numpy array, a string, an
         object, or a dictionary containing all of them including more
@@ -438,9 +438,6 @@ def save(path, data, compression='blosc'):
     --------
     load
     """
-    if not isinstance(path, str):
-        path = path.name
-
     filters = _get_compression_filters(compression)
 
     with tables.open_file(path, mode='w') as h5file:
@@ -474,8 +471,8 @@ def load(path, group=None, sel=None, unpack=False):
 
     Parameters
     ----------
-    path : file-like object or string
-        File or filename from which to load the data.
+    path : string
+        Filename from which to load the data.
     group : string
         Load a specific group in the HDF5 hierarchy.
     sel : slice or tuple of slices
@@ -497,9 +494,6 @@ def load(path, group=None, sel=None, unpack=False):
     save
 
     """
-    if not isinstance(path, str):
-        path = path.name
-
     with tables.open_file(path, mode='r') as h5file:
         if group is not None:
             data = _load_specific_level(h5file, h5file, group, sel=sel)
