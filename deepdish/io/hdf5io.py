@@ -389,7 +389,7 @@ def _load_sliced_level(handler, level, sel):
         raise ValueError('Cannot partially load this data type using `sel`')
 
 
-def save(path, data, compression='blosc'):
+def save(path, data, mode = 'w', compression='blosc'):
     """
     Save any Python structure to an HDF5 file. It is particularly suited for
     Numpy arrays. This function works similar to ``numpy.save``, except if you
@@ -440,7 +440,7 @@ def save(path, data, compression='blosc'):
     """
     filters = _get_compression_filters(compression)
 
-    with tables.open_file(path, mode='w') as h5file:
+    with tables.open_file(path, mode=mode) as h5file:
         # If the data is a dictionary, put it flatly in the root
         group = h5file.root
         group._v_attrs[DEEPDISH_IO_VERSION_STR] = IO_VERSION
