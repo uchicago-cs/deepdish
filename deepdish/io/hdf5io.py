@@ -425,6 +425,13 @@ def save(path, data, mode = 'w', compression='blosc'):
         Data to be saved. This can be anything from a Numpy array, a string, an
         object, or a dictionary containing all of them including more
         dictionaries.
+    mode: string
+        The mode to open the file. It can be one of the following:
+        *'w': Write; a new file is created (an existing file with the same
+         name would be deleted).
+        *'a': Append; an existing file is opened for reading and writing,
+         and if the file does not exist it is created.
+        The default is 'w'.
     compression : string or tuple
         Set compression method, choosing from `blosc`, `zlib`, `lzo`, `bzip2`
         and more (see PyTables documentation). It can also be specified as a
