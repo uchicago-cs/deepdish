@@ -180,11 +180,6 @@ class DictNode(Node):
 
     def print(self, level=0, parent='/', colorize=True, max_level=None,
               file=sys.stdout):
-        if level == 0 and not self.header.get('dd_io_unpack'):
-            print_row('', self.info(colorize=colorize,
-                                    final_level=(0 == max_level)),
-                      level=level, parent=parent, unpack=False,
-                      colorize=colorize, file=file)
         if level < max_level:
             for k in sorted(self.children):
                 v = self.children[k]
@@ -214,6 +209,15 @@ class SimpleNamespaceNode(DictNode):
                               colorize=colorize,
                               type_color='purple',
                               final_level=final_level)
+
+    def print(self, level=0, parent='/', colorize=True, max_level=None,
+              file=sys.stdout):
+        if level == 0 and not self.header.get('dd_io_unpack'):
+            print_row('', self.info(colorize=colorize,
+                                    final_level=(0 == max_level)),
+                      level=level, parent=parent, unpack=False,
+                      colorize=colorize, file=file)
+        DictNode.print(self, level, parent, colorize, max_level, file)
 
     def __repr__(self):
         s = ['{}={}'.format(k, repr(v)) for k, v in self.children.items()]
@@ -391,6 +395,21 @@ class ObjectNode(Node):
                            colorize=colorize)
 
 
+class SoftLinkNode(Node):
+    def __init__(self, target):
+        self.target = target
+
+    def info(self, colorize=True, final_level=False):
+        return type_string('link -> {}'.format(self.target),
+                           dtype='SoftLink',
+                           type_color='cyan',
+                           colorize=colorize)
+
+    def __repr__(self):
+        return ('SoftLinkNode(target={})'
+                .format(self.target))
+
+
 def _tree_level(level, raw=False):
     if isinstance(level, tables.Group):
         if _sns and (level._v_title.startswith('SimpleNamespace:') or
@@ -476,6 +495,9 @@ def _tree_level(level, raw=False):
 
             node = NumpyArrayNode(shape, strtype.decode('ascii'))
 
+        return node
+    elif isinstance(level, tables.link.SoftLink):
+        node = SoftLinkNode(level.target)
         return node
     else:
         return Node()

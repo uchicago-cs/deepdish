@@ -28,7 +28,6 @@ We also offer our own version of ``h5ls`` that works really well with deepdish
 saved HDF5 files::
 
     $ ddls test.h5
-    /                          dict
     /bar                       array (5, 4, 3) [float64]
     /foo                       array (10,) [int64]
 
@@ -57,7 +56,6 @@ Resulting in::
 Again, we can use the deepdish tool for better inspection::
 
     $ ddls test.h5
-    /                          dict
     /foo                       dict
     /foo/bar                   array (10,) [int64]
     /foo/baz                   array (3,) [float64]
@@ -65,10 +63,9 @@ Again, we can use the deepdish tool for better inspection::
 
 SimpleNamespaces
 ----------------
-
 SimpleNamespaces work almost identically to dictionaries and are available in
 Python 3.3 and later. Note that for versions of Python that do not support
-SimpleNamespaces, deepdish will seamlessly load them in as dictionaries.
+SimpleNamespaces, deepdish will load them in as dictionaries.
 
 Like dictionaries, SimpleNamespaces are saved as HDF5 groups:
 
@@ -99,7 +96,6 @@ For a version of Python that doesn't support SimpleNamespaces, dictionaries are
 used::
 
     $ ddls test.h5
-    /                          dict
     /foo                       dict
     /foo/bar                   array (10,) [int64]
     /foo/baz                   array (3,) [float64]
@@ -141,7 +137,6 @@ We might not see them through ``h5ls``::
 This is where ``ddls`` excels::
 
     $ ddls test.h5
-    /                          dict
     /a                         10 [int64]
     /b                         'test' (4) [unicode]
     /c                         None [python]
@@ -154,7 +149,7 @@ attributes::
     / (RootGroup) ''
       /._v_attrs (AttributeSet), 7 attributes:
        [CLASS := 'GROUP',
-        DEEPDISH_IO_VERSION := 8,
+        DEEPDISH_IO_VERSION := 10,
         PYTABLES_FORMAT_VERSION := '2.1',
         TITLE := '',
         VERSION := '1.0',
@@ -333,7 +328,6 @@ deepdish also offers pickling as a last resort::
 Inspecting this file will yield::
 
     $ ddls test.h5
-    /                          dict
     /foo                       pickled [object]
 
 Note that the class `Foo` has to be defined in the file that calls
@@ -391,5 +385,50 @@ registered named can be accessed through:
 
 To give the base class a name, we can add
 ``dd.util.SaveableRegistry.register('foo')`` before the class definition.
+
+
+Soft Links
+----------
+In Python, many names can be bound to the same object. Deepdish accounts for
+this for many objects (dictionaries, lists, numpy arrays, pandas dataframes,
+SimpleNamespaces, etc) by using HDF5 soft links. This means the object itself
+is only written once and that these relationships are preserved upon loading.
+Recursion inside objects is also handled via soft links.
+
+Here is an example where soft links are used for both purposes:
+
+>>> import deepdish as dd
+>>> ones = np.ones((5, 4, 3))
+>>> d = {'foo': np.arange(10), 'bar': ones, 'baz': ones}
+>>> d['self'] = d   # to demonstrate recursion
+>>> dd.io.save('test.h5', d)
+
+Soft links are native to HDF5::
+
+    $ h5ls test.h5
+    bar                      Dataset {5, 4, 3}
+    baz                      Soft Link {/bar}
+    foo                      Dataset {10}
+    self                     Soft Link {/}
+
+Notice that the `ones` 3D array was only written once and that ``self`` is a
+link to the top level group. With ``ddls``::
+
+    $ ddls test.h5
+    /bar                       array (5, 4, 3) [float64]
+    /baz                       link -> /bar [SoftLink]
+    /foo                       array (10,) [int64]
+    /self                      link -> / [SoftLink]
+
+Verify that ``d['bar']`` and ``d['baz']`` refer to the same object:
+
+>>> d = dd.io.load('test.h5')
+>>> d['bar'] is d['baz']
+True
+
+Also verify that ``d['self']`` is ``d``:
+
+>>> d['self'] is d
+True
 
 .. _pandas: http://pandas.pydata.org/
