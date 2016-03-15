@@ -446,7 +446,7 @@ def _load_sliced_level(handler, level, sel):
         raise ValueError('Cannot partially load this data type using `sel`')
 
 
-def save(path, data, compression='blosc'):
+def save(path, data, mode = 'w', compression='blosc'):
     """
     Save any Python structure to an HDF5 file. It is particularly suited for
     Numpy arrays. This function works similar to ``numpy.save``, except if you
@@ -482,6 +482,13 @@ def save(path, data, compression='blosc'):
         Data to be saved. This can be anything from a Numpy array, a string, an
         object, or a dictionary containing all of them including more
         dictionaries.
+    mode: string
+        The mode to open the file. It can be one of the following:
+        *'w': Write; a new file is created (an existing file with the same
+         name would be deleted).
+        *'a': Append; an existing file is opened for reading and writing,
+         and if the file does not exist it is created.
+        The default is 'w'.
     compression : string or tuple
         Set compression method, choosing from `blosc`, `zlib`, `lzo`, `bzip2`
         and more (see PyTables documentation). It can also be specified as a
@@ -497,7 +504,7 @@ def save(path, data, compression='blosc'):
     """
     filters = _get_compression_filters(compression)
 
-    with tables.open_file(path, mode='w') as h5file:
+    with tables.open_file(path, mode=mode) as h5file:
         # If the data is a dictionary, put it flatly in the root
         group = h5file.root
         group._v_attrs[DEEPDISH_IO_VERSION_STR] = IO_VERSION
