@@ -303,7 +303,10 @@ def _load_pickled(level):
         return level[0]
 
 
-def _load_level1(handler, level, pathtable, pathname):
+def _load_nonlink_level(handler, level, pathtable, pathname):
+    """
+    Loads level and builds appropriate type, without handling softlinks
+    """
     if isinstance(level, tables.Group):
         if _sns and (level._v_title.startswith('SimpleNamespace:') or
                      DEEPDISH_IO_ROOT_IS_SNS in level._v_attrs):
@@ -405,6 +408,9 @@ def _load_level1(handler, level, pathtable, pathname):
 
 
 def _load_level(handler, level, pathtable):
+    """
+    Loads level and builds appropriate type, handling softlinks if necessary
+    """
     if isinstance(level, tables.link.SoftLink):
         # this is a link, so see if target is already loaded, return it
         pathname = level.target
@@ -417,8 +423,8 @@ def _load_level(handler, level, pathtable):
     try:
         return pathtable[pathname]
     except KeyError:
-        pathtable[pathname] = _load_level1(handler, node, pathtable,
-                                           pathname)
+        pathtable[pathname] = _load_nonlink_level(handler, node, pathtable,
+                                                  pathname)
         return pathtable[pathname]
 
 
