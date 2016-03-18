@@ -521,8 +521,6 @@ def _tree_level(level, raw=False, settings={}):
     elif isinstance(level, tables.Array):
         stats = {}
         if settings.get('summarize'):
-            #kwargs['min'] = level.min()
-            #kwargs['max'] = level.max()
             stats['mean'] = level[:].mean()
             stats['std'] = level[:].std()
 
