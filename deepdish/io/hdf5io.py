@@ -111,8 +111,17 @@ def _save_ndarray(handler, group, name, x, filters=None):
         atom = tables.Atom.from_dtype(x.dtype)
         strtype = None
         itemsize = None
-    assert np.min(x.shape) > 0, ("deepdish.io.save does not support saving "
-                                 "numpy arrays with a zero-length axis")
+
+    if x.ndim > 0 and np.min(x.shape) == 0:
+        raise ValueError("deepdish.io.save does not support saving "
+                         "numpy arrays with a zero-length axis")
+
+    if x.ndim == 0 and len(x.shape) == 0:
+        # This is a numpy array scalar. We will store it as a regular scalar instead,
+        # which means it will be unpacked as a numpy scalar (not numpy array scalar)
+        setattr(group._v_attrs, name, x[()])
+        return
+
     # For small arrays, compression actually leads to larger files, so we are
     # settings a threshold here. The threshold has been set through
     # experimentation.

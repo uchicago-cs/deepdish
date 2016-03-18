@@ -242,6 +242,16 @@ class TestIO(unittest.TestCase):
             assert x.shape == x1.shape
             np.testing.assert_array_equal(x.todense(), x1.todense())
 
+    def test_array_scalar(self):
+        with tmp_filename() as fn:
+            v = np.array(12.3)
+            v1 = reconstruct(fn, v)
+            assert v1[()] == v and isinstance(v1[()], np.float64)
+
+            v = np.array(40, dtype=np.int8)
+            v1 = reconstruct(fn, v)
+            assert v1[()] == v and isinstance(v1[()], np.int8)
+
     def test_load_group(self):
         with tmp_filename() as fn:
             x = dict(one=np.ones(10), two='string')
