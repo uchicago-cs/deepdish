@@ -97,6 +97,20 @@ def crop(im, size):
     return im2
 
 
+def crop_or_pad(im, size, value=0):
+    """
+    Crops an image in the center.
+
+    Parameters
+    ----------
+    size : tuple, (height, width)
+        Finally size after cropping.
+    """
+    diff = [im.shape[index] - size[index] for index in (0, 1)]
+    im2 = im[diff[0]//2:diff[0]//2 + size[0], diff[1]//2:diff[1]//2 + size[1]]
+    return im2
+
+
 def crop_to_bounding_box(im, bb):
     """
     Crops according to a bounding box.
