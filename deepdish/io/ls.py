@@ -328,15 +328,33 @@ class ListNode(Node):
 
 
 class NumpyArrayNode(Node):
-    def __init__(self, shape, dtype):
+    def __init__(self, shape, dtype, statistics=None):
         self.shape = shape
         self.dtype = dtype
+        self.statistics = statistics
 
     def info(self, colorize=True, final_level=False):
-        return type_string('array', extra=repr(self.shape),
-                           dtype=str(self.dtype),
-                           type_color='red',
-                           colorize=colorize)
+        if not self.statistics:
+            s = type_string('array', extra=repr(self.shape),
+                               dtype=str(self.dtype),
+                               type_color='red',
+                               colorize=colorize)
+        else:
+            s = type_string('array', extra=repr(self.shape),
+                               #dtype=str(self.dtype),
+                               type_color='red',
+                               colorize=colorize)
+            raw_s = type_string('array', extra=repr(self.shape),
+                               #dtype=str(self.dtype),
+                               type_color='red',
+                               colorize=False)
+
+            if len(raw_s) < 25:
+                s += ' ' * (25 - len(raw_s))
+            s += paint(' {:14.2g}'.format(self.statistics.get('mean')), 'white', colorize=colorize)
+            s += paint(' ± ', 'darkgray', colorize=colorize)
+            s += paint('{:.2g}'.format(self.statistics.get('std')), 'reset', colorize=colorize)
+        return s
 
     def __repr__(self):
         return ('NumpyArrayNode(shape={}, dtype={})'
@@ -427,7 +445,7 @@ class SoftLinkNode(Node):
                 .format(self.target))
 
 
-def _tree_level(level, raw=False):
+def _tree_level(level, raw=False, settings={}):
     if isinstance(level, tables.Group):
         if _sns and (level._v_title.startswith('SimpleNamespace:') or
                      DEEPDISH_IO_ROOT_IS_SNS in level._v_attrs):
@@ -436,7 +454,7 @@ def _tree_level(level, raw=False):
             node = DictNode()
 
         for grp in level:
-            node.add(grp._v_name, _tree_level(grp, raw=raw))
+            node.add(grp._v_name, _tree_level(grp, raw=raw, settings=settings))
 
         for name in level._v_attrs._f_list():
             v = level._v_attrs[name]
@@ -501,7 +519,16 @@ def _tree_level(level, raw=False):
         node = NumpyArrayNode(level.shape, 'unknown')
         return node
     elif isinstance(level, tables.Array):
-        node = NumpyArrayNode(level.shape, level.dtype)
+        stats = {}
+        if settings.get('summarize'):
+            #kwargs['min'] = level.min()
+            #kwargs['max'] = level.max()
+            stats['mean'] = level[:].mean()
+            stats['std'] = level[:].std()
+
+        node = NumpyArrayNode(level.shape, level.dtype,
+                              statistics=stats)
+
         if hasattr(level._v_attrs, 'strtype'):
             strtype = level._v_attrs.strtype
             itemsize = level._v_attrs.itemsize
@@ -520,12 +547,12 @@ def _tree_level(level, raw=False):
         return Node()
 
 
-def get_tree(path, raw=False):
+def get_tree(path, raw=False, settings={}):
     fn = os.path.basename(path)
     try:
         with tables.open_file(path, mode='r') as h5file:
             grp = h5file.root
-            s = _tree_level(grp, raw=raw)
+            s = _tree_level(grp, raw=raw, settings=settings)
             s.header['filename'] = fn
             return s
     except OSError:
@@ -560,6 +587,8 @@ def main():
                         help=('Print only entries that match this regular expression'))
     parser.add_argument('-l', '--leaves-only', action='store_true',
                         help=('Only print leaves'))
+    parser.add_argument('-s', '--summarize', action='store_true',
+                        help=('Print summary statistics of numpy arrays'))
     parser.add_argument('-v', '--version', action='version',
                         version='deepdish {} (io protocol {})'.format(__version__, IO_VERSION))
 
@@ -573,6 +602,9 @@ def main():
 
     if args.leaves_only:
         settings['leaves-only'] = True
+
+    if args.summarize:
+        settings['summarize'] = True
 
     def single_file(files):
         if len(files) >= 2:
@@ -622,7 +654,7 @@ def main():
             # State that will be incremented
             settings['filtered_count'] = 0
 
-            s = get_tree(f, raw=args.raw)
+            s = get_tree(f, raw=args.raw, settings=settings)
             if s is not None:
                 if i > 0:
                     print()
