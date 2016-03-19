@@ -78,10 +78,11 @@ def _dict_native_ok(d):
 def _get_compression_filters(compression='default'):
     if compression == 'default':
         config = conf.config()
-        compression = config['io']['compression']
+        compression = config.get('io', 'compression')
     elif compression is True:
         compression = 'zlib'
 
+    print(compression)
     if (compression is False or compression is None or
         compression == 'none' or compression == 'None'):
         ff = None
