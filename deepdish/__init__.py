@@ -50,8 +50,8 @@ __all__ = ['deepdish',
            'aslice',
            ]
 
-VERSION = (0, 3, 2)
-ISRELEASED = True
+VERSION = (0, 3, 3)
+ISRELEASED = False
 __version__ = '{0}.{1}.{2}'.format(*VERSION)
 if not ISRELEASED:
     __version__ += '.git'
