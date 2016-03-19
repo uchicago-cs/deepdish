@@ -4,6 +4,7 @@ import numpy as np
 import tables
 import warnings
 from scipy import sparse
+from deepdish import conf
 try:
     import pandas as pd
     _pandas = True
@@ -74,11 +75,15 @@ def _dict_native_ok(d):
     return True
 
 
-def _get_compression_filters(compression=True):
-    if compression is True:
-        compression = 'blosc'
+def _get_compression_filters(compression='default'):
+    if compression == 'default':
+        config = conf.config()
+        compression = config['io']['compression']
+    elif compression is True:
+        compression = 'zlib'
 
-    if compression is False or compression is None:
+    if (compression is False or compression is None or
+        compression == 'none' or compression == 'None'):
         ff = None
     else:
         if isinstance(compression, (tuple, list)):
@@ -455,7 +460,7 @@ def _load_sliced_level(handler, level, sel):
         raise ValueError('Cannot partially load this data type using `sel`')
 
 
-def save(path, data, compression='blosc'):
+def save(path, data, compression='default'):
     """
     Save any Python structure to an HDF5 file. It is particularly suited for
     Numpy arrays. This function works similar to ``numpy.save``, except if you
@@ -483,6 +488,17 @@ def save(path, data, compression='blosc'):
     This function requires the `PyTables <http://www.pytables.org/>`_ module to
     be installed.
 
+    You can change the default compression method by create a
+    ``~/.deepdish.conf``, that could look like:
+
+    ```
+    [io]
+    compression: blosc
+    ```
+
+    This is the recommended compression method if you plan to use your HDF5
+    files exclusively through deepdish (or PyTables).
+
     Parameters
     ----------
     path : string
@@ -497,8 +513,8 @@ def save(path, data, compression='blosc'):
         tuple (e.g. ``('blosc', 5)``), with the latter value specifying the
         level of compression, choosing from 0 (no compression) to 9 (maximum
         compression).  Set to `None` to turn off compression. The default is
-        `blosc` since it is fast; for greater compression rate, try for
-        instance `zlib`.
+        `zlib`, since it is highly portable; for much greater speed, try for
+        instance `blosc`.
 
     See also
     --------

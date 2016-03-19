@@ -17,6 +17,7 @@ from deepdish import io
 from deepdish import util
 from deepdish import image
 from deepdish import parallel
+from deepdish.conf import config
 
 class MovedPackage(object):
     def __init__(self, old_loc, new_loc):

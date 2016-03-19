@@ -236,12 +236,17 @@ types BSR, COO, CSC, CSR and DIA. The types DOK and LIL are currently not
 supported (note that these two types are mainly for incrementally building
 sparse matrices anyway).
 
-Using deepdish can offer a dramatic space and speed improvement over for instance
-``mmwrite`` and ``mmread`` in `scipy.io
-<http://docs.scipy.org/doc/scipy/reference/io.html>`__. This is not surprising
-since it saves the file in an ASCII format. Instead, deepdish saves the
-internal Numpy arrays directly, which means there is no conversion overhead
-whatsoever. Here is a comparison on a large (100 billion elements) and sparse
+Just like with pandas data types, you can inspect the storage format using
+``ddls --raw``.
+
+Compression
+-----------
+The way sparse matrices are stored in deepdish are identical to how they are
+represented in Numpy, meaning there is no conversion time and the storage is
+compact. The further minimize the disk space, deepdish offer several means
+of compressing the data (all thanks to the powerful PyTables backend).
+
+Here is a comparison on a large (100 billion elements) and sparse
 (0.01% sparsity) CSR matrix:
 
 ============================  ===========  ==========  ==============  =============
@@ -259,11 +264,16 @@ deepdish (zlib)                         Y          21            9.01           
 
 This particular matrix had only nonzero elements that were set to 1, which
 meant even more compression could be applied. The default compression in
-deepdish is blosc, since zlib takes much longer to encode and offers only a
-modest space improvement.
+deepdish is zlib, since it is widely supported and means your HDF5 files saved
+with deepdish can be universally read. However, blosc is clearly a much better
+choice, so if interoperability (e.g. with MATLAB) is not a priority, we
+encourage you to change the default. You can do this by placing the following
+in the file ``~/.deepdish.conf``::
 
-Just like with pandas data types, you can inspect the storage format using
-``ddls --raw``.
+    [io]
+    compression: blosc
+
+To change the default to no compression, use ``compression: none``.
 
 Quick inspection
 ----------------
