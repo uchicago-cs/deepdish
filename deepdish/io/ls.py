@@ -328,10 +328,11 @@ class ListNode(Node):
 
 
 class NumpyArrayNode(Node):
-    def __init__(self, shape, dtype, statistics=None):
+    def __init__(self, shape, dtype, statistics=None, compression=None):
         self.shape = shape
         self.dtype = dtype
         self.statistics = statistics
+        self.compression = compression
 
     def info(self, colorize=True, final_level=False):
         if not self.statistics:
@@ -339,6 +340,14 @@ class NumpyArrayNode(Node):
                                dtype=str(self.dtype),
                                type_color='red',
                                colorize=colorize)
+
+            if self.compression:
+                if self.compression['complib'] is not None:
+                    compstr = '{} lvl{}'.format(self.compression['complib'], self.compression['complevel'])
+                else:
+                    compstr = 'none'
+                s += ' ' + paint(compstr, 'yellow', colorize=colorize)
+
         else:
             s = type_string('array', extra=repr(self.shape),
                                #dtype=str(self.dtype),
@@ -354,6 +363,7 @@ class NumpyArrayNode(Node):
             s += paint(' {:14.2g}'.format(self.statistics.get('mean')), 'white', colorize=colorize)
             s += paint(' ± ', 'darkgray', colorize=colorize)
             s += paint('{:.2g}'.format(self.statistics.get('std')), 'reset', colorize=colorize)
+
         return s
 
     def __repr__(self):
@@ -524,8 +534,14 @@ def _tree_level(level, raw=False, settings={}):
             stats['mean'] = level[:].mean()
             stats['std'] = level[:].std()
 
+        compression = {}
+        if settings.get('compression'):
+            compression['complib'] = level.filters.complib
+            compression['shuffle'] = level.filters.shuffle
+            compression['complevel'] = level.filters.complevel
+
         node = NumpyArrayNode(level.shape, level.dtype,
-                              statistics=stats)
+                              statistics=stats, compression=compression)
 
         if hasattr(level._v_attrs, 'strtype'):
             strtype = level._v_attrs.strtype
@@ -587,6 +603,8 @@ def main():
                         help=('Only print leaves'))
     parser.add_argument('-s', '--summarize', action='store_true',
                         help=('Print summary statistics of numpy arrays'))
+    parser.add_argument('-c', '--compression', action='store_true',
+                        help=('Print compression method for each array'))
     parser.add_argument('-v', '--version', action='version',
                         version='deepdish {} (io protocol {})'.format(__version__, IO_VERSION))
 
@@ -603,6 +621,9 @@ def main():
 
     if args.summarize:
         settings['summarize'] = True
+
+    if args.compression:
+        settings['compression'] = True
 
     def single_file(files):
         if len(files) >= 2:

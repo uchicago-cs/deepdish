@@ -58,6 +58,15 @@ class ForcePickle(object):
         self.obj = obj
 
 
+class Compression(object):
+    """
+    Class to enable explicit compression settings for individual arrays.
+    """
+    def __init__(self, obj, compression='default'):
+        self.obj = obj
+        self.compression = compression
+
+
 def _dict_native_ok(d):
     """
     This checks if a dictionary can be saved natively as HDF5 groups.
@@ -176,7 +185,12 @@ def _save_level(handler, group, level, name=None, filters=None, idtable=None):
         handler.create_soft_link(group, name, target=oldpath)
         return
 
-    if isinstance(level, ForcePickle):
+    if isinstance(level, Compression):
+        custom_filters = _get_compression_filters(level.compression)
+        return _save_level(handler, group, level.obj, name=name,
+                           filters=custom_filters, idtable=idtable)
+
+    elif isinstance(level, ForcePickle):
         _save_pickled(handler, group, level, name=name)
 
     elif isinstance(level, dict) and _dict_native_ok(level):
@@ -185,7 +199,8 @@ def _save_level(handler, group, level, name=None, filters=None, idtable=None):
                                          "dict:{}".format(len(level)))
         for k, v in level.items():
             if isinstance(k, six.string_types):
-                _save_level(handler, new_group, v, name=k, idtable=idtable)
+                _save_level(handler, new_group, v, name=k, filters=filters,
+                            idtable=idtable)
 
     elif (_sns and isinstance(level, SimpleNamespace) and
           _dict_native_ok(level.__dict__)):
@@ -194,7 +209,8 @@ def _save_level(handler, group, level, name=None, filters=None, idtable=None):
             group, name, "SimpleNamespace:{}".format(len(level.__dict__)))
         for k, v in level.__dict__.items():
             if isinstance(k, six.string_types):
-                _save_level(handler, new_group, v, name=k, idtable=idtable)
+                _save_level(handler, new_group, v, name=k, filters=filters,
+                            idtable=idtable)
 
     elif isinstance(level, list) and len(level) < 256:
         # Lists can contain other dictionaries and numpy arrays, so we don't
@@ -206,7 +222,7 @@ def _save_level(handler, group, level, name=None, filters=None, idtable=None):
         for i, entry in enumerate(level):
             level_name = 'i{}'.format(i)
             _save_level(handler, new_group, entry,
-                        name=level_name, idtable=idtable)
+                        name=level_name, filters=filters, idtable=idtable)
 
     elif isinstance(level, tuple) and len(level) < 256:
         # Lists can contain other dictionaries and numpy arrays, so we don't
@@ -218,7 +234,7 @@ def _save_level(handler, group, level, name=None, filters=None, idtable=None):
         for i, entry in enumerate(level):
             level_name = 'i{}'.format(i)
             _save_level(handler, new_group, entry, name=level_name,
-                        idtable=idtable)
+                        filters=filters, idtable=idtable)
 
     elif isinstance(level, np.ndarray):
         _save_ndarray(handler, group, name, level, filters=filters)
