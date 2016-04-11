@@ -578,8 +578,10 @@ def load(path, group=None, sel=None, unpack=False):
     ----------
     path : string
         Filename from which to load the data.
-    group : string
-        Load a specific group in the HDF5 hierarchy.
+    group : string or list
+        Load a specific group in the HDF5 hierarchy. If `group` is a list of
+        strings, then a tuple will be returned with all the groups that were
+        specified.
     sel : slice or tuple of slices
         If you specify `group` and the target is a numpy array, then you can
         use this to slice it. This is useful for opening subsets of large HDF5
@@ -602,8 +604,16 @@ def load(path, group=None, sel=None, unpack=False):
     with tables.open_file(path, mode='r') as h5file:
         pathtable = {}  # dict to keep track of objects already loaded
         if group is not None:
-            data = _load_specific_level(h5file, h5file, group, sel=sel,
-                                        pathtable=pathtable)
+            if isinstance(group, str):
+                data = _load_specific_level(h5file, h5file, group, sel=sel,
+                                            pathtable=pathtable)
+            else:  # Assume group is a list or tuple
+                data = []
+                for g in group:
+                    data_i = _load_specific_level(h5file, h5file, g, sel=sel,
+                                                  pathtable=pathtable)
+                    data.append(data_i)
+                data = tuple(data)
         else:
             grp = h5file.root
             auto_unpack = (DEEPDISH_IO_UNPACK in grp._v_attrs and

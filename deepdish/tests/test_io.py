@@ -266,6 +266,19 @@ class TestIO(unittest.TestCase):
             np.testing.assert_array_equal(x['one'], full['one'])
             assert x['two'] == full['two']
 
+    def test_load_multiple_groups(self):
+        with tmp_filename() as fn:
+            x = dict(one=np.ones(10), two='string', three=200)
+            dd.io.save(fn, x)
+
+            one, three = dd.io.load(fn, ['/one', '/three'])
+            np.testing.assert_array_equal(one, x['one'])
+            assert three == x['three']
+
+            three, two = dd.io.load(fn, ['/three', '/two'])
+            assert three == x['three']
+            assert two == x['two']
+
     def test_load_slice(self):
         with tmp_filename() as fn:
             x = np.arange(3 * 4 * 5).reshape((3, 4, 5))

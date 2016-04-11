@@ -320,6 +320,10 @@ You can even load slices of arrays::
 The file will never be read in full, not even the array, so this technique can
 be used to step through very large arrays.
 
+To load multiple groups at once, use a list of strings::
+
+    data, label = dd.io.load('training.h5', ['/data', '/label'])
+
 Pickled objects
 ---------------
 Some objects cannot be saved natively as HDF5, such as object classes. Our
