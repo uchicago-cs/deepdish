@@ -8,6 +8,7 @@ Released: 2016-04-10
 * Default compression changed from blosc to zlib, to promote interoperability
 * Support for changing the default compression using a ``~/.deepdish.conf`` file
 * Specify compression method for individual items by wrapping them in ``dd.io.Compression``
+* Added ``ddls --compression``
 * Load multiple groups using ``foo, bar = dd.io.load('test.h5', ['/foo', '/bar'])``
 
 0.3.2
