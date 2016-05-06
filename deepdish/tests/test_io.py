@@ -69,6 +69,12 @@ class TestIO(unittest.TestCase):
             x1 = reconstruct(fn, x)
             assert x1 is None
 
+    def test_big_integers(self):
+        with tmp_filename() as fn:
+            x = 1239487239847234982392837423874
+            x1 = reconstruct(fn, x)
+            assert x == x1
+
     def test_numpy_array(self):
         with tmp_filename() as fn:
             x0 = np.arange(3 * 4 * 5, dtype=np.int64).reshape((3, 4, 5))
