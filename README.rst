@@ -20,7 +20,7 @@ Deep learning and data science tools from the University of Chicago.
 
 Installation
 ------------
-Run::
+::
 
     pip install deepdish
 
@@ -68,13 +68,9 @@ Or, better yet, our custom tool ``ddls`` (or ``python -m deepdish.io.ls``)::
     /sub/bar                   'a string' (8) [unicode]
     /sub/baz                   1.23 [float64]
 
-Read more at `Saving and loading data <http://deepdish.readthedocs.org/en/latest/io.html>`__.
+Read more at `Saving and loading data <http://deepdish.readthedocs.io/en/latest/io.html>`__.
 
 Documentation
 -------------
 
-* http://deepdish.readthedocs.org/
-
-.. |doc| image:: https://readthedocs.org/projects/deepdish/badge/?version=latest
-         :target: https://readthedocs.org/projects/deepdish/?badge=latest
-         :alt: Documentation Status
+* http://deepdish.readthedocs.io/
