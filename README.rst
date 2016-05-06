@@ -20,7 +20,7 @@ Deep learning and data science tools from the University of Chicago.
 
 Installation
 ------------
-Make sure that you have Cython and Numpy installed. Then run::
+Run::
 
     pip install deepdish
 
