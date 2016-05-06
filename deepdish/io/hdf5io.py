@@ -91,7 +91,6 @@ def _get_compression_filters(compression='default'):
     elif compression is True:
         compression = 'zlib'
 
-    print(compression)
     if (compression is False or compression is None or
         compression == 'none' or compression == 'None'):
         ff = None
