@@ -10,6 +10,9 @@
 
 .. image:: https://coveralls.io/repos/uchicago-cs/deepdish/badge.svg?branch=master&service=github
     :target: https://coveralls.io/github/uchicago-cs/deepdish?branch=master
+   
+.. image:: https://img.shields.io/badge/license-BSD%203--Clause-blue.svg?style=flat
+    :target: http://opensource.org/licenses/BSD-3-Clause 
 
 deepdish
 ========
