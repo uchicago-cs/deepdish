@@ -29,6 +29,16 @@ COLORS = dict(
 )
 
 
+def _format_dtype(dtype):
+    dtype = np.dtype(dtype)
+    dtype_str = dtype.name
+    if dtype.byteorder == '<':
+        dtype_str += ' little-endian'
+    elif dtype.byteorder == '>':
+        dtype_str += ' big-endian'
+    return dtype_str
+
+
 def _pandas_shape(level):
     if 'ndim' in level._v_attrs:
         ndim = level._v_attrs['ndim']
@@ -540,10 +550,14 @@ def _tree_level(level, raw=False, settings={}):
             compression['shuffle'] = level.filters.shuffle
             compression['complevel'] = level.filters.complevel
 
-        node = NumpyArrayNode(level.shape, level.dtype,
+        node = NumpyArrayNode(level.shape, _format_dtype(level.dtype),
                               statistics=stats, compression=compression)
 
-        if hasattr(level._v_attrs, 'strtype'):
+        if hasattr(level._v_attrs, 'zeroarray_dtype'):
+            dtype = level._v_attrs.zeroarray_dtype
+            node = NumpyArrayNode(tuple(level), _format_dtype(dtype))
+
+        elif hasattr(level._v_attrs, 'strtype'):
             strtype = level._v_attrs.strtype
             itemsize = level._v_attrs.itemsize
             if strtype == b'unicode':

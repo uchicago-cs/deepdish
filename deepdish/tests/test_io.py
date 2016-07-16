@@ -90,6 +90,19 @@ class TestIO(unittest.TestCase):
             x0[0] = 1 + 2j
             assert_array(fn, x0)
 
+    def test_numpy_array_zero_size(self):
+        # Arrays where one of the axes is length 0. These zero-length arrays cannot
+        # be stored natively in HDF5, so we'll have to store only the shape
+        with tmp_filename() as fn:
+            x0 = np.arange(0, dtype=np.int64)
+            assert_array(fn, x0)
+
+            x0 = np.arange(0, dtype=np.float32).reshape((10, 20, 0))
+            assert_array(fn, x0)
+
+            x0 = np.arange(0, dtype=np.complex128).reshape((0, 5, 0))
+            assert_array(fn, x0)
+
     def test_numpy_string_array(self):
         with tmp_filename() as fn:
             x0 = np.array([[b'this', b'string'], [b'foo', b'bar']])

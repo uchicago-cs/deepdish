@@ -19,7 +19,7 @@ except ImportError:
 
 from deepdish import six
 
-IO_VERSION = 10
+IO_VERSION = 11
 DEEPDISH_IO_PREFIX = 'DEEPDISH_IO'
 DEEPDISH_IO_VERSION_STR = DEEPDISH_IO_PREFIX + '_VERSION'
 DEEPDISH_IO_UNPACK = DEEPDISH_IO_PREFIX + '_DEEPDISH_IO_UNPACK'
@@ -127,8 +127,13 @@ def _save_ndarray(handler, group, name, x, filters=None):
         itemsize = None
 
     if x.ndim > 0 and np.min(x.shape) == 0:
-        raise ValueError("deepdish.io.save does not support saving "
-                         "numpy arrays with a zero-length axis")
+        sh = np.array(x.shape)
+        atom0 = tables.Atom.from_dtype(np.dtype(np.int64))
+        node = handler.create_array(group, name, atom=atom0,
+                                    shape=(sh.size,))
+        node._v_attrs.zeroarray_dtype = np.dtype(x.dtype).str.encode('ascii')
+        node[:] = sh
+        return
 
     if x.ndim == 0 and len(x.shape) == 0:
         # This is a numpy array scalar. We will store it as a regular scalar instead,
@@ -426,6 +431,13 @@ def _load_nonlink_level(handler, level, pathtable, pathname):
             return level[:]
 
     elif isinstance(level, tables.Array):
+        if 'zeroarray_dtype' in level._v_attrs:
+            # Unpack zero-size arrays (shape is stored in an HDF5 array and
+            # type is stored in the attibute 'zeroarray_dtype')
+            dtype = level._v_attrs.zeroarray_dtype
+            sh = level[:]
+            return np.zeros(tuple(sh), dtype=dtype)
+
         if 'strtype' in level._v_attrs:
             strtype = level._v_attrs.strtype
             itemsize = level._v_attrs.itemsize
