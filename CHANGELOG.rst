@@ -1,6 +1,13 @@
 deepdish changelog
 ==================
 
+0.3.4
+-----
+Released: TBD
+
+* Support for Python big integers (>64 bits)
+* Support for zero-length arrays
+
 0.3.3
 -----
 Released: 2016-04-10
