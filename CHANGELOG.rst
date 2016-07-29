@@ -3,10 +3,11 @@ deepdish changelog
 
 0.3.4
 -----
-Released: TBD
+Released: 2016-07-28
 
 * Support for Python big integers (>64 bits)
 * Support for zero-length arrays
+* Removed compression printing bug
 
 0.3.3
 -----
