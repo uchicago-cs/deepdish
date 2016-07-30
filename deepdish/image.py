@@ -14,6 +14,15 @@ def _import_skimage():
     return skimage
 
 
+def _import_pil():
+    """Import scikit-image, with slightly modified `ImportError` message"""
+    try:
+        import PIL
+    except ImportError:
+        raise ImportError("PIL/Pillow is required to use this function.")
+    return PIL
+
+
 def resize_by_factor(im, factor):
     """
     Resizes the image according to a factor. The image is pre-filtered
@@ -146,6 +155,22 @@ def load(path, dtype=np.float64):
         return im.astype(dtype) / 255
     else:
         raise ValueError('Unsupported dtype')
+
+
+def load_raw(path):
+    """
+    Load image using PIL/Pillow without any processing. This is particularly
+    useful for palette images, which will be loaded using their palette index
+    values as opposed to `load` which will convert them to RGB.
+
+    Parameters
+    ----------
+    path : str
+        Path to image file.
+    """
+    _import_pil()
+    from PIL import Image
+    return np.array(Image.open(path))
 
 
 def save(path, im):
