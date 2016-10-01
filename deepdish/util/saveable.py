@@ -11,7 +11,7 @@ class Saveable(object):
     instead of through named variables. What this interface enables, is to save
     and load an instance of the class to file. This is done by encoding it into
     a dictionary, or decoding it from a dictionary. The dictionary is then
-    saved/loaded using `deepdish.io.save`.
+    saved/loaded using :func:`deepdish.io.save`.
     """
     @classmethod
     def load(cls, path):
@@ -39,7 +39,7 @@ class Saveable(object):
 
     def save(self, path):
         """
-        Saves an instance of the class using `deepdish.io.save`.
+        Saves an instance of the class using :func:`deepdish.io.save`.
 
         Parameters
         ----------

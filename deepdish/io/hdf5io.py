@@ -514,7 +514,8 @@ def save(path, data, compression='default'):
 
     A recommendation is to always convert your data to using only these types
     That way your data will be portable and can be opened through any HDF5
-    reader. A class that helps you with this is `deepdish.util.Saveable`.
+    reader. A class that helps you with this is
+    :class:`deepdish.util.Saveable`.
 
     Lists and tuples are supported and can contain heterogeneous types. This is
     mostly useful and plays well with HDF5 for short lists and tuples. If you
