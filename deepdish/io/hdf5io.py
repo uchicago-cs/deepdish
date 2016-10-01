@@ -498,22 +498,29 @@ def save(path, data, compression='default'):
     Save any Python structure to an HDF5 file. It is particularly suited for
     Numpy arrays. This function works similar to ``numpy.save``, except if you
     save a Python object at the top level, you do not need to issue
-    ``data.flat[1]`` to retrieve it from inside a Numpy array of type
+    ``data.flat[0]`` to retrieve it from inside a Numpy array of type
     ``object``.
 
-    Five types of objects get saved natively in HDF5, the rest get serialized
-    automatically.  For most needs, you should be able to stick to the five,
-    which are:
+    Some types of objects get saved natively in HDF5. The rest get serialized
+    automatically.  For most needs, you should be able to stick to the natively
+    supported types, which are:
 
     * Dictionaries
-    * Lists and tuples
+    * Short lists and tuples (<256 in length)
     * Basic data types (including strings and None)
     * Numpy arrays
+    * Pandas ``DataFrame``, ``Series``, and ``Panel``
     * SimpleNamespaces (for Python >= 3.3, but see note below)
 
-    A recommendation is to always convert your data to using only these five
-    ingredients. That way your data will always be retrievable by any HDF5
+    A recommendation is to always convert your data to using only these types
+    That way your data will be portable and can be opened through any HDF5
     reader. A class that helps you with this is `deepdish.util.Saveable`.
+
+    Lists and tuples are supported and can contain heterogeneous types. This is
+    mostly useful and plays well with HDF5 for short lists and tuples. If you
+    have a long list (>256) it will be serialized automatically. However,
+    in such cases it is common for the elements to have the same type, in which
+    case we strongly recommend converting to a Numpy array first.
 
     Note that the SimpleNamespace type will be read in as dictionaries for
     earlier versions of Python.
@@ -521,13 +528,11 @@ def save(path, data, compression='default'):
     This function requires the `PyTables <http://www.pytables.org/>`_ module to
     be installed.
 
-    You can change the default compression method by create a
-    ``~/.deepdish.conf``, that could look like:
+    You can change the default compression method to ``blosc`` (much faster,
+    but less portable) by creating a ``~/.deepdish.conf`` with::
 
-    ```
-    [io]
-    compression: blosc
-    ```
+        [io]
+            compression: blosc
 
     This is the recommended compression method if you plan to use your HDF5
     files exclusively through deepdish (or PyTables).
