@@ -509,6 +509,7 @@ def save(path, data, compression='default'):
     * Short lists and tuples (<256 in length)
     * Basic data types (including strings and None)
     * Numpy arrays
+    * Scipy sparse matrices
     * Pandas ``DataFrame``, ``Series``, and ``Panel``
     * SimpleNamespaces (for Python >= 3.3, but see note below)
 
