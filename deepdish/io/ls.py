@@ -605,7 +605,7 @@ def main():
     parser.add_argument('-i', '--inspect', metavar='GRP',
                         help='prints a specific variable (e.g. /data)')
     parser.add_argument('--ipython', action='store_true',
-                        help=('loads file into an IPython session.'
+                        help=('loads file into an IPython session. '
                               'Works with -i'))
     parser.add_argument('--raw', action='store_true',
                         help=('prints the raw HDF5 structure for complex '
