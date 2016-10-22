@@ -92,7 +92,7 @@ def _get_compression_filters(compression='default'):
         compression = 'zlib'
 
     if (compression is False or compression is None or
-        compression == 'none' or compression == 'None'):
+            compression == 'none' or compression == 'None'):
         ff = None
     else:
         if isinstance(compression, (tuple, list)):
@@ -136,8 +136,9 @@ def _save_ndarray(handler, group, name, x, filters=None):
         return
 
     if x.ndim == 0 and len(x.shape) == 0:
-        # This is a numpy array scalar. We will store it as a regular scalar instead,
-        # which means it will be unpacked as a numpy scalar (not numpy array scalar)
+        # This is a numpy array scalar. We will store it as a regular scalar
+        # instead, which means it will be unpacked as a numpy scalar (not numpy
+        # array scalar)
         setattr(group._v_attrs, name, x[()])
         return
 
@@ -260,8 +261,10 @@ def _save_level(handler, group, level, name=None, filters=None, idtable=None):
         new_group = handler.create_group(group, name, "sparse:")
 
         _save_ndarray(handler, new_group, 'data', level.data, filters=filters)
-        _save_ndarray(handler, new_group, 'indices', level.indices, filters=filters)
-        _save_ndarray(handler, new_group, 'indptr', level.indptr, filters=filters)
+        _save_ndarray(handler, new_group, 'indices', level.indices,
+                      filters=filters)
+        _save_ndarray(handler, new_group, 'indptr', level.indptr,
+                      filters=filters)
         _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape))
         new_group._v_attrs.format = level.format
         new_group._v_attrs.maxprint = level.maxprint
@@ -270,7 +273,8 @@ def _save_level(handler, group, level, name=None, filters=None, idtable=None):
         new_group = handler.create_group(group, name, "sparse:")
 
         _save_ndarray(handler, new_group, 'data', level.data, filters=filters)
-        _save_ndarray(handler, new_group, 'offsets', level.offsets, filters=filters)
+        _save_ndarray(handler, new_group, 'offsets', level.offsets,
+                      filters=filters)
         _save_ndarray(handler, new_group, 'shape', np.asarray(level.shape))
         new_group._v_attrs.format = level.format
         new_group._v_attrs.maxprint = level.maxprint

@@ -1,7 +1,4 @@
 from __future__ import division, print_function, absolute_import
-_is_verbose = False
-_is_silent = False
-
 import time
 import warnings
 import numpy as np
@@ -9,6 +6,9 @@ import itertools as itr
 import sys
 from contextlib import contextmanager
 warnings.simplefilter("ignore", np.ComplexWarning)
+
+_is_verbose = False
+_is_silent = False
 
 
 class AbortException(Exception):

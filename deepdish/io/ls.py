@@ -202,10 +202,13 @@ class DictNode(Node):
                 v = self.children[k]
                 final = level+1 == max_level
 
-                if not settings.get('leaves-only') or not isinstance(v, DictNode):
-                    print_row(k, v.info(colorize=colorize,
-                                        final_level=final), level=level,
-                              parent=parent, unpack=self.header.get('dd_io_unpack'),
+                if (not settings.get('leaves-only') or
+                        not isinstance(v, DictNode)):
+                    print_row(k,
+                              v.info(colorize=colorize, final_level=final),
+                              level=level,
+                              parent=parent,
+                              unpack=self.header.get('dd_io_unpack'),
                               colorize=colorize, file=file,
                               settings=settings)
                 v.print(level=level+1, parent='{}{}/'.format(parent, k),
@@ -313,10 +316,6 @@ class ListNode(Node):
     def print(self, level=0, parent='/', colorize=True,
               max_level=None, file=sys.stdout, settings={}):
 
-        #if 'filter' in settings:
-            #if not re.match(settings['filter'], parent):
-                #return
-
         if level < max_level:
             for i, v in enumerate(self.children):
                 k = str(i)
@@ -347,32 +346,33 @@ class NumpyArrayNode(Node):
     def info(self, colorize=True, final_level=False):
         if not self.statistics:
             s = type_string('array', extra=repr(self.shape),
-                               dtype=str(self.dtype),
-                               type_color='red',
-                               colorize=colorize)
+                            dtype=str(self.dtype),
+                            type_color='red',
+                            colorize=colorize)
 
             if self.compression:
                 if self.compression['complib'] is not None:
-                    compstr = '{} lvl{}'.format(self.compression['complib'], self.compression['complevel'])
+                    compstr = '{} lvl{}'.format(self.compression['complib'],
+                                                self.compression['complevel'])
                 else:
                     compstr = 'none'
                 s += ' ' + paint(compstr, 'yellow', colorize=colorize)
 
         else:
             s = type_string('array', extra=repr(self.shape),
-                               #dtype=str(self.dtype),
-                               type_color='red',
-                               colorize=colorize)
+                            type_color='red',
+                            colorize=colorize)
             raw_s = type_string('array', extra=repr(self.shape),
-                               #dtype=str(self.dtype),
-                               type_color='red',
-                               colorize=False)
+                                type_color='red',
+                                colorize=False)
 
             if len(raw_s) < 25:
                 s += ' ' * (25 - len(raw_s))
-            s += paint(' {:14.2g}'.format(self.statistics.get('mean')), 'white', colorize=colorize)
+            s += paint(' {:14.2g}'.format(self.statistics.get('mean')),
+                       'white', colorize=colorize)
             s += paint(' ± ', 'darkgray', colorize=colorize)
-            s += paint('{:.2g}'.format(self.statistics.get('std')), 'reset', colorize=colorize)
+            s += paint('{:.2g}'.format(self.statistics.get('std')),
+                       'reset', colorize=colorize)
 
         return s
 
@@ -592,10 +592,10 @@ def get_tree(path, raw=False, settings={}):
 def main():
     import argparse
     parser = argparse.ArgumentParser(
-            description=("Look inside HDF5 files. Works particularly well "
-                         "for HDF5 files saved with deepdish.io.save()."),
-            prog='ddls',
-            epilog='example: ddls test.h5 -i /foo/bar --ipython')
+        description=("Look inside HDF5 files. Works particularly well "
+                     "for HDF5 files saved with deepdish.io.save()."),
+        prog='ddls',
+        epilog='example: ddls test.h5 -i /foo/bar --ipython')
     parser.add_argument('file', nargs='+',
                         help='filename of HDF5 file')
     parser.add_argument('-d', '--depth', type=int, default=4,
@@ -612,7 +612,8 @@ def main():
                               'data types, such as sparse matrices and pandas '
                               'data frames'))
     parser.add_argument('-f', '--filter', type=str,
-                        help=('Print only entries that match this regular expression'))
+                        help=('Print only entries that match this regular '
+                              'expression'))
     parser.add_argument('-l', '--leaves-only', action='store_true',
                         help=('Only print leaves'))
     parser.add_argument('-s', '--summarize', action='store_true',
@@ -620,7 +621,8 @@ def main():
     parser.add_argument('-c', '--compression', action='store_true',
                         help=('Print compression method for each array'))
     parser.add_argument('-v', '--version', action='version',
-                        version='deepdish {} (io protocol {})'.format(__version__, IO_VERSION))
+                        version='deepdish {} (io protocol {})'.format(
+                            __version__, IO_VERSION))
 
     args = parser.parse_args()
 
@@ -694,13 +696,15 @@ def main():
 
                 if len(args.file) >= 2:
                     print(paint(f, 'yellow', colorize=colorize))
-                s.print(colorize=colorize, max_level=args.depth, settings=settings)
+                s.print(colorize=colorize, max_level=args.depth,
+                        settings=settings)
                 i += 1
 
             if settings.get('filter'):
                 print('Filtered on: {} ({} rows omitted)'.format(
                     paint(args.filter, 'purple', colorize=colorize),
-                    paint(str(settings['filtered_count']), 'white', colorize=colorize)))
+                    paint(str(settings['filtered_count']), 'white',
+                          colorize=colorize)))
 
 if __name__ == '__main__':
     main()

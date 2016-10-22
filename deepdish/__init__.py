@@ -19,6 +19,7 @@ from deepdish import image
 from deepdish import parallel
 from deepdish.conf import config
 
+
 class MovedPackage(object):
     def __init__(self, old_loc, new_loc):
         self.old_loc = old_loc
@@ -47,6 +48,7 @@ __all__ = ['deepdish',
            'image',
            'plot',
            'parallel',
+           'config',
            'timed',
            'aslice',
            ]
