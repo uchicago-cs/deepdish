@@ -17,7 +17,7 @@
 deepdish
 ========
 
-Deep learning and data science tools from the University of Chicago.
+Flexible HDF5 saving/loading and other data science tools from the University of Chicago. This repository also host a Deep Learning blog:
 
 * http://deepdish.io
 
