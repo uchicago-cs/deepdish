@@ -370,7 +370,7 @@ class NumpyArrayNode(Node):
                 s += ' ' * (25 - len(raw_s))
             s += paint(' {:14.2g}'.format(self.statistics.get('mean')),
                        'white', colorize=colorize)
-            s += paint(' ± ', 'darkgray', colorize=colorize)
+            s += paint(u' \u00b1 ', 'darkgray', colorize=colorize)
             s += paint('{:.2g}'.format(self.statistics.get('std')),
                        'reset', colorize=colorize)
 
