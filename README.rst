@@ -27,6 +27,11 @@ Installation
 
     pip install deepdish
 
+Alternatively::
+
+    conda install deepdish
+
+
 Main feature
 ------------
 The primary feature of deepdish is its ability to save and load all kinds of
