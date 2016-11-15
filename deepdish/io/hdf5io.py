@@ -19,7 +19,7 @@ except ImportError:
 
 from deepdish import six
 
-IO_VERSION = 11
+IO_VERSION = 12
 DEEPDISH_IO_PREFIX = 'DEEPDISH_IO'
 DEEPDISH_IO_VERSION_STR = DEEPDISH_IO_PREFIX + '_VERSION'
 DEEPDISH_IO_UNPACK = DEEPDISH_IO_PREFIX + '_DEEPDISH_IO_UNPACK'
@@ -121,6 +121,10 @@ def _save_ndarray(handler, group, name, x, filters=None):
         strtype = b'ascii'
         itemsize = x.itemsize
         atom = tables.StringAtom(itemsize)
+    elif x.dtype == np.object:
+        # Not supported by HDF5, force pickling
+        _save_pickled(handler, group, x, name=name)
+        return
     else:
         atom = tables.Atom.from_dtype(x.dtype)
         strtype = None
