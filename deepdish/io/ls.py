@@ -12,8 +12,6 @@ import os
 import re
 from deepdish import io, six, __version__
 
-LEFT_COL = 25
-
 COLORS = dict(
     black='0;30',
     darkgray='1;30',
@@ -138,8 +136,8 @@ def print_row(key, value, level=0, parent='/', colorize=True,
         extra_str = '*'
         s_raw += extra_str
         s += paint(extra_str, 'purple', colorize=colorize)
-    print('{}{} {}'.format(abbreviate(s, LEFT_COL),
-                           ' '*max(0, (LEFT_COL + 1 - len(s_raw))),
+    print('{}{} {}'.format(abbreviate(s, settings['left-column-width']),
+                           ' '*max(0, (settings['left-column-width'] + 1 - len(s_raw))),
                            value))
 
 
@@ -623,6 +621,7 @@ def main():
     parser.add_argument('-v', '--version', action='version',
                         version='deepdish {} (io protocol {})'.format(
                             __version__, IO_VERSION))
+    parser.add_argument('--column-width', type=int, default=25)
 
     args = parser.parse_args()
 
@@ -640,6 +639,8 @@ def main():
 
     if args.compression:
         settings['compression'] = True
+
+    settings['left-column-width'] = args.column_width
 
     def single_file(files):
         if len(files) >= 2:
