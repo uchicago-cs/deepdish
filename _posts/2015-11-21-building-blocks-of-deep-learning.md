@@ -4,7 +4,7 @@ title: The building blocks of Deep Learning
 author: gustav
 ---
 
-A feed-forward network is built up of nodes that make a directed ascyclic graph (DAG). This post will focus on how a single node works and what we need to implement if we want to define one. It is aimed at people who generally know how deep networks work, but can still be confused about exactly what gradients need to be computed for each node (i.e. myself, all the time).
+A feed-forward network is built up of nodes that make a directed acyclic graph (DAG). This post will focus on how a single node works and what we need to implement if we want to define one. It is aimed at people who generally know how deep networks work, but can still be confused about exactly what gradients need to be computed for each node (i.e. myself, all the time).
 
 # Network
 
