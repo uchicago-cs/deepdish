@@ -1,6 +1,12 @@
 deepdish changelog
 ==================
 
+0.3.5
+------
+Released: TBD
+
+* Better handling of ``np.object`` (pickles instead of crashes)
+
 0.3.4
 -----
 Released: 2016-07-28
