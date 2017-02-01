@@ -27,7 +27,7 @@ Installation
 
     pip install deepdish
 
-Alternatively::
+Alternatively (if you have conda with the `conda-forge <https://conda-forge.github.io/>`__ channel)::
 
     conda install deepdish
 
