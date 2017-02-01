@@ -6,11 +6,12 @@ baseurl:      ''
 author:
   name:       ''
   email:      ''
-markdown:     redcarpet
+markdown:     kramdown
 permalink:    pretty
-redcarpet:
+kramdown:
       extensions: ["no_intra_emphasis", "fenced_code_blocks", "autolink", "tables", "with_toc_data"]
 highlighter:  pygments
+gems: [jekyll-paginate]
 paginate:     3
 authors:
   gustav:
