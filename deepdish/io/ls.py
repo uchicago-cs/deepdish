@@ -13,16 +13,16 @@ import re
 from deepdish import io, six, __version__
 
 COLORS = dict(
-    black='0;30',
-    darkgray='1;30',
-    red='1;31',
-    green='1;32',
+    black='30',
+    darkgray='2;39',
+    red='0;31',
+    green='0;32',
     brown='0;33',
-    yellow='1;33',
-    blue='1;34',
-    purple='1;35',
-    cyan='1;36',
-    white='1;37',
+    yellow='0;33',
+    blue='0;34',
+    purple='0;35',
+    cyan='0;36',
+    white='0;39',
     reset='0'
 )
 
@@ -415,7 +415,7 @@ class ValueNode(Node):
                                type_color='green',
                                extra='({})'.format(len(self.value)),
                                colorize=colorize)
-        if isinstance(self.value, six.binary_type):
+        elif isinstance(self.value, six.binary_type):
             if len(self.value) > 25:
                 s = repr(self.value[:22] + b'...')
             else:
@@ -430,7 +430,7 @@ class ValueNode(Node):
                                type_color='blue',
                                colorize=colorize)
         else:
-            return type_string(repr(self.value),
+            return type_string(repr(self.value)[:20],
                                dtype=str(np.dtype(type(self.value))),
                                type_color='blue',
                                colorize=colorize)
@@ -485,7 +485,10 @@ def _tree_level(level, raw=False, settings={}):
             if name.startswith(DEEPDISH_IO_PREFIX):
                 continue
 
-            node.add(name, ValueNode(v))
+            if isinstance(v, np.ndarray):
+                node.add(name, NumpyArrayNode(v.shape, _format_dtype(v.dtype)))
+            else:
+                node.add(name, ValueNode(v))
 
         if (level._v_title.startswith('list:') or
                 level._v_title.startswith('tuple:')):
