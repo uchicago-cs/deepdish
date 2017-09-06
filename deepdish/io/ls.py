@@ -26,6 +26,11 @@ COLORS = dict(
     reset='0'
 )
 
+MIN_COLUMN_WIDTH = 5
+MIN_AUTOMATIC_COLUMN_WIDTH = 20
+MAX_AUTOMATIC_COLUMN_WIDTH = 80
+
+
 
 def _format_dtype(dtype):
     dtype = np.dtype(dtype)
@@ -592,6 +597,28 @@ def get_tree(path, raw=False, settings={}):
         return InvalidFileNode(fn)
 
 
+def _column_width(level):
+    if isinstance(level, tables.Group):
+        max_w = 0
+        for grp in level:
+            max_w = max(max_w, _column_width(grp))
+        for name in level._v_attrs._f_list():
+            if name.startswith(DEEPDISH_IO_PREFIX):
+                continue
+            max_w = max(max_w, len(level._v_pathname) + 1 + len(name))
+        return max_w
+    else:
+        return len(level._v_pathname)
+
+
+def _discover_column_width(path):
+    if not os.path.isfile(path):
+        return MIN_AUTOMATIC_COLUMN_WIDTH
+
+    with tables.open_file(path, mode='r') as h5file:
+        return _column_width(h5file.root)
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(
@@ -626,7 +653,7 @@ def main():
     parser.add_argument('-v', '--version', action='version',
                         version='deepdish {} (io protocol {})'.format(
                             __version__, IO_VERSION))
-    parser.add_argument('--column-width', type=int, default=25)
+    parser.add_argument('--column-width', type=int, default=None)
 
     args = parser.parse_args()
 
@@ -645,7 +672,6 @@ def main():
     if args.compression:
         settings['compression'] = True
 
-    settings['left-column-width'] = args.column_width
 
     def single_file(files):
         if len(files) >= 2:
@@ -695,6 +721,11 @@ def main():
             # State that will be incremented
             settings['filtered_count'] = 0
 
+            if args.column_width is None:
+                settings['left-column-width'] = max(MIN_AUTOMATIC_COLUMN_WIDTH, min(MAX_AUTOMATIC_COLUMN_WIDTH, _discover_column_width(f)))
+            else:
+                settings['left-column-width'] = args.column_width
+
             s = get_tree(f, raw=args.raw, settings=settings)
             if s is not None:
                 if i > 0:
@@ -711,6 +742,7 @@ def main():
                     paint(args.filter, 'purple', colorize=colorize),
                     paint(str(settings['filtered_count']), 'white',
                           colorize=colorize)))
+
 
 if __name__ == '__main__':
     main()
