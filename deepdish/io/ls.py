@@ -586,6 +586,8 @@ def get_tree(path, raw=False, settings={}):
             return s
     except OSError:
         return FileNotFoundNode(fn)
+    except IOError:
+        return FileNotFoundNode(fn)
     except tables.exceptions.HDF5ExtError:
         return InvalidFileNode(fn)
 
