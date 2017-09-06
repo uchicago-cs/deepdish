@@ -30,6 +30,8 @@ MIN_COLUMN_WIDTH = 5
 MIN_AUTOMATIC_COLUMN_WIDTH = 20
 MAX_AUTOMATIC_COLUMN_WIDTH = 80
 
+ABRIDGE_OVER_N_CHILDREN = 50
+ABRIDGE_SHOW_EACH_SIDE = 5
 
 
 def _format_dtype(dtype):
@@ -57,6 +59,18 @@ def _pandas_shape(level):
             else:
                 return None
         return tuple(shape)
+
+
+def sorted_maybe_numeric(x):
+    """
+    Sorts x with numeric semantics if all keys are nonnegative integers.
+    Otherwise uses standard string sorting.
+    """
+    all_numeric = all(map(str.isdigit, x))
+    if all_numeric:
+        return sorted(x, key=int)
+    else:
+        return sorted(x)
 
 
 def paint(s, color, colorize=True):
@@ -127,10 +141,12 @@ def abbreviate(s, maxlength=25):
 
 
 def print_row(key, value, level=0, parent='/', colorize=True,
-              file=sys.stdout, unpack=False, settings={}):
+              file=sys.stdout, unpack=False, settings={},
+              parent_color='darkgray',
+              key_color='white'):
 
-    s = '{}{}'.format(paint(parent, 'darkgray', colorize=colorize),
-                      paint(key, 'white', colorize=colorize))
+    s = '{}{}'.format(paint(parent, parent_color, colorize=colorize),
+                      paint(key, key_color, colorize=colorize))
     s_raw = '{}{}'.format(parent, key)
     if 'filter' in settings:
         if not re.search(settings['filter'], s_raw):
@@ -201,7 +217,25 @@ class DictNode(Node):
     def print(self, level=0, parent='/', colorize=True, max_level=None,
               file=sys.stdout, settings={}):
         if level < max_level:
-            for k in sorted(self.children):
+            ch = sorted_maybe_numeric(self.children)
+            N = len(ch)
+            if N > ABRIDGE_OVER_N_CHILDREN and not settings.get('all'):
+                ch = ch[:ABRIDGE_SHOW_EACH_SIDE] + [None] + ch[-ABRIDGE_SHOW_EACH_SIDE:]
+
+            for k in ch:#sorted(self.children):
+                if k is None:
+                    #print(paint('... ({} omitted)'.format(N-20), 'darkgray', colorize=colorize))
+                    omitted = N-2 * ABRIDGE_SHOW_EACH_SIDE
+                    info = paint('{} omitted ({} in total)'.format(omitted, N),
+                                 'darkgray', colorize=colorize)
+                    print_row('...', info,
+                              level=level,
+                              parent=parent,
+                              unpack=self.header.get('dd_io_unpack'),
+                              colorize=colorize, file=file,
+                              key_color='darkgray',
+                              settings=settings)
+                    continue
                 v = self.children[k]
                 final = level+1 == max_level
 
@@ -646,10 +680,12 @@ def main():
                               'expression'))
     parser.add_argument('-l', '--leaves-only', action='store_true',
                         help=('Only print leaves'))
+    parser.add_argument('-a', '--all', action='store_true',
+                        help=('do not abridge'))
     parser.add_argument('-s', '--summarize', action='store_true',
-                        help=('Print summary statistics of numpy arrays'))
+                        help=('print summary statistics of numpy arrays'))
     parser.add_argument('-c', '--compression', action='store_true',
-                        help=('Print compression method for each array'))
+                        help=('print compression method for each array'))
     parser.add_argument('-v', '--version', action='version',
                         version='deepdish {} (io protocol {})'.format(
                             __version__, IO_VERSION))
@@ -672,6 +708,8 @@ def main():
     if args.compression:
         settings['compression'] = True
 
+    if args.all:
+        settings['all'] = True
 
     def single_file(files):
         if len(files) >= 2:
