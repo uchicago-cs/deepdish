@@ -667,19 +667,19 @@ def main():
     parser.add_argument('-nc', '--no-color', action='store_true',
                         help='turn off bash colors')
     parser.add_argument('-i', '--inspect', metavar='GRP',
-                        help='prints a specific variable (e.g. /data)')
+                        help='print a specific variable (e.g. /data)')
     parser.add_argument('--ipython', action='store_true',
-                        help=('loads file into an IPython session. '
+                        help=('load file into an IPython session. '
                               'Works with -i'))
     parser.add_argument('--raw', action='store_true',
-                        help=('prints the raw HDF5 structure for complex '
+                        help=('print the raw HDF5 structure for complex '
                               'data types, such as sparse matrices and pandas '
                               'data frames'))
     parser.add_argument('-f', '--filter', type=str,
-                        help=('Print only entries that match this regular '
+                        help=('print only entries that match this regular '
                               'expression'))
     parser.add_argument('-l', '--leaves-only', action='store_true',
-                        help=('Only print leaves'))
+                        help=('print only leaves'))
     parser.add_argument('-a', '--all', action='store_true',
                         help=('do not abridge'))
     parser.add_argument('-s', '--summarize', action='store_true',
