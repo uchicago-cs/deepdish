@@ -571,7 +571,7 @@ def save(path, data, compression='default'):
     with tables.open_file(path, mode='w') as h5file:
         save_to_file(h5file, data, compression)
 
-def save_to_file(file, data, compression='default'):
+def save_to_file(tables_file, data, compression='default'):
     """
     Save any Python structure as HDF5 to a writable file-like object. It is particularly suited for
     Numpy arrays. This function works similar to ``numpy.save``, except if you
@@ -619,8 +619,8 @@ def save_to_file(file, data, compression='default'):
 
     Parameters
     ----------
-    file : file-like object
-        A writeable file-object to which the data is saved.
+    tables_file : PyTables file object
+        A writeable PyTables file object to which the data is saved.
     data : anything
         Data to be saved. This can be anything from a Numpy array, a string, an
         object, or a dictionary containing all of them including more
@@ -641,7 +641,7 @@ def save_to_file(file, data, compression='default'):
     filters = _get_compression_filters(compression)
 
     # If the data is a dictionary, put it flatly in the root
-    group = file.root
+    group = tables_file.root
     group._v_attrs[DEEPDISH_IO_VERSION_STR] = IO_VERSION
     idtable = {}  # dict to keep track of objects already saved
     # Sparse matrices match isinstance(data, dict), so we'll have to be
@@ -649,7 +649,7 @@ def save_to_file(file, data, compression='default'):
     if type(data) == type({}) and _dict_native_ok(data):
         idtable[id(data)] = '/'
         for key, value in data.items():
-            _save_level(file, group, value, name=key,
+            _save_level(tables_file, group, value, name=key,
                         filters=filters, idtable=idtable)
 
     elif (_sns and isinstance(data, SimpleNamespace) and
@@ -657,11 +657,11 @@ def save_to_file(file, data, compression='default'):
         idtable[id(data)] = '/'
         group._v_attrs[DEEPDISH_IO_ROOT_IS_SNS] = True
         for key, value in data.__dict__.items():
-            _save_level(file, group, value, name=key,
+            _save_level(tables_file, group, value, name=key,
                         filters=filters, idtable=idtable)
 
     else:
-        _save_level(file, group, data, name='data',
+        _save_level(tables_file, group, data, name='data',
                     filters=filters, idtable=idtable)
         # Mark this to automatically unpack when loaded
         group._v_attrs[DEEPDISH_IO_UNPACK] = True
@@ -704,7 +704,7 @@ def load(path, group=None, sel=None, unpack=False):
     with tables.open_file(path, mode='r') as h5file:
         return load_from_file(h5file, group, sel, unpack)
 
-def load_from_file(file, group=None, sel=None, unpack=False):
+def load_from_file(tables_file, group=None, sel=None, unpack=False):
     """
     Loads an HDF5 saved with `save` from a file-like object.
 
@@ -713,8 +713,8 @@ def load_from_file(file, group=None, sel=None, unpack=False):
 
     Parameters
     ----------
-    file : file-like object
-        Readable file from which to load the data.
+    tables_file : PyTables file object
+        Readable PyTables file from which to load the data.
     group : string or list
         Load a specific group in the HDF5 hierarchy. If `group` is a list of
         strings, then a tuple will be returned with all the groups that were
@@ -741,30 +741,30 @@ def load_from_file(file, group=None, sel=None, unpack=False):
     pathtable = {}  # dict to keep track of objects already loaded
     if group is not None:
         if isinstance(group, str):
-            data = _load_specific_level(file, file, group, sel=sel,
+            data = _load_specific_level(tables_file, tables_file, group, sel=sel,
                                         pathtable=pathtable)
         else:  # Assume group is a list or tuple
             data = []
             for g in group:
-                data_i = _load_specific_level(file, file, g, sel=sel,
+                data_i = _load_specific_level(tables_file, tables_file, g, sel=sel,
                                               pathtable=pathtable)
                 data.append(data_i)
             data = tuple(data)
     else:
-        grp = file.root
+        grp = tables_file.root
         auto_unpack = (DEEPDISH_IO_UNPACK in grp._v_attrs and
                        grp._v_attrs[DEEPDISH_IO_UNPACK])
         do_unpack = unpack or auto_unpack
         if do_unpack and len(grp._v_children) == 1:
             name = next(iter(grp._v_children))
-            data = _load_specific_level(file, grp, name, sel=sel,
+            data = _load_specific_level(tables_file, grp, name, sel=sel,
                                         pathtable=pathtable)
             do_unpack = False
         elif sel is not None:
             raise ValueError("Must specify group with `sel` unless it "
                              "automatically unpacks")
         else:
-            data = _load_level(file, grp, pathtable)
+            data = _load_level(tables_file, grp, pathtable)
 
         if DEEPDISH_IO_VERSION_STR in grp._v_attrs:
             v = grp._v_attrs[DEEPDISH_IO_VERSION_STR]
