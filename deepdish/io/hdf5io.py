@@ -598,7 +598,7 @@ def save(path, data, compression='default'):
             group._v_attrs[DEEPDISH_IO_UNPACK] = True
 
 
-def load(path, group=None, sel=None, unpack=False):
+def load(path, group=None, sel=None, unpack=False, pytables_kwargs={}):
     """
     Loads an HDF5 saved with `save`.
 
@@ -621,6 +621,8 @@ def load(path, group=None, sel=None, unpack=False):
         If True, a single-entry dictionaries will be unpacked and the value
         will be returned directly. That is, if you save ``dict(a=100)``, only
         ``100`` will be loaded.
+    pytables_kwargs : dict
+        Keyword arguments to pass to pytables when opening a file.
 
     Returns
     -------
@@ -632,7 +634,7 @@ def load(path, group=None, sel=None, unpack=False):
     save
 
     """
-    with tables.open_file(path, mode='r') as h5file:
+    with tables.open_file(path, mode='r', **pytables_kwargs) as h5file:
         pathtable = {}  # dict to keep track of objects already loaded
         if group is not None:
             if isinstance(group, str):
