@@ -7,6 +7,7 @@ from scipy import sparse
 from deepdish import conf
 try:
     import pandas as pd
+    pd.io.pytables._tables()
     _pandas = True
 except ImportError:
     _pandas = False
