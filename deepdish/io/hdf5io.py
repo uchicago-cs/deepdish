@@ -104,7 +104,7 @@ def _get_compression_filters(compression='default'):
         try:
             ff = tables.Filters(complevel=level, complib=compression,
                                 shuffle=True)
-        except Exception: 
+        except Exception:
             warnings.warn(("(deepdish.io.save) Missing compression method {}: "
                            "no compression will be used.").format(compression))
             ff = None
