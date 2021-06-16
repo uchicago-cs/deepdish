@@ -29,7 +29,7 @@ Installation
 
 Alternatively (if you have conda with the `conda-forge <https://conda-forge.github.io/>`__ channel)::
 
-    conda install deepdish
+    conda install -c conda-forge deepdish
 
 
 Main feature
