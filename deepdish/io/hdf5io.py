@@ -249,7 +249,7 @@ def _save_level(handler, group, level, name=None, filters=None, idtable=None):
     elif isinstance(level, np.ndarray):
         _save_ndarray(handler, group, name, level, filters=filters)
 
-    elif _pandas and isinstance(level, (pd.DataFrame, pd.Series, pd.Panel)):
+    elif _pandas and isinstance(level, (pd.DataFrame, pd.Series)):
         store = _HDFStoreWithHandle(handler)
         store.put(group._v_pathname + '/' + name, level)
 
