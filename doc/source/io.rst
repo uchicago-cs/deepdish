@@ -36,6 +36,19 @@ We can now reconstruct the dictionary from the file using
 
 >>> d = dd.io.load('test.h5')
 
+An alternative save_to_file / load_from_file API exists where you control the PyTables file, e.g.:
+
+>>> with tables.open_file("in_memory.h5", "w", driver="H5FD_CORE", driver_core_backing_store=0) as my_file:
+>>>   d = {'foo': np.arange(10), 'bar': np.ones((5, 4, 3))}
+>>>   dd.io.save_to_file(my_file, d)
+>>>   # TODO: Save the file somewhere, such as cloud storage.
+>>>   # TODO: Load the file from the cloud.
+>>>   d = dd.io.load_from_file(my_file)
+
+This will be useful if, for example, you want to read and write HDF5 somewhere
+other than a local disk. In all other respects these methods have the same
+behavior as save and load.
+
 Dictionaries
 ------------
 

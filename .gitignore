@@ -4,6 +4,8 @@ _site
 .ruby-version
 build
 .coverage
+deepdish.egg-info/**
+dist/**
 
 # Numerous always-ignore extensions
 *.diff
