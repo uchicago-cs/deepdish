@@ -32,6 +32,14 @@ ATTR_TYPES = (int, float, bool, six.string_types, six.binary_type,
               np.uint16, np.uint32, np.uint64, np.float16, np.float32,
               np.float64, np.bool_, np.complex64, np.complex128)
 
+# np.object has been deprecated since numpy>=1.20
+NUMPY_MINOR_VERSION = int(np.version.version.split(".")[1])
+if NUMPY_MINOR_VERSION >= 20:
+    NUMPY_OBJECT_DTYPE = np.object_
+else:
+    NUMPY_OBJECT_DTYPE = np.object
+
+
 if _pandas:
     class _HDFStoreWithHandle(pd.io.pytables.HDFStore):
         def __init__(self, handle):
@@ -122,7 +130,7 @@ def _save_ndarray(handler, group, name, x, filters=None):
         strtype = b'ascii'
         itemsize = x.itemsize
         atom = tables.StringAtom(itemsize)
-    elif x.dtype == np.object:
+    elif x.dtype == NUMPY_OBJECT_DTYPE:
         # Not supported by HDF5, force pickling
         _save_pickled(handler, group, x, name=name)
         return
