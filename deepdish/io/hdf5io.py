@@ -122,7 +122,7 @@ def _save_ndarray(handler, group, name, x, filters=None):
         strtype = b'ascii'
         itemsize = x.itemsize
         atom = tables.StringAtom(itemsize)
-    elif x.dtype == np.object:
+    elif x.dtype == object:
         # Not supported by HDF5, force pickling
         _save_pickled(handler, group, x, name=name)
         return
