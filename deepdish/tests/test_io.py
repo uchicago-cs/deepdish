@@ -6,6 +6,7 @@ import numpy as np
 import deepdish as dd
 import pandas as pd
 from contextlib import contextmanager
+import tables
 
 try:
     from types import SimpleNamespace
@@ -377,6 +378,13 @@ class TestIO(unittest.TestCase):
                 dd.io.save(fn, x, compression=comp)
                 x1 = dd.io.load(fn)
                 assert (x == x1).all()
+
+    def test_reconstruction_with_consumer_owned_file(self):
+        with tables.open_file("in_memory.h5", "w", driver="H5FD_CORE", driver_core_backing_store=0) as file:
+            x = 100
+            dd.io.save_to_file(file, x)
+            x1 = dd.io.load_from_file(file)
+            assert x == x1
 
 if __name__ == '__main__':
     unittest.main()

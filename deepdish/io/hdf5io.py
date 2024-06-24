@@ -569,39 +569,108 @@ def save(path, data, compression='default'):
     --------
     load
     """
+    with tables.open_file(path, mode='w') as h5file:
+        save_to_file(h5file, data, compression)
+
+def save_to_file(tables_file, data, compression='default'):
+    """
+    Save any Python structure as HDF5 to a writable file-like object. It is particularly suited for
+    Numpy arrays. This function works similar to ``numpy.save``, except if you
+    save a Python object at the top level, you do not need to issue
+    ``data.flat[0]`` to retrieve it from inside a Numpy array of type
+    ``object``.
+
+    Some types of objects get saved natively in HDF5. The rest get serialized
+    automatically.  For most needs, you should be able to stick to the natively
+    supported types, which are:
+
+    * Dictionaries
+    * Short lists and tuples (<256 in length)
+    * Basic data types (including strings and None)
+    * Numpy arrays
+    * Scipy sparse matrices
+    * Pandas ``DataFrame``, ``Series``, and ``Panel``
+    * SimpleNamespaces (for Python >= 3.3, but see note below)
+
+    A recommendation is to always convert your data to using only these types
+    That way your data will be portable and can be opened through any HDF5
+    reader. A class that helps you with this is
+    :class:`deepdish.util.Saveable`.
+
+    Lists and tuples are supported and can contain heterogeneous types. This is
+    mostly useful and plays well with HDF5 for short lists and tuples. If you
+    have a long list (>256) it will be serialized automatically. However,
+    in such cases it is common for the elements to have the same type, in which
+    case we strongly recommend converting to a Numpy array first.
+
+    Note that the SimpleNamespace type will be read in as dictionaries for
+    earlier versions of Python.
+
+    This function requires the `PyTables <http://www.pytables.org/>`_ module to
+    be installed.
+
+    You can change the default compression method to ``blosc`` (much faster,
+    but less portable) by creating a ``~/.deepdish.conf`` with::
+
+        [io]
+            compression: blosc
+
+    This is the recommended compression method if you plan to use your HDF5
+    files exclusively through deepdish (or PyTables).
+
+    Parameters
+    ----------
+    tables_file : PyTables file object
+        A writeable PyTables file object to which the data is saved.
+    data : anything
+        Data to be saved. This can be anything from a Numpy array, a string, an
+        object, or a dictionary containing all of them including more
+        dictionaries.
+    compression : string or tuple
+        Set compression method, choosing from `blosc`, `zlib`, `lzo`, `bzip2`
+        and more (see PyTables documentation). It can also be specified as a
+        tuple (e.g. ``('blosc', 5)``), with the latter value specifying the
+        level of compression, choosing from 0 (no compression) to 9 (maximum
+        compression).  Set to `None` to turn off compression. The default is
+        `zlib`, since it is highly portable; for much greater speed, try for
+        instance `blosc`.
+
+    See also
+    --------
+    load
+    """
     filters = _get_compression_filters(compression)
 
-    with tables.open_file(path, mode='w') as h5file:
-        # If the data is a dictionary, put it flatly in the root
-        group = h5file.root
-        group._v_attrs[DEEPDISH_IO_VERSION_STR] = IO_VERSION
-        idtable = {}  # dict to keep track of objects already saved
-        # Sparse matrices match isinstance(data, dict), so we'll have to be
-        # more strict with the type checking
-        if type(data) == type({}) and _dict_native_ok(data):
-            idtable[id(data)] = '/'
-            for key, value in data.items():
-                _save_level(h5file, group, value, name=key,
-                            filters=filters, idtable=idtable)
-
-        elif (_sns and isinstance(data, SimpleNamespace) and
-              _dict_native_ok(data.__dict__)):
-            idtable[id(data)] = '/'
-            group._v_attrs[DEEPDISH_IO_ROOT_IS_SNS] = True
-            for key, value in data.__dict__.items():
-                _save_level(h5file, group, value, name=key,
-                            filters=filters, idtable=idtable)
-
-        else:
-            _save_level(h5file, group, data, name='data',
+    # If the data is a dictionary, put it flatly in the root
+    group = tables_file.root
+    group._v_attrs[DEEPDISH_IO_VERSION_STR] = IO_VERSION
+    idtable = {}  # dict to keep track of objects already saved
+    # Sparse matrices match isinstance(data, dict), so we'll have to be
+    # more strict with the type checking
+    if type(data) == type({}) and _dict_native_ok(data):
+        idtable[id(data)] = '/'
+        for key, value in data.items():
+            _save_level(tables_file, group, value, name=key,
                         filters=filters, idtable=idtable)
-            # Mark this to automatically unpack when loaded
-            group._v_attrs[DEEPDISH_IO_UNPACK] = True
+
+    elif (_sns and isinstance(data, SimpleNamespace) and
+          _dict_native_ok(data.__dict__)):
+        idtable[id(data)] = '/'
+        group._v_attrs[DEEPDISH_IO_ROOT_IS_SNS] = True
+        for key, value in data.__dict__.items():
+            _save_level(tables_file, group, value, name=key,
+                        filters=filters, idtable=idtable)
+
+    else:
+        _save_level(tables_file, group, data, name='data',
+                    filters=filters, idtable=idtable)
+        # Mark this to automatically unpack when loaded
+        group._v_attrs[DEEPDISH_IO_UNPACK] = True
 
 
 def load(path, group=None, sel=None, unpack=False):
     """
-    Loads an HDF5 saved with `save`.
+    Loads an HDF5 saved with `save` from a file path.
 
     This function requires the `PyTables <http://www.pytables.org/>`_ module to
     be installed.
@@ -634,47 +703,83 @@ def load(path, group=None, sel=None, unpack=False):
 
     """
     with tables.open_file(path, mode='r') as h5file:
-        pathtable = {}  # dict to keep track of objects already loaded
-        if group is not None:
-            if isinstance(group, str):
-                data = _load_specific_level(h5file, h5file, group, sel=sel,
-                                            pathtable=pathtable)
-            else:  # Assume group is a list or tuple
-                data = []
-                for g in group:
-                    data_i = _load_specific_level(h5file, h5file, g, sel=sel,
-                                                  pathtable=pathtable)
-                    data.append(data_i)
-                data = tuple(data)
+        return load_from_file(h5file, group, sel, unpack)
+
+def load_from_file(tables_file, group=None, sel=None, unpack=False):
+    """
+    Loads an HDF5 saved with `save` from a file-like object.
+
+    This function requires the `PyTables <http://www.pytables.org/>`_ module to
+    be installed.
+
+    Parameters
+    ----------
+    tables_file : PyTables file object
+        Readable PyTables file from which to load the data.
+    group : string or list
+        Load a specific group in the HDF5 hierarchy. If `group` is a list of
+        strings, then a tuple will be returned with all the groups that were
+        specified.
+    sel : slice or tuple of slices
+        If you specify `group` and the target is a numpy array, then you can
+        use this to slice it. This is useful for opening subsets of large HDF5
+        files. To compose the selection, you can use `deepdish.aslice`.
+    unpack : bool
+        If True, a single-entry dictionaries will be unpacked and the value
+        will be returned directly. That is, if you save ``dict(a=100)``, only
+        ``100`` will be loaded.
+
+    Returns
+    -------
+    data : anything
+        Hopefully an identical reconstruction of the data that was saved.
+
+    See also
+    --------
+    save
+
+    """
+    pathtable = {}  # dict to keep track of objects already loaded
+    if group is not None:
+        if isinstance(group, str):
+            data = _load_specific_level(tables_file, tables_file, group, sel=sel,
+                                        pathtable=pathtable)
+        else:  # Assume group is a list or tuple
+            data = []
+            for g in group:
+                data_i = _load_specific_level(tables_file, tables_file, g, sel=sel,
+                                              pathtable=pathtable)
+                data.append(data_i)
+            data = tuple(data)
+    else:
+        grp = tables_file.root
+        auto_unpack = (DEEPDISH_IO_UNPACK in grp._v_attrs and
+                       grp._v_attrs[DEEPDISH_IO_UNPACK])
+        do_unpack = unpack or auto_unpack
+        if do_unpack and len(grp._v_children) == 1:
+            name = next(iter(grp._v_children))
+            data = _load_specific_level(tables_file, grp, name, sel=sel,
+                                        pathtable=pathtable)
+            do_unpack = False
+        elif sel is not None:
+            raise ValueError("Must specify group with `sel` unless it "
+                             "automatically unpacks")
         else:
-            grp = h5file.root
-            auto_unpack = (DEEPDISH_IO_UNPACK in grp._v_attrs and
-                           grp._v_attrs[DEEPDISH_IO_UNPACK])
-            do_unpack = unpack or auto_unpack
-            if do_unpack and len(grp._v_children) == 1:
-                name = next(iter(grp._v_children))
-                data = _load_specific_level(h5file, grp, name, sel=sel,
-                                            pathtable=pathtable)
-                do_unpack = False
-            elif sel is not None:
-                raise ValueError("Must specify group with `sel` unless it "
-                                 "automatically unpacks")
-            else:
-                data = _load_level(h5file, grp, pathtable)
+            data = _load_level(tables_file, grp, pathtable)
 
-            if DEEPDISH_IO_VERSION_STR in grp._v_attrs:
-                v = grp._v_attrs[DEEPDISH_IO_VERSION_STR]
-            else:
-                v = 0
+        if DEEPDISH_IO_VERSION_STR in grp._v_attrs:
+            v = grp._v_attrs[DEEPDISH_IO_VERSION_STR]
+        else:
+            v = 0
 
-            if v > IO_VERSION:
-                warnings.warn('This file was saved with a newer version of '
-                              'deepdish. Please upgrade to make sure it loads '
-                              'correctly.')
+        if v > IO_VERSION:
+            warnings.warn('This file was saved with a newer version of '
+                          'deepdish. Please upgrade to make sure it loads '
+                          'correctly.')
 
-            # Attributes can't be unpacked with the method above, so fall back
-            # to this
-            if do_unpack and isinstance(data, dict) and len(data) == 1:
-                data = next(iter(data.values()))
+        # Attributes can't be unpacked with the method above, so fall back
+        # to this
+        if do_unpack and isinstance(data, dict) and len(data) == 1:
+            data = next(iter(data.values()))
 
     return data
