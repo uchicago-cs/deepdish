@@ -29,6 +29,7 @@ COLORS = dict(
 MIN_COLUMN_WIDTH = 5
 MIN_AUTOMATIC_COLUMN_WIDTH = 20
 MAX_AUTOMATIC_COLUMN_WIDTH = 80
+MAX_FLOAT_LEN = 24
 
 ABRIDGE_OVER_N_CHILDREN = 50
 ABRIDGE_SHOW_EACH_SIDE = 5
@@ -271,13 +272,14 @@ class SimpleNamespaceNode(DictNode):
                               final_level=final_level)
 
     def print(self, level=0, parent='/', colorize=True, max_level=None,
-              file=sys.stdout):
+              file=sys.stdout, settings={}):
         if level == 0 and not self.header.get('dd_io_unpack'):
             print_row('', self.info(colorize=colorize,
                                     final_level=(0 == max_level)),
                       level=level, parent=parent, unpack=False,
                       colorize=colorize, file=file)
-        DictNode.print(self, level, parent, colorize, max_level, file)
+        DictNode.print(self, level, parent, colorize, max_level,
+                       file, settings)
 
     def __repr__(self):
         s = ['{}={}'.format(k, repr(v)) for k, v in self.children.items()]
@@ -469,7 +471,7 @@ class ValueNode(Node):
                                type_color='blue',
                                colorize=colorize)
         else:
-            return type_string(repr(self.value)[:20],
+            return type_string(repr(self.value)[:MAX_FLOAT_LEN],
                                dtype=str(np.dtype(type(self.value))),
                                type_color='blue',
                                colorize=colorize)
